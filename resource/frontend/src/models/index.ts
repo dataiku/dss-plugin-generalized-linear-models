@@ -36,6 +36,11 @@ export type ModelPoint = {
     name: string;
 }
 
+export type Interaction = { 
+    interaction_first: string;
+    interaction_second: string;
+}
+
 export type BaseValue = {
     variable: string;
     base_level: string;

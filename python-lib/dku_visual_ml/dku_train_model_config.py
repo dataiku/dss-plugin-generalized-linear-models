@@ -44,6 +44,10 @@ class DKUVisualMLConfig:
         logger.debug("Getting exposure variable")
         return self.exposure_column
     
+    def get_interaction_variables(self):
+        logger.debug("Getting interaction variables")
+        return self.interaction_variables
+
     def get_offset_variable(self):
         logger.debug("Getting offset variables")
         return self.get_variable_by_role("offset")
@@ -99,6 +103,7 @@ class DKUVisualMLConfig:
         
         self.variables = dict(request_json.get('variables'))
         self.variables_list = [{'name': key, **value} for key, value in self.variables.items()]
+        self.interaction_variables =  request_json.get('interaction_variable', None)
         self.log_configuration()
         # Check for required parameters
 

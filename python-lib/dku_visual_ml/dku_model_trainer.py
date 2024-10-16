@@ -354,6 +354,19 @@ class VisualMLModelTrainer(DataikuClientProject):
                 logger.debug(error_message)
                 return None, error_message
             
+    def process_interaction_columns(self, interaction_columns):
+        print(f"interaction columns are {interaction_columns}")
+        interaction_columns_first = []
+        interaction_columns_second = []
+        
+        for interaction in interaction_columns:
+            first = interaction['interaction_first']
+            second = interaction['interaction_second']
+            interaction_columns_first.append(first)
+            interaction_columns_second.append(second)
+            
+        return interaction_columns_first, interaction_columns_second
+        
     def update_mltask_modelling_params(self):
         """
         Updates the modeling parameters based on the distribution function, link function, elastic net penalty, l1 ratio
@@ -361,6 +374,9 @@ class VisualMLModelTrainer(DataikuClientProject):
         """
         settings = self.mltask.get_settings()
         exposure_variable = self.visual_ml_config.get_exposure_variable()
+        interaction_variables = self.visual_ml_config.get_interaction_variables()
+        first_columns, second_columns = self.process_interaction_columns(interaction_variables)
+            
         offset_variable = None
         
         algo_settings = settings.get_algorithm_settings(
@@ -370,7 +386,9 @@ class VisualMLModelTrainer(DataikuClientProject):
             f"{self.visual_ml_config.distribution_function}_link": self.visual_ml_config.link_function,
             "family_name": self.visual_ml_config.distribution_function,
             "penalty": [self.visual_ml_config.elastic_net_penalty],
-            "l1_ratio": [self.visual_ml_config.l1_ratio]
+            "l1_ratio": [self.visual_ml_config.l1_ratio],
+            "interaction_columns_first":first_columns,
+            "interaction_columns_second":second_columns,
         })
         
         # Handle exposure and offset variables

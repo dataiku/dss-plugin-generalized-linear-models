@@ -30,6 +30,7 @@ class ModelConformityChecker(DataikuClientProject):
         logger.info("Model Conformity Check: is GLM?")
         modeling = self.model_details.details['modeling']
         if modeling['algorithm'] != 'CUSTOM_PLUGIN':
+            logger.info("Failed: Model Conformity Check: is GLM?")
             return False
         if modeling['plugin_python_grid']['pluginId'] != 'generalized-linear-models':
             logger.info("Failed: Model Conformity Check: is GLM?")
@@ -62,19 +63,26 @@ class ModelConformityChecker(DataikuClientProject):
         return True
 
     def check_train_test_split(self):
+        logger.info("Model Conformity Check: train test split")
         tt_policy = self.model_details.details['splitDesc']['params']['ttPolicy']
         if tt_policy not in ['SPLIT_SINGLE_DATASET', 'EXPLICIT_FILTERING_TWO_DATASETS']:
+            logger.info(f"Failed: Model Conformity Check: train test split with {tt_policy}")
             return False
+        logger.info("PASSEd: Model Conformity Check: train test split")
         return True
 
     def check_feature_handling(self):
+        logger.info("Model Conformity Check: no weighting?")
         feature_handlings = self.model_details.details['preprocessing']['per_feature']
         for feature, feature_handling in feature_handlings.items():
             if feature_handling['role'] == 'INPUT':
                 if feature_handling['type'] == 'CATEGORY':
                     if feature_handling['category_handling'] != 'CUSTOM':
+                        logger.info("FAILED: Model Conformity Check: feature handling")
                         return False
                 elif feature_handling['type'] == 'NUMERIC':
                     if feature_handling['rescaling'] != 'NONE':
+                        logger.info("FAILED: Model Conformity Check: feature handling")
                         return False
+        logger.info("PASSED: Model Conformity Check: feature handling")
         return True

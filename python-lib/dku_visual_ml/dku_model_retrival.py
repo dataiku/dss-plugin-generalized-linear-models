@@ -113,6 +113,23 @@ class VisualMLModelRetriver(DataikuClientProject):
         logger.info(f"Features filtered: non_excluded_features={self.non_excluded_features}, used_features={self.used_features}, candidate_features={self.candidate_features}")
         return self.used_features
     
+    def get_interactions(self):
+        """
+        Extracts the interaction variables from the model
+        """
+        coef_table = self.predictor._clf.coef_table.reset_index()
+        coef_variable_names = list(coef_table['index'])
+        interaction_variables = [variable for variable in coef_variable_names if variable.split(':')[0] == 'interaction']
+        final_interactions = set()
+
+        for interaction in interaction_variables:
+            split_interaction = interaction_variables[0].split('::')
+            first = split_interaction[0].split(':')[1]
+            second = split_interaction[1].split(':')[1]
+            final_interactions.add((first, second))
+        
+        final_interactions = list(final_interactions)
+        return final_interactions
 
     def get_features_used_in_modelling(self):
         """

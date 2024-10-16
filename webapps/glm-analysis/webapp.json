@@ -62,7 +62,6 @@
       "description": "Select the Default Prediction Type",
        "type": "SELECT",
         "selectChoices" : [
-            { "value": "BINARY_CLASSIFICATION", "label": "Binary Classification"},
             { "value": "REGRESSION", "label": "Regression"}
         ]
   },
