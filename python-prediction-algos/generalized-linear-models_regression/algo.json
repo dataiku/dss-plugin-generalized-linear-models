@@ -346,6 +346,29 @@
                 "double",
                 "float"
               ]
+        },
+        {
+            "type": "SEPARATOR",
+            "name": "",
+            "description": "<h4> Interactions</h4>"
+        },
+        {
+            "name": "interaction_columns_first",
+            "label": "First Interaction Columns",
+            "gridParam": false,
+            "description": "interaction column",
+            "type": "DATASET_COLUMNS",
+            "datasetParamName": "training_dataset",
+            "mandatory": false
+        },
+        {
+            "name": "interaction_columns_second",
+            "label": "Second Interaction Columns",
+            "gridParam": false,
+            "description": "interaction column",
+            "type": "DATASET_COLUMNS",
+            "datasetParamName": "training_dataset",
+            "mandatory": false
         }
     ]
 }

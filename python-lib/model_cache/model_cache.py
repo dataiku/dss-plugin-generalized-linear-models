@@ -9,6 +9,7 @@ class ModelCache(ModelConformityChecker):
     def add_model(self, 
                   model_id, 
                   relativities, 
+                  relativities_interaction,
                   predicted_and_base, 
                   base_values,
                   relativities_dict,
@@ -28,6 +29,7 @@ class ModelCache(ModelConformityChecker):
         if is_conform:
             self.cache[model_id] = {
                         'relativities': relativities,
+                        'relativities_interaction': relativities_interaction,
                         'predicted_and_base': predicted_and_base,
                         'base_values': base_values,
                         'relativities_dict': relativities_dict,

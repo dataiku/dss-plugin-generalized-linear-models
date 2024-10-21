@@ -1,7 +1,6 @@
 from glm_handler.dku_relativites_calculator import RelativitiesCalculator
 from glm_handler.dku_model_deployer import ModelDeployer
 from glm_handler.glm_data_handler import GlmDataHandler
-from glm_handler.dku_model_metrics import ModelMetricsCalculator
 from time import time
 from logging_assist.logging import logger
 from glm_handler.glm_data_handler import GlmDataHandler
@@ -45,6 +44,7 @@ def setup_model_cache(global_dku_mltask, model_deployer):
                 base_values = relativities_calculator.get_base_values()
 
                 relativities = relativities_calculator.get_relativities_df()
+                relativities_interaction = relativities_calculator.get_relativities_interactions_df()
                 
                 logger.info(f"relativites are: {relativities.to_dict()}")
                 relativities_dict = relativities_calculator.relativities
@@ -72,6 +72,7 @@ def setup_model_cache(global_dku_mltask, model_deployer):
                 # Store data in cache
                 model_cache.add_model(model_id, 
                                      relativities, 
+                                     relativities_interaction,
                                      model1_predicted_base,
                                      base_values,
                                      relativities_dict,
@@ -109,6 +110,8 @@ def update_model_cache(global_dku_mltask, model_cache):
             base_values = relativities_calculator.get_base_values()
             
             relativities = relativities_calculator.get_relativities_df()
+            relativities_interaction = relativities_calculator.get_relativities_interactions_df()
+            
             relativities_dict = relativities_calculator.relativities
             variable_level_stats = VariableLevelStatsFormatter(
                 model_retriever, data_handler, relativities_calculator
@@ -123,6 +126,7 @@ def update_model_cache(global_dku_mltask, model_cache):
 
             model_cache.add_model(model_id, 
                                  relativities, 
+                                 relativities_interaction,
                                  model1_predicted_base,
                                  base_values,
                                  relativities_dict,
