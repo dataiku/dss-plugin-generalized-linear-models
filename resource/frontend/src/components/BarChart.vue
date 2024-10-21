@@ -167,7 +167,7 @@
                         // Custom tooltip formatter
                         var tooltip = params[0].axisValueLabel + '<br/>'; // X-axis label
                         params.forEach(function(item: any) {
-                            tooltip += item.seriesName + ': ' + item.data + '<br/>'; // Series name and value
+                            tooltip += item.seriesName + ': ' + (Math.round(item.data*1000.0)/1000.0) + '<br/>'; // Series name and value
                         });
                         return tooltip;
                     }

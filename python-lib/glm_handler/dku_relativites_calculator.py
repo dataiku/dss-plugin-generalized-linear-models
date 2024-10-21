@@ -207,13 +207,9 @@ class RelativitiesCalculator:
         self.get_predicted_and_base()
         df = self.predicted_base_df.copy()
         df.columns = ['definingVariable', 
-                                             'Category', 
-                                             'observedAverage', 
-                                             'fittedAverage', 'Value', 'baseLevelPrediction', 'dataset']
-        df['observedAverage'] = [float('%s' % float('%.3g' % x)) for x in  df['observedAverage']]
-        df['fittedAverage'] = [float('%s' % float('%.3g' % x)) for x in df['fittedAverage']]
-        df['Value'] = [float('%s' % float('%.3g' % x)) for x in  df['Value']]
-        df['baseLevelPrediction'] = [float('%s' % float('%.3g' % x)) for x in  df['baseLevelPrediction']]
+                     'Category', 
+                     'observedAverage', 
+                     'fittedAverage', 'Value', 'baseLevelPrediction', 'dataset']
         logger.info("Successfully got formatted and predicted base")
         return df
     

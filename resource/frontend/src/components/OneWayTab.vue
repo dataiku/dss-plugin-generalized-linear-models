@@ -306,13 +306,9 @@ export default defineComponent({
           this.allData = dataResponse?.data;
         },
         async updateRescale(value: boolean) {
-          console.log("rescale");
           if (value) {
-            console.log(value);
-            console.log(this.baseValues);
             //const baseCategory = this.relativitiesTable.find(item => item.relativity === 1);
             const baseCategory = this.baseValues.find(item => item.variable === this.selectedVariable.variable);
-            console.log(baseCategory);
             if (baseCategory) {
               const baseData = this.allData.find(item => item.Category === baseCategory.base_level && item.definingVariable === this.selectedVariable.variable);
               console.log(baseData);
