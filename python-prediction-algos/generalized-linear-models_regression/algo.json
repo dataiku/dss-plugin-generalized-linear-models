@@ -356,10 +356,31 @@
             "name": "solver",
             "label": "Solver",
             "defaultValue": "auto",
-            "type": "STRING",
+            "type": "SELECT",
+            "selectChoices": [{
+                    "value": "auto",
+                    "label": "auto"
+                },
+                {
+                    "value": "irls-cd",
+                    "label": "irls-cd"
+                },
+                {
+                    "value": "irls-ls",
+                    "label": "irls-ls"
+                },
+                {
+                    "value": "lbfgs",
+                    "label": "lbfgs"
+                },
+                {
+                    "value": "trust-constr",
+                    "label": "trust-constr"
+                }
+            ],
             "description": "The solver",
             "allowDuplicates": false,
-            "mandatory": false,
+            "mandatory": true,
             "gridParam": false,
             "visibilityCondition": true
         },
