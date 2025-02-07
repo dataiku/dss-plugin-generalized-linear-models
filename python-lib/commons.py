@@ -222,4 +222,44 @@ def check_params(params):
                 )
             dku_config.exposure_columns = params.get('exposure_columns')
 
+    dku_config.add_param(
+            name="solver",
+            value=params.get("solver"),
+            checks=[{
+                "type": "in",
+                "op": ['auto', 'irls-cd', 'irls-ls', 'lbfgs', 'trust-constr']
+            }],
+            required=True
+        )
+    
+    dku_config.add_param(
+            name="max_iter",
+            value=params.get("max_iter"),
+            checks=[{
+                "type": "sup_eq",
+                "op": 0
+            }],
+            required=True
+        )
+    
+    dku_config.add_param(
+            name="gradient_tol",
+            value=params.get("gradient_tol"),
+            checks=[{
+                "type": "sup_eq",
+                "op": 0
+            }],
+            required=True
+        )
+    
+    dku_config.add_param(
+            name="step_size_tol",
+            value=params.get("step_size_tol"),
+            checks=[{
+                "type": "sup_eq",
+                "op": 0
+            }],
+            required=False
+        )
+
     return dku_config

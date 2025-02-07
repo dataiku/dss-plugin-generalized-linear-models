@@ -18,7 +18,8 @@ class BaseGLM(BaseEstimator, ClassifierMixin):
     """
     def __init__(self, family_name="gaussian", binomial_link="logit", gamma_link="inverse_power", gaussian_link="identity", inverse_gaussian_link="inverse_squared",
                  poisson_link="log", negative_binomial_link="log", tweedie_link="log", alpha=1, power=1, penalty=0.0, l1_ratio=0.5,
-                 var_power=1, offset_mode="BASIC", training_dataset=None, offset_columns=None, exposure_columns=None,
+                 var_power=1, offset_mode="BASIC", training_dataset=None, offset_columns=None, exposure_columns=None, 
+                 solver='auto', max_iter=100, gradient_tol=None, step_size_tol=None,
                  column_labels=None):
 
         self.family_name = family_name
@@ -65,6 +66,10 @@ class BaseGLM(BaseEstimator, ClassifierMixin):
         self.fit_intercept = True
         self.intercept_scaling = 1
         self.fitted_model = None
+        self.solver = solver
+        self.max_iter = max_iter
+        self.gradient_tol = gradient_tol
+        self.step_size_tol = step_size_tol
         self.coef_ = None
         self.intercept_ = None
         self.classes_ = None
@@ -230,7 +235,9 @@ class BaseGLM(BaseEstimator, ClassifierMixin):
 
         #  fits and stores glum glm
         model = GeneralizedLinearRegressor(alpha=self.penalty, l1_ratio=self.l1_ratio, fit_intercept=True,
-                                            family=self.family, link=self.link)
+                                            family=self.family, link=self.link,
+                                            solver=self.solver, max_iter=self.max_iter, 
+                                            gradient_tol=self.gradient_tol, step_size_tol=self.step_size_tol)
         self.fitted_model = model.fit(X, y, sample_weight=sample_weight, offset=offset_output)
         
         self.compute_coefs(prediction_is_classification)

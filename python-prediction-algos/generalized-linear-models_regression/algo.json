@@ -346,6 +346,55 @@
                 "double",
                 "float"
               ]
+        },
+        {
+            "type": "SEPARATOR",
+            "name": "",
+            "description": "<h4> Advanced Parameters</h4>"
+        },
+        {
+            "name": "solver",
+            "label": "Solver",
+            "defaultValue": "auto",
+            "type": "STRING",
+            "description": "The solver",
+            "allowDuplicates": false,
+            "mandatory": false,
+            "gridParam": false,
+            "visibilityCondition": true
+        },
+        {
+            "name": "max_iter",
+            "label": "Max Iter",
+            "defaultValue": 100,
+            "type": "INT",
+            "description": "The maximum number of iteration",
+            "allowDuplicates": false,
+            "mandatory": false,
+            "gridParam": false,
+            "visibilityCondition": true
+        },
+        {
+            "name": "gradient_tol",
+            "label": "Gradient Tol",
+            "defaultValue": 1e-4,
+            "type": "DOUBLE",
+            "description": "The stopping condition on the gradient tolerance",
+            "allowDuplicates": false,
+            "mandatory": false,
+            "gridParam": false,
+            "visibilityCondition": true
+        },
+        {
+            "name": "step_size_tol",
+            "label": "Step Size Tol",
+            "defaultValue": null,
+            "type": "DOUBLE",
+            "description": "The stopping condition on the step size tolerance",
+            "allowDuplicates": false,
+            "mandatory": false,
+            "gridParam": false,
+            "visibilityCondition": true
         }
     ]
 }
