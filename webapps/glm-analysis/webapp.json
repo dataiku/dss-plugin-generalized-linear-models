@@ -94,7 +94,7 @@
         "type": "SEPARATOR",
         "description": "",
         "label": "Select an Existing Analysis",
-        "visibilityCondition": "model.create_new_analysis == 'true'"
+        "visibilityCondition": "model.create_new_analysis == 'false'"
     },
 
     {
