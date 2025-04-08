@@ -12,13 +12,9 @@ from model_cache.model_cache import ModelCache
 
 model_cache = ModelCache()
 
-def setup_model_cache(global_dku_mltask, model_deployer):
+def setup_model_cache(global_dku_mltask):
     if global_dku_mltask is None:
         logger.warning("global_dku_mltask is None. Exiting setup_model_cache.")
-        return
-
-    elif model_deployer is None:
-        logger.warning("model_deployer is None. Exiting setup_model_cache.")
         return
     
     else:
@@ -30,7 +26,6 @@ def setup_model_cache(global_dku_mltask, model_deployer):
         for model_id in model_id_list:
 
                 loop_start_time = time()
-                model_deployer.set_new_active_version(model_id)
                 model_retriever = VisualMLModelRetriver(
                     model_id
                 )
