@@ -15,41 +15,6 @@
   ],
   "paramsPythonSetup": "web_app_setting_list.py",
   "params": [
-      
-      {
-          "name": "setup_type",
-          "label": "Setup Type",
-            "description": "Continue the existing analysis from a previous session or start new",
-          "type": "SELECT",
-          "selectChoices" : [
-              { "value": "new", "label": "New Analysis"},
-              { "value": "continue", "label": "Continue Existing"}
-          ],
-          "mandatory": true
-      },
-      {
-        "name": "experiment_name",
-        "label": "Experiment Name",
-         "description": "Your custom name for your experiment",
-        "type": "STRING",
-      "visibilityCondition": "model.setup_type == 'new'",
-        "mandatory": true
-      },
-     {
-        "type": "SEPARATOR",
-        "description": "",
-        "label": "Existing Model Details",
-        "visibilityCondition": "model.setup_type == 'continue'"
-    },
-
-    {
-      "name": "existing_analysis_id",
-      "label": "Existing Analysis",
-      "type": "SELECT",
-       "getChoicesFromPython": true,
-      "mandatory": false,
-      "visibilityCondition": "model.setup_type == 'continue'"
-    }, 
       {
       "type": "SEPARATOR",
       "description": "",
@@ -107,6 +72,36 @@
     "type": "DATASET_COLUMN",
     "datasetParamName": "training_dataset_string",
     "mandatory": false
-  }
+  },
+      {
+        "type": "SEPARATOR",
+        "description": "",
+         "label": "Analysis Setup"
+    },
+      
+      {
+          "name": "create_new_analysis",
+          "label": "Create New Analysis?",
+          "description": "Create a new analysis on the selected dataset",
+          "type": "BOOLEAN",
+          "defaultValue": false,
+          "mandatory": true
+      },
+      {
+        "name": "experiment_name",
+        "label": "Experiment Name",
+        "description": "Your custom name for your experiment",
+        "type": "STRING",
+        "visibilityCondition": "model.create_new_analysis == true",
+        "mandatory": false
+      },
+    {
+      "name": "existing_analysis_id",
+      "label": "Existing Analysis",
+      "type": "SELECT",
+       "getChoicesFromPython": true,
+      "mandatory": false,
+      "visibilityCondition": "model.create_new_analysis == false"
+    }
   ]
 }

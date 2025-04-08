@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, send_file, current_app
+from flask import Blueprint, jsonify, request, send_file, current_app, abort
 import pandas as pd
 import random
 import re
@@ -33,9 +33,13 @@ if not is_local:
     
     visual_ml_config = DKUVisualMLConfig()
     data_handler = GlmDataHandler()
-    visual_ml_trainer = VisualMLModelTrainer()
+    visual_ml_trainer = VisualMLModelTrainer(visual_ml_config)
     
-    if visual_ml_config.setup_type != "new":
+    if visual_ml_config.create_new_analysis:
+        visual_ml_trainer.create_initial_ml_task()
+        logger.info(f"Created new analysis {visual_ml_config.experiment_name}")
+        abort(500, description=f"Created new analysis {visual_ml_config.experiment_name}. Now select and restart backend")
+    else:
         visual_ml_trainer.setup_using_existing_ml_task(
             visual_ml_config.existing_analysis_id
             )
@@ -44,7 +48,7 @@ if not is_local:
         relativities_calculator = RelativitiesCalculator(
             data_handler,
             model_retriever
-            )
+        )
     
         
 def setup_cache():

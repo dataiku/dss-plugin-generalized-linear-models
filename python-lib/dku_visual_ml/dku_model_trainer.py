@@ -103,7 +103,7 @@ class VisualMLModelTrainer(DataikuClientProject):
         new_analysis_defintion['name'] = str(self.visual_ml_config.input_dataset) + "_" + experiment_name
         analysis_definition = analysis.set_definition(new_analysis_defintion)
     
-    def create_inital_ml_task(self, target_variable):
+    def create_initial_ml_task(self):
         logger.info("Creating an Inital ML Task")
         target_variable = self.visual_ml_config.get_target_variable()
         self.mltask = self.project.create_prediction_ml_task(
@@ -132,7 +132,7 @@ class VisualMLModelTrainer(DataikuClientProject):
         if not self.mltask:
             logger.info("Creating a new ML task")
             target = self.visual_ml_config.get_target_variable()
-            self.mltask = self.create_inital_ml_task(target)  
+            self.mltask = self.create_initial_ml_task(target)
         else:
             logger.info("ML task already exists")
             self._refresh_mltask()
