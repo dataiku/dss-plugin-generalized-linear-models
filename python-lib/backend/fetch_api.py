@@ -33,10 +33,11 @@ if not is_local:
     
     visual_ml_config = DKUVisualMLConfig()
     data_handler = GlmDataHandler()
-    visual_ml_trainer = VisualMLModelTrainer(visual_ml_config)
+    visual_ml_trainer = VisualMLModelTrainer()
     
     if visual_ml_config.create_new_analysis:
-        visual_ml_trainer.create_visual_ml_task()
+        target = visual_ml_config.get_target_variable()
+        visual_ml_trainer.create_inital_ml_task(target)
     else:
         visual_ml_trainer.setup_using_existing_ml_task(
             visual_ml_config.existing_analysis_id
