@@ -73,6 +73,11 @@
     "datasetParamName": "training_dataset_string",
     "mandatory": false
   },
+      {
+        "type": "SEPARATOR",
+        "description": "",
+         "label": "Analysis Setup"
+    },
       
       {
           "name": "create_new_analysis",
