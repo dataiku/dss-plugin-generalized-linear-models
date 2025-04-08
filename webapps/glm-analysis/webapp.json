@@ -79,7 +79,7 @@
           "label": "Create New Analysis?",
           "description": "Create a new analysis on the selected dataset",
           "type": "BOOLEAN",
-          "defaultValue": false,
+          "defaultValue": 'false',
           "mandatory": true
       },
       {
