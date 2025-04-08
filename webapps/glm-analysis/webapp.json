@@ -50,15 +50,6 @@
       "mandatory": false,
       "visibilityCondition": "model.setup_type == 'continue'"
     }, 
-    {
-      "name": "saved_model_id",
-        "label": "Deployed Model",
-        "description": "Continue the analysis from a previous session",
-        "type": "SAVED_MODEL",
-        "getChoicesFromPython": true,
-        "mandatory": false,
-        "visibilityCondition": "model.setup_type == 'continue'"
-    },
       {
       "type": "SEPARATOR",
       "description": "",
