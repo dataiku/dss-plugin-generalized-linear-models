@@ -36,7 +36,7 @@ if not is_local:
     visual_ml_trainer = VisualMLModelTrainer(visual_ml_config)
     
     if visual_ml_config.create_new_analysis:
-        visual_ml_trainer.create_inital_ml_task()
+        visual_ml_trainer.create_initial_ml_task()
     else:
         visual_ml_trainer.setup_using_existing_ml_task(
             visual_ml_config.existing_analysis_id
@@ -46,7 +46,7 @@ if not is_local:
         relativities_calculator = RelativitiesCalculator(
             data_handler,
             model_retriever
-            )
+        )
     
         
 def setup_cache():
