@@ -49,12 +49,10 @@ class VisualMLModelTrainer(DataikuClientProject):
         self.mltask.wait_guess_complete()
         logger.debug("Successfully refreshed the ml task")
     
-    def setup_using_existing_ml_task(self, analysis_id, saved_model_id):
+    def setup_using_existing_ml_task(self, analysis_id):
         
         logger.debug(f"Updating the ml task with analysis id {analysis_id}")
-        logger.debug(f"and saved_model Id {saved_model_id}")
         
-        self.saved_model_id = saved_model_id
         self.analysis= self.project.get_analysis(analysis_id)
         self.mltask_id = self.analysis.list_ml_tasks().get('mlTasks')[0].get('mlTaskId')
         self.mltask = self.analysis.get_ml_task(self.mltask_id)
