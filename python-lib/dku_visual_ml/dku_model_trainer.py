@@ -132,7 +132,7 @@ class VisualMLModelTrainer(DataikuClientProject):
         if not self.mltask:
             logger.info("Creating a new ML task")
             target = self.visual_ml_config.get_target_variable()
-            self.mltask = self.create_inital_ml_task(target)
+            self.mltask = self.create_initial_ml_task(target)
         else:
             logger.info("ML task already exists")
             self._refresh_mltask()
