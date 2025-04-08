@@ -35,7 +35,7 @@ if not is_local:
     data_handler = GlmDataHandler()
     visual_ml_trainer = VisualMLModelTrainer()
     
-    if visual_ml_config.setup_type != "new":
+    if !visual_ml_config.create_new_analysis:
         visual_ml_trainer.setup_using_existing_ml_task(
             visual_ml_config.existing_analysis_id
             )
