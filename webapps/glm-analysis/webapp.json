@@ -116,18 +116,6 @@
     "type": "DATASET_COLUMN",
     "datasetParamName": "training_dataset_string",
     "mandatory": false
-  },
-    
-     {
-        "type": "SEPARATOR",
-        "description": "",
-         "label": "Setup Parameters"
-    },
-    {
-        "name": "code_env_string",
-        "label": "Code Environment",
-        "description": "Select the Code Environment for Modelling",
-        "type": "CODE_ENV"
-    }
+  }
   ]
 }
