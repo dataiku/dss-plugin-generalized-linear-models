@@ -15,6 +15,7 @@ import time
 from dataiku.customwebapp import get_webapp_config
 from chart_formatters.lift_chart import LiftChartFormatter
 from .api_utils import calculate_base_levels
+from backend.dataiku_api import dataiku_api
 
 visual_ml_trainer = model_cache = model_deployer =relativities_calculator = None
 is_local = False
@@ -77,7 +78,7 @@ def train_model():
     visual_ml_trainer.update_visual_ml_config(visual_ml_config)
 
     model_details, error_message = visual_ml_trainer.train_model(
-        code_env_string=visual_ml_config.code_env_string,
+        code_env_string=dataiku_api.plugin_code_env,
         session_name=visual_ml_config.model_name_string
     )
     current_app.logger.debug(f"Model error message is {error_message}")
