@@ -59,7 +59,6 @@ class VisualMLModelTrainer(DataikuClientProject):
         self.mltask_id = self.analysis.list_ml_tasks().get('mlTasks')[0].get('mlTaskId')
         self.mltask = self.analysis.get_ml_task(self.mltask_id)
         self.remove_failed_trainings()
-        self.model_deployer = ModelDeployer(self.mltask, self.saved_model_id)
         
         logger.info(f"Successfully update the existing ML task")
         
@@ -98,18 +97,10 @@ class VisualMLModelTrainer(DataikuClientProject):
         logger.info(f"Successfully disabled all variables from the ml task config other than {target_variable}") 
         return
     
-    def generate_random_word(self, min_length=3, max_length=10):
-        # Randomly choose the length of the word
-        word_length = random.randint(min_length, max_length)
-        # Generate a word by randomly selecting letters
-        word = ''.join(random.choice(string.ascii_lowercase) for _ in range(word_length))
-        return word
-    
     def rename_analysis(self, analysis_id):
         
         analysis = self.project.get_analysis(analysis_id)
         new_analysis_defintion = analysis.get_definition().get_raw()
-#         random_word = self.generate_random_word(5,6)
         experiment_name = str(self.visual_ml_config.experiment_name)
         new_analysis_defintion['name'] = str(self.visual_ml_config.input_dataset) + "_" + experiment_name
         analysis_definition = analysis.set_definition(new_analysis_defintion)
