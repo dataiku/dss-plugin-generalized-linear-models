@@ -62,6 +62,11 @@ class DataikuApi:
         except:
             return self._webapp_config
 
+    @property
+    def plugin_code_env(self):
+        plugin = self.client.get_plugin('generalized-linear-models')
+        return plugin.get_settings().get_raw()['codeEnvName']
+
     def get_root_lib_path(self):
         paths = os.environ.get("PYTHONPATH")
         if paths:
