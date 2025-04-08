@@ -330,23 +330,7 @@ class VisualMLModelTrainer(DataikuClientProject):
                 error_message = error_message + "Check colinearity of variables added to the model"
             self.remove_failed_trainings()
             return None, error_message
-        else:
-            if not self.model_deployer:
-                logger.info("Setting up model deployer")
-                self.model_deployer = ModelDeployer(self.mltask, self.visual_ml_config.saved_model_id)
-            try:
-
-                model_details = self.model_deployer.deploy_model(latest_model_id,
-                                                                 self.visual_ml_config.input_dataset,
-                                                                 self.visual_ml_config.experiment_name
-                                                                )
-                logger.info(f"Model Details are {model_details}")
-                return model_details, None
-            except Exception as e:
-                error_message = f"Model Deployment Failed:  {str(e)}"
-                logger.debug(error_message)
-                return None, error_message
-            
+    
     def process_interaction_columns(self, interaction_columns):
         print(f"interaction columns are {interaction_columns}")
         interaction_columns_first = []
