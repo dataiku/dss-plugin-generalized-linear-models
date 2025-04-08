@@ -36,15 +36,10 @@ if not is_local:
     
     if visual_ml_config.setup_type != "new":
         visual_ml_trainer.setup_using_existing_ml_task(
-            visual_ml_config.existing_analysis_id, 
-            visual_ml_config.saved_model_id
-            )
-        model_deployer = ModelDeployer(
-            visual_ml_trainer.mltask, 
-            visual_ml_config.saved_model_id
+            visual_ml_config.existing_analysis_id,
             )
         saved_model_id = visual_ml_trainer.get_latest_model()
-        model_retriever = VisualMLModelRetriver(saved_model_id)
+        model_retriever = VisualMLModelRetriver()
         relativities_calculator = RelativitiesCalculator(
             data_handler,
             model_retriever
