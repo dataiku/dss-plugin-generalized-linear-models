@@ -38,6 +38,7 @@ if not is_local:
         visual_ml_trainer.setup_using_existing_ml_task(
             visual_ml_config.existing_analysis_id
             )
+        full_model_id = visual_ml_trainer.ml_task.get_trained_models_ids()[0]
         model_retriever = VisualMLModelRetriver(full_model_id)
         relativities_calculator = RelativitiesCalculator(
             data_handler,
