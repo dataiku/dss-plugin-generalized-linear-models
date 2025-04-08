@@ -38,7 +38,7 @@ if not is_local:
     if visual_ml_config.create_new_analysis:
         visual_ml_trainer.create_initial_ml_task()
         logger.info(f"Created new analysis {visual_ml_config.experiment_name}")
-        abort(200)
+        abort(Response(f"Created new analysis {visual_ml_config.experiment_name}. Now select and restart backend", 500))
     else:
         visual_ml_trainer.setup_using_existing_ml_task(
             visual_ml_config.existing_analysis_id
