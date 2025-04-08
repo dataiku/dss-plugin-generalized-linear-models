@@ -36,15 +36,10 @@ if not is_local:
     
     if visual_ml_config.setup_type != "new":
         visual_ml_trainer.setup_using_existing_ml_task(
-            visual_ml_config.existing_analysis_id, 
-            visual_ml_config.saved_model_id
+            visual_ml_config.existing_analysis_id
             )
-        model_deployer = ModelDeployer(
-            visual_ml_trainer.mltask, 
-            visual_ml_config.saved_model_id
-            )
-        saved_model_id = visual_ml_trainer.get_latest_model()
-        model_retriever = VisualMLModelRetriver(saved_model_id)
+        full_model_id = visual_ml_trainer.mltask.get_trained_models_ids()[0]
+        model_retriever = VisualMLModelRetriver(full_model_id)
         relativities_calculator = RelativitiesCalculator(
             data_handler,
             model_retriever
@@ -54,7 +49,7 @@ if not is_local:
 def setup_cache():
     global model_cache
     latest_ml_task = visual_ml_trainer.get_latest_ml_task()
-    model_cache = setup_model_cache(latest_ml_task, model_deployer)
+    model_cache = setup_model_cache(latest_ml_task)
 
 loading_thread = threading.Thread(target=setup_cache)
 loading_thread.start()
