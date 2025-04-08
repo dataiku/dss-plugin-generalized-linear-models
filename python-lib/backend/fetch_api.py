@@ -49,7 +49,7 @@ if not is_local:
 def setup_cache():
     global model_cache
     latest_ml_task = visual_ml_trainer.get_latest_ml_task()
-    model_cache = setup_model_cache(latest_ml_task, model_deployer)
+    model_cache = setup_model_cache(latest_ml_task)
 
 loading_thread = threading.Thread(target=setup_cache)
 loading_thread.start()
