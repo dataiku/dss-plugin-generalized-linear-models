@@ -87,7 +87,7 @@
         "label": "Experiment Name",
         "description": "Your custom name for your experiment",
         "type": "STRING",
-        "visibilityCondition": "model.create_new_analysis == 'true'",
+        "visibilityCondition": "model.create_new_analysis == true",
         "mandatory": true
       },
      {
