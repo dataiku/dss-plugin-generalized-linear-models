@@ -26,8 +26,6 @@ class VisualMLModelTrainer(DataikuClientProject):
         logger.info("Initializing a Visual ML training task")
         self.visual_ml_config = visual_ml_config
         self.mltask = None
-        self.saved_model_id = None
-        self.model_deployer = None
 
         logger.info("Initalized a Visual ML training task successfully")
         if visual_ml_config:
