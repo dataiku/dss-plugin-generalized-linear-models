@@ -90,20 +90,13 @@
         "visibilityCondition": "model.create_new_analysis == true",
         "mandatory": false
       },
-     {
-        "type": "SEPARATOR",
-        "description": "",
-        "label": "Select an Existing Analysis",
-        "visibilityCondition": "model.create_new_analysis == 'false'"
-    },
-
     {
       "name": "existing_analysis_id",
       "label": "Existing Analysis",
       "type": "SELECT",
        "getChoicesFromPython": true,
       "mandatory": false,
-      "visibilityCondition": "model.setup_type == 'continue'"
+      "visibilityCondition": "model.create_new_analysis == false"
     }
   ]
 }
