@@ -330,6 +330,8 @@ class VisualMLModelTrainer(DataikuClientProject):
                 error_message = error_message + "Check colinearity of variables added to the model"
             self.remove_failed_trainings()
             return None, error_message
+        else:
+            return None, error_message
     
     def process_interaction_columns(self, interaction_columns):
         print(f"interaction columns are {interaction_columns}")
