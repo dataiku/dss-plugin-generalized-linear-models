@@ -85,16 +85,16 @@
       {
         "name": "experiment_name",
         "label": "Experiment Name",
-         "description": "Your custom name for your experiment",
+        "description": "Your custom name for your experiment",
         "type": "STRING",
-      "visibilityCondition": "model.setup_type == 'new'",
+        "visibilityCondition": "model.create_new_analysis == 'true'",
         "mandatory": true
       },
      {
         "type": "SEPARATOR",
         "description": "",
         "label": "Existing Model Details",
-        "visibilityCondition": "model.setup_type == 'continue'"
+        "visibilityCondition": "model.create_new_analysis == 'true'"
     },
 
     {
