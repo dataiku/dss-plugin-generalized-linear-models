@@ -350,6 +350,7 @@ class VisualMLModelTrainer(DataikuClientProject):
         and any special variables like exposure or offset.
         """
         settings = self.mltask.get_settings()
+        settings.get_raw()['modeling']['skipExpensiveReports'] = True
         exposure_variable = self.visual_ml_config.get_exposure_variable()
         interaction_variables = self.visual_ml_config.get_interaction_variables()
         first_columns, second_columns = self.process_interaction_columns(interaction_variables)
