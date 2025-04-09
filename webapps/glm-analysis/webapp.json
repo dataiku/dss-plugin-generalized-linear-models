@@ -24,8 +24,8 @@
       "name": "analysis_id",
       "label": "Select Analysis",
       "type": "SELECT",
-       "getChoicesFromPython": true,
-        "description": "Select or create a new analysis",
+      "getChoicesFromPython": true,
+      "description": "Select or create a new analysis",
       "mandatory": true
     },
       {
