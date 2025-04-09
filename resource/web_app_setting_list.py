@@ -14,4 +14,6 @@ def do(payload, config, plugin_config, inputs):
             }
             for item in analysis_details
         ]
+    choices.append({"value": "new",
+                "label": "Create New Analysis"})
     return {"choices": choices}
