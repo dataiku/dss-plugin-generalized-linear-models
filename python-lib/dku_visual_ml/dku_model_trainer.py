@@ -101,6 +101,7 @@ class VisualMLModelTrainer(DataikuClientProject):
         new_analysis_defintion = analysis.get_definition().get_raw()
         experiment_name = str(self.visual_ml_config.analysis_name)
         new_analysis_defintion['name'] = str(self.visual_ml_config.input_dataset) + "_" + analysis_name
+        self.visual_ml_config.analysis_id = analysis_id
         analysis_definition = analysis.set_definition(new_analysis_defintion)
     
     def create_initial_ml_task(self):
