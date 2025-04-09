@@ -14,7 +14,7 @@ class DKUVisualMLConfig:
         if self.create_new_analysis:
             self.existing_analysis_id = None
         else:
-            self.existing_analysis_id = web_app_config.get("existing_analysis_id")
+            self.existing_analysis_id = web_app_config.get("analysis_id")
         self.target_column = web_app_config.get("target_column")
         self.input_dataset = web_app_config.get("training_dataset_string")
         self.prediction_type = web_app_config.get("prediction_type")
