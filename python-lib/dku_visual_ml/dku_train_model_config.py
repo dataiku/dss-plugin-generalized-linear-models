@@ -10,7 +10,7 @@ class DKUVisualMLConfig:
         
         web_app_config = get_webapp_config()
         print(web_app_config)
-        self.create_new_analysis = web_app_config.get("create_new_analysis")
+        self.create_new_analysis = web_app_config.get("analysis_id") == 'new'
         print(self.create_new_analysis)
         if self.create_new_analysis:
             self.existing_analysis_id = None
