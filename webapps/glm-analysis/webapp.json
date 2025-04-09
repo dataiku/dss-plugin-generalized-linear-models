@@ -33,21 +33,21 @@
         "label": "Analysis Name",
         "description": "Your custom name for your experiment",
         "type": "STRING",
-        "visibilityCondition": "analysis_id == 'new'",
+        "visibilityCondition": "model.analysis_id == 'new'",
         "mandatory": false
       },
       {
       "type": "SEPARATOR",
       "description": "",
        "label": "Dataset Parameters",
-       "visibilityCondition": "analysis_id == 'new'"
+       "visibilityCondition": "model.analysis_id == 'new'"
   },
     {
         "name": "training_dataset_string",
         "label": "Training Dataset",
         "description": "Select the Training Dataset for Modelling",
         "type": "DATASET",
-       "visibilityCondition": "analysis_id == 'new'"
+       "visibilityCondition": "model.analysis_id == 'new'"
     },
     {
         "name": "policy",
@@ -58,7 +58,7 @@
               { "value": "random_split", "label": "Random 80:20 Split"},
               { "value": "explicit_test_set", "label": "Define a Test Set"}
           ],
-       "visibilityCondition": "analysis_id == 'new'"
+       "visibilityCondition": "model.analysis_id == 'new'"
     },
     {
         "name": "test_dataset_string",
@@ -71,7 +71,7 @@
         "type": "SEPARATOR",
         "description": "",
          "label": "Modelling Parameters",
-       "visibilityCondition": "analysis_id == 'new'"
+       "visibilityCondition": "model.analysis_id == 'new'"
     },
 
   {
@@ -80,7 +80,7 @@
     "type": "DATASET_COLUMN",
     "datasetParamName": "training_dataset_string",
     "mandatory": true,
-       "visibilityCondition": "analysis_id == 'new'"
+       "visibilityCondition": "model.analysis_id == 'new'"
   },
   {
     "name": "exposure_column",
@@ -88,7 +88,7 @@
     "type": "DATASET_COLUMN",
     "datasetParamName": "training_dataset_string",
     "mandatory": false,
-       "visibilityCondition": "analysis_id == 'new'"
+       "visibilityCondition": "model.analysis_id == 'new'"
   }
       
   ]
