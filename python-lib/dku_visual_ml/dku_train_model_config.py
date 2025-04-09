@@ -9,6 +9,7 @@ class DKUVisualMLConfig:
         logger.debug("Initalising a dku visual ML config with the existing web app settings")
         
         web_app_config = get_webapp_config()
+        print(web_app_config)
         self.create_new_analysis = web_app_config.get("create_new_analysis")
         print(self.create_new_analysis)
         if self.create_new_analysis:
