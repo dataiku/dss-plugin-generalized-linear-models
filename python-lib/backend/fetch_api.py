@@ -68,6 +68,7 @@ def update_config():
         webapp = dataiku_api.default_project.get_webapp(webapp_id)
         settings = webapp.get_settings()
         settings.get_raw()['config']['analysis_id'] = visual_ml_trainer.visual_ml_config.analysis_id
+        settings.save()
         return jsonify({'message': 'Settings updated.'}), 200
     else:
         return jsonify({'message': 'No need to update settings'}), 200
