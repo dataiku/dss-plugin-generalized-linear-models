@@ -60,10 +60,10 @@ loading_thread.start()
 
 fetch_api = Blueprint("fetch_api", __name__, url_prefix="/api")
 
-@fetch_api.route("/api/send_webapp_id", methods=["POST"])
+@fetch_api.route("/send_webapp_id", methods=["POST"])
 def update_config():
-    print(request.json())
-    webapp_id = request.json()
+    print(request.get_json())
+    webapp_id = request.get_json()['webAppId']
     if visual_ml_config.create_new_analysis:
         webapp = dataiku_api.default_project.get_webapp(webapp_id)
         settings = webapp.get_settings()

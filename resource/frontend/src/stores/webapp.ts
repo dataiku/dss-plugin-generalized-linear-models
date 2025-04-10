@@ -92,7 +92,7 @@ export const useModelStore = defineStore("GLMStore", {
         if (webAppId === null) {
           throw new Error('WebAppId not found in URL');
         }
-        await API.sendWebappId(webAppId);
+        await API.sendWebappId({"webAppId": webAppId});
       },
       async loadModels() {
         try {
