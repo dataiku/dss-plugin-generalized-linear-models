@@ -4,8 +4,8 @@ import pandas as pd
 class rebase_mode():
     """This processor applies dummy vectorisation, but drops the dummy column with the mode. Only applies to categorical variables
     """
-    def __init__(self, base_level):
-        self.mode_column = base_level
+    def __init__(self, config):
+        self.mode_column = config["base_level"]
     def fit(self, series):
         # identify the mode of the column, returns as a text value
         self.modalities = np.unique(series)
