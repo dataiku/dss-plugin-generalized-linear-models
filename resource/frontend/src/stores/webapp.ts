@@ -84,6 +84,16 @@ export const useModelStore = defineStore("GLMStore", {
       comparisonChartTitle: "Model Metrics",
     }),
     actions: {
+      async sendWebappId() {
+        const iframes = window.parent.document.getElementsByTagName('iframe');
+        const url = iframes[0].src;
+        const urlParams = new URLSearchParams(new URL(url).search);
+        const webAppId = urlParams.get('webAppId');
+        if (webAppId === null) {
+          throw new Error('WebAppId not found in URL');
+        }
+        await API.sendWebappId(webAppId);
+      },
       async loadModels() {
         try {
           const response = await API.getModels();

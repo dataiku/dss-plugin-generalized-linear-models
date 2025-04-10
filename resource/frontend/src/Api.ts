@@ -129,6 +129,7 @@ interface MLTaskParams {
 
 
 export let API = {
+    sendWebappId: (data: string) => axios.post<number>("/api/send_webapp_id", data),
     getLatestMLTaskParams: (data:any) => axios.post<MLTaskParams>("/api/get_latest_mltask_params", data),
     getExcludedColumns: () => axios.get<ExcludedColumns>("/api/get_excluded_columns"),
     getData: (data: ModelPoint) => axios.post<DataPoint[]>("/api/data", data),

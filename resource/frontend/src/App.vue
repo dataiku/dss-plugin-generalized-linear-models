@@ -119,7 +119,6 @@ export default defineComponent({
     watch: {
         loading(newVal) {
             console.log("App loading");
-            console.log(newVal);
             if (newVal) {
                 useLoader("Loading data..").show();
             } else {
@@ -143,6 +142,9 @@ export default defineComponent({
                 layout.tabIndex = index;
             }
         },
+    },
+    mounted() {
+        this.store.sendWebappId();
     }
 })
 </script>

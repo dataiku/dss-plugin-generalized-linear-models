@@ -37,7 +37,6 @@ if not is_local:
     
     if visual_ml_config.create_new_analysis:
         visual_ml_trainer.create_initial_ml_task()
-        web_app_config.get_raw()['analysis_id'] = visual_ml_trainer.visual_ml_config.analysis_id
     else:
         visual_ml_trainer.setup_using_existing_ml_task(
             visual_ml_config.existing_analysis_id
@@ -61,6 +60,14 @@ loading_thread.start()
 
 fetch_api = Blueprint("fetch_api", __name__, url_prefix="/api")
 
+@fetch_api.route("/api/send_webapp_id", methods=["POST"])
+def update_config():
+    print(request.json())
+    webapp_id = request.json()
+    if visual_ml_config.create_new_analysis:
+        webapp = dataiku_api.default_project.get_webapp(webapp_id)
+        settings = webapp.get_settings()
+        settings.get_raw()['config']['analysis_id'] = visual_ml_trainer.visual_ml_config.analysis_id
 
     
 @fetch_api.route("/train_model", methods=["POST"])
