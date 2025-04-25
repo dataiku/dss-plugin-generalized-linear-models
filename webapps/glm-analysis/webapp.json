@@ -1,7 +1,7 @@
 {
   "meta": {
     "label": "GLM Analysis",
-    "description": "Analyze your GLM.",
+    "description": "Analyze your GLM",
     "icon": "icon-picture"
   },
   "baseType": "STANDARD",
