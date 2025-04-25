@@ -17,7 +17,7 @@ from chart_formatters.lift_chart import LiftChartFormatter
 from .api_utils import calculate_base_levels
 
 visual_ml_trainer = model_cache = model_deployer =relativities_calculator = None
-is_local = False
+is_local = True
 
 logger.debug(f"Starting web application with is_local: {is_local}")
 
@@ -65,6 +65,7 @@ fetch_api = Blueprint("fetch_api", __name__, url_prefix="/api")
 @fetch_api.route("/send_webapp_id", methods=["POST"])
 def update_config():
     webapp_id = request.get_json()['webAppId']
+    print(webapp_id)
     if visual_ml_config.create_new_analysis:
         webapp = dataiku_api.default_project.get_webapp(webapp_id)
         settings = webapp.get_settings()
