@@ -232,6 +232,10 @@ class BaseGLM(BaseEstimator, ClassifierMixin):
         """
         fits a GLM model
         """
+        import time
+        
+        print(time.time())
+        print('prepare fit')
         self.classes_ = list(set(y))
         offsets, exposures = self.get_offsets_and_exposures(X)
         self.set_interactions()
@@ -257,6 +261,8 @@ class BaseGLM(BaseEstimator, ClassifierMixin):
         self.coef_table = self.fitted_model.coef_table()
         
         self.compute_coefs(prediction_is_classification)
+        print('done fit')
+        print(time.time())
         
     def compute_coefs(self, prediction_is_classification):
         """

@@ -3,7 +3,6 @@ from glm_handler.dku_model_deployer import ModelDeployer
 from glm_handler.glm_data_handler import GlmDataHandler
 from time import time
 from logging_assist.logging import logger
-from glm_handler.glm_data_handler import GlmDataHandler
 from dku_visual_ml.dku_model_retrival import VisualMLModelRetriver
 from chart_formatters.lift_chart import LiftChartFormatter
 from chart_formatters.variable_level_stats import VariableLevelStatsFormatter

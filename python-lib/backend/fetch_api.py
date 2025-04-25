@@ -62,7 +62,17 @@ loading_thread.start()
 
 fetch_api = Blueprint("fetch_api", __name__, url_prefix="/api")
 
-
+@fetch_api.route("/send_webapp_id", methods=["POST"])
+def update_config():
+    webapp_id = request.get_json()['webAppId']
+    if visual_ml_config.create_new_analysis:
+        webapp = dataiku_api.default_project.get_webapp(webapp_id)
+        settings = webapp.get_settings()
+        settings.get_raw()['config']['analysis_id'] = visual_ml_trainer.visual_ml_config.analysis_id
+        settings.save()
+        return jsonify({'message': 'Settings updated.'}), 200
+    else:
+        return jsonify({'message': 'No need to update settings'}), 200
     
 @fetch_api.route("/train_model", methods=["POST"])
 def train_model():
@@ -604,7 +614,7 @@ def get_dataset_columns():
             
         current_app.logger.info(f"Training Dataset name selected is: {dataset_name}")
         
-        df = dataiku.Dataset(dataset_name).get_dataframe()
+        df = dataiku.Dataset(dataset_name).get_dataframe(limit=100000)
         cols_json = calculate_base_levels(df, exposure_column)
 
         current_app.logger.info(f"Successfully retrieved column for dataset '{dataset_name}': {[col['column'] for col in cols_json]}")

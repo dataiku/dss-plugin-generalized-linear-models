@@ -68,7 +68,10 @@ class VisualMLModelTrainer(DataikuClientProject):
 
     def assign_train_test_policy(self):
         logger.info(f"Assigning train test policy")   
-     
+        # remove sampling
+        settings = self.mltask.get_settings()
+        settings.split_params.get_raw()['ssdSelection']['maxRecords'] = 10000000
+        settings.save()
         if self.visual_ml_config.policy == "explicit_test_set":
             logger.info(f"Configuration specifies test set, asigning")   
             settings = self.mltask.get_settings()
@@ -149,7 +152,7 @@ class VisualMLModelTrainer(DataikuClientProject):
             self.mltask = self.create_inital_ml_task(target)  
         else:
             logger.info("ML task already exists")
-            self._refresh_mltask()
+            #self._refresh_mltask()
             
         self.assign_train_test_policy()
         self.update_mltask_modelling_params()

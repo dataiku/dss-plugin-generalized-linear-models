@@ -232,7 +232,7 @@ class RelativitiesCalculator:
 
         dataset['weighted_target'] = dataset[self.model_retriever.target_column]
         dataset['weighted_predicted'] = dataset['predicted']
-        
+                  
         logger.info(f"{dataset_type.capitalize()} dataset prepared: {dataset.shape}")
         return dataset
     
@@ -289,7 +289,7 @@ class RelativitiesCalculator:
     
     def get_predicted_and_base(self, nb_bins_numerical=100000):
         logger.info("Getting Predicted and base")
-        self.compute_base_values()
+        #self.compute_base_values()
         
         test_predictions = self.process_dataset(self.test_set, 'test')
         train_predictions = self.process_dataset(self.train_set, 'train')
