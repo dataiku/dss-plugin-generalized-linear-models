@@ -29,6 +29,16 @@
       "mandatory": true
     },
       {
+      "name": "saved_model_id",
+      "label": "Select Saved Model",
+      "type": "SELECT",
+      "getChoicesFromPython": false,
+      "type": "SAVED_MODEL",
+      "description": "Select the saved model",
+      "visibilityCondition": "model.analysis_id != 'new'",
+      "mandatory": true
+    },
+      {
         "name": "analysis_name",
         "label": "Analysis Name",
         "description": "Your custom name for your experiment",
@@ -93,13 +103,15 @@
      {
         "type": "SEPARATOR",
         "description": "",
-         "label": "Setup Parameters"
+         "label": "Setup Parameters",
+         "visibilityCondition": "model.analysis_id == 'new'"
     },
     {
         "name": "code_env_string",
         "label": "Code Environment",
         "description": "Select the Code Environment for Modelling",
-        "type": "CODE_ENV"
+        "type": "CODE_ENV",
+        "visibilityCondition": "model.analysis_id == 'new'"
     }
       
       

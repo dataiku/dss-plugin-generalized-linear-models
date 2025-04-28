@@ -119,8 +119,8 @@ class VisualMLModelTrainer(DataikuClientProject):
         new_analysis_defintion['name'] = str(self.visual_ml_config.input_dataset) + "_" + experiment_name
         analysis_definition = analysis.set_definition(new_analysis_defintion)
     
-    def create_inital_ml_task(self, target_variable):
-        logger.info("Creating an Inital ML Task")
+    def create_initial_ml_task(self):
+        logger.info("Creating an Initial ML Task")
         target_variable = self.visual_ml_config.get_target_variable()
         self.mltask = self.project.create_prediction_ml_task(
                 input_dataset=self.visual_ml_config.input_dataset,
@@ -381,6 +381,7 @@ class VisualMLModelTrainer(DataikuClientProject):
         and any special variables like exposure or offset.
         """
         settings = self.mltask.get_settings()
+        settings.get_raw()['modeling']['skipExpensiveReports'] = True
         exposure_variable = self.visual_ml_config.get_exposure_variable()
         interaction_variables = self.visual_ml_config.get_interaction_variables()
         first_columns, second_columns = self.process_interaction_columns(interaction_variables)

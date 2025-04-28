@@ -17,7 +17,7 @@ from chart_formatters.lift_chart import LiftChartFormatter
 from .api_utils import calculate_base_levels
 
 visual_ml_trainer = model_cache = model_deployer =relativities_calculator = None
-is_local = True
+is_local = False
 
 logger.debug(f"Starting web application with is_local: {is_local}")
 
@@ -32,11 +32,13 @@ if not is_local:
     
     visual_ml_config = DKUVisualMLConfig()
     data_handler = GlmDataHandler()
-    visual_ml_trainer = VisualMLModelTrainer()
+    visual_ml_trainer = VisualMLModelTrainer(visual_ml_config)
     
-    if visual_ml_config.setup_type != "new":
+    if visual_ml_config.create_new_analysis:
+        visual_ml_trainer.create_initial_ml_task()
+    else:
         visual_ml_trainer.setup_using_existing_ml_task(
-            visual_ml_config.existing_analysis_id, 
+            visual_ml_config.analysis_id, 
             visual_ml_config.saved_model_id
             )
         model_deployer = ModelDeployer(
@@ -53,8 +55,9 @@ if not is_local:
         
 def setup_cache():
     global model_cache
-    latest_ml_task = visual_ml_trainer.get_latest_ml_task()
-    model_cache = setup_model_cache(latest_ml_task, model_deployer)
+    if not visual_ml_config.create_new_analysis:
+        latest_ml_task = visual_ml_trainer.get_latest_ml_task()
+        model_cache = setup_model_cache(latest_ml_task, model_deployer)
 
 loading_thread = threading.Thread(target=setup_cache)
 loading_thread.start()
@@ -65,7 +68,6 @@ fetch_api = Blueprint("fetch_api", __name__, url_prefix="/api")
 @fetch_api.route("/send_webapp_id", methods=["POST"])
 def update_config():
     webapp_id = request.get_json()['webAppId']
-    print(webapp_id)
     if visual_ml_config.create_new_analysis:
         webapp = dataiku_api.default_project.get_webapp(webapp_id)
         settings = webapp.get_settings()
@@ -205,7 +207,7 @@ def get_data():
         current_app.logger.info(f"Successfully generated predictions. Sample is {predicted_base.head()}")
         
         return jsonify(predicted_base.to_dict('records'))
-    
+        
     except Exception as e:
         current_app.logger.error(f"An error occurred while processing the request: {e}", exc_info=True)
         return jsonify({"error": "An error occurred during data processing."}), 500
