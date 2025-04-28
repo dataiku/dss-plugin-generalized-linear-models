@@ -27,6 +27,7 @@ import OneWayTab from './components/OneWayTab.vue';
 import VariableLevelStatsTab from './components/VariableLevelStatsTab.vue';
 import { BsLayoutDefault } from "quasar-ui-bs";
 import { defineComponent } from "vue";
+import { API } from './Api';
 export default defineComponent({
     components: {
         ModelTrainingTab,
@@ -45,6 +46,16 @@ export default defineComponent({
         console.log("App: update models");
         this.reloadModels = !this.reloadModels;
       },
+    },
+    async mounted() {
+      const iframes = window.parent.document.getElementsByTagName('iframe');
+      const url = iframes[0].src;
+      const urlParams = new URLSearchParams(new URL(url).search);
+      const webAppId = urlParams.get('webAppId');
+      if (webAppId === null) {
+        throw new Error('WebAppId not found in URL');
+      }
+      await API.sendWebappId({"webAppId": webAppId});
     }
 })
 </script>

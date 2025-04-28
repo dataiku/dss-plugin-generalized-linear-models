@@ -9,18 +9,18 @@ class DKUVisualMLConfig:
         logger.debug("Initalising a dku visual ML config with the existing web app settings")
         
         web_app_config = get_webapp_config()
-        self.setup_type = web_app_config.get("setup_type")
-        if self.setup_type == "new":
-            self.existing_analysis_id =None
+        self.create_new_analysis = web_app_config.get("analysis_id") == 'new'
+        if self.create_new_analysis:
+            self.analysis_id = None
             self.saved_model_id = None
         else:
-            self.existing_analysis_id = web_app_config.get("existing_analysis_id")
+            self.analysis_id = web_app_config.get("analysis_id")
             self.saved_model_id = web_app_config.get("saved_model_id")
         self.target_column = web_app_config.get("target_column")
         self.input_dataset = web_app_config.get("training_dataset_string")
-        self.prediction_type = web_app_config.get("prediction_type")
+        self.prediction_type = 'REGRESSION'#web_app_config.get("prediction_type")
         self.exposure_column = web_app_config.get("exposure_column")    
-        self.experiment_name = web_app_config.get("experiment_name")    
+        self.experiment_name = web_app_config.get("analysis_name")    
         self.policy = web_app_config.get("policy")
         self.test_dataset_string = web_app_config.get("test_dataset_string")
         self.code_env_string = web_app_config.get("code_env_string")

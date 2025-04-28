@@ -1,0 +1,42 @@
+
+{
+    "meta": {
+        "label": "Export Variable Level Stats",
+        "description": "Export Variable Level Stats",
+        "icon": "icon-table"
+    },
+
+    "kind": "PYTHON",
+    "selectableFromSavedModel": "input_ML_Model",
+
+    "inputRoles": [
+        {
+            "name": "input_ML_Model",
+            "label": "GLM Model",
+            "description": "GLM upon which varaible level stats will be calculated",
+            "arity": "UNARY",
+            "required": true,
+            "acceptsDataset": false,
+            "acceptsSavedModel": true
+        }
+    ],
+
+    "outputRoles": [
+        {
+            "name": "variable_level_stats",
+            "label": "Output Variable Level Stats Dataset",
+            "description": "The dataset which will contain the variable level stats table",
+            "arity": "UNARY",
+            "required": false,
+            "acceptsDataset": true
+        }
+    ],
+
+
+    "params": [
+    ],
+
+
+    "resourceKeys": []
+
+}
