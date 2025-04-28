@@ -1,10 +1,10 @@
 {
     "id": "generalized-linear-models",
-    "version": "1.1.1",
+    "version": "2.0.0beta2",
     "meta": {
         "label": "Generalized Linear Models",
         "description": "Train and deploy Generalized Linear Models",
-        "author": "Dataiku (Matthew Galloway, David Behar, Nicolas Vallée)",
+        "author": "Dataiku",
         "icon": "icon-bullseye",
         "tags": ["Machine Learning"],
         "url": "https://www.dataiku.com/product/plugins/glm",
