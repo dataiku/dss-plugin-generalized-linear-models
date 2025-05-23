@@ -18,7 +18,7 @@ from chart_formatters.lift_chart import LiftChartFormatter
 from .api_utils import calculate_base_levels
 
 visual_ml_trainer = model_cache = model_deployer =relativities_calculator = None
-is_local = True
+is_local = False
 
 logger.debug(f"Starting web application with is_local: {is_local}")
 
@@ -242,12 +242,12 @@ def get_data():
                 else:
                     model_retriever = VisualMLModelRetriver(full_model_id)
                     relativities_calculator = RelativitiesCalculator(data_handler, model_retriever)
-                    predicted_base_variable = relativities_calculator.get_formated_predicted_base(variable)
+                    predicted_base_variable = relativities_calculator.get_formated_predicted_base_variable(variable)
                     predicted_base[variable] = predicted_base_variable
             else:
                 model_retriever = VisualMLModelRetriver(full_model_id)
                 relativities_calculator = RelativitiesCalculator(data_handler, model_retriever)
-                predicted_base_variable = relativities_calculator.get_formated_predicted_base(variable)
+                predicted_base_variable = relativities_calculator.get_formated_predicted_base_variable(variable)
                 model_cache.add_model_object(full_model_id, 'predicted_and_base', {variable: predicted_base_variable})
         else:
             model_retriever = VisualMLModelRetriver(full_model_id)
@@ -256,8 +256,8 @@ def get_data():
             model_cache.add_model_object(full_model_id, 'predicted_and_base', {variable: predicted_base_variable})
 
         predicted_base_variable = predicted_base_variable[predicted_base_variable['dataset']==dataset]
-
-        current_app.logger.info(f"Successfully generated predictions. Sample is {predicted_base_variable.head()}")
+        
+        current_app.logger.info(f"Successfully generated predictions. Sample is {predicted_base_variable}")
         
         return jsonify(predicted_base_variable.to_dict('records'))
         
