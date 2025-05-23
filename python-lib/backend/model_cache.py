@@ -33,54 +33,55 @@ def setup_model_cache(global_dku_mltask, model_deployer):
                 model_retriever = VisualMLModelRetriver(
                     model_id
                 )
-                print(f'cache visual model retrieve target is {model_retriever.target_column}')
-                relativities_calculator = RelativitiesCalculator(
-                    data_handler,
-                    model_retriever
-                )
+                if False:
+                    print(f'cache visual model retrieve target is {model_retriever.target_column}')
+                    relativities_calculator = RelativitiesCalculator(
+                        data_handler,
+                        model_retriever
+                    )
+                    
+                    model1_predicted_base = relativities_calculator.get_formated_predicted_base()
+                    base_values = relativities_calculator.get_base_values()
+
+                    relativities = relativities_calculator.get_relativities_df()
+                    relativities_interaction = relativities_calculator.get_relativities_interactions_df()
+                    
+                    logger.info(f"relativites are: {relativities.to_dict()}")
+                    relativities_dict = relativities_calculator.relativities
+                    logger.info(f"relativites dict is: {relativities_dict}")
+
+                    variable_level_stats = VariableLevelStatsFormatter(
+                        model_retriever, data_handler, relativities_calculator
+                    )
+                    variable_stats=variable_level_stats.get_variable_level_stats()
                 
-                model1_predicted_base = relativities_calculator.get_formated_predicted_base()
-                base_values = relativities_calculator.get_base_values()
+                    lift_chart = LiftChartFormatter(
+                            model_retriever,
+                            data_handler,
+                    ) 
+                    train_set = relativities_calculator.train_set
+                    test_set = relativities_calculator.test_set
 
-                relativities = relativities_calculator.get_relativities_df()
-                relativities_interaction = relativities_calculator.get_relativities_interactions_df()
-                
-                logger.info(f"relativites are: {relativities.to_dict()}")
-                relativities_dict = relativities_calculator.relativities
-                logger.info(f"relativites dict is: {relativities_dict}")
+                    if train_set is None:
+                        raise ValueError("Train set is not defined in relativities_calculator")
+                    if test_set is None:
+                        raise ValueError("Test set is not defined in relativities_calculator")
 
-                variable_level_stats = VariableLevelStatsFormatter(
-                    model_retriever, data_handler, relativities_calculator
-                )
-                variable_stats=variable_level_stats.get_variable_level_stats()
-            
-                lift_chart = LiftChartFormatter(
-                         model_retriever,
-                         data_handler,
-                ) 
-                train_set = relativities_calculator.train_set
-                test_set = relativities_calculator.test_set
+                    lift_chart_data = lift_chart.get_lift_chart(8, train_set, test_set)
 
-                if train_set is None:
-                    raise ValueError("Train set is not defined in relativities_calculator")
-                if test_set is None:
-                    raise ValueError("Test set is not defined in relativities_calculator")
+                    # Store data in cache
+                    model_cache.add_model(model_id, 
+                                        relativities, 
+                                        relativities_interaction,
+                                        model1_predicted_base,
+                                        base_values,
+                                        relativities_dict,
+                                        lift_chart_data,
+                                        variable_stats)
 
-                lift_chart_data = lift_chart.get_lift_chart(8, train_set, test_set)
-
-                # Store data in cache
-                model_cache.add_model(model_id, 
-                                     relativities, 
-                                     relativities_interaction,
-                                     model1_predicted_base,
-                                     base_values,
-                                     relativities_dict,
-                                     lift_chart_data,
-                                     variable_stats)
-
-                # Print the total time taken for this model
-                loop_elapsed = time() - loop_start_time
-                print(f"Total processing time for model {model_id}: {loop_elapsed:.2f} seconds")
+                    # Print the total time taken for this model
+                    loop_elapsed = time() - loop_start_time
+                    print(f"Total processing time for model {model_id}: {loop_elapsed:.2f} seconds")
 
         # Print the total setup time for the model cache
         total_setup_time_elapsed = time() - model_cache_setup_time

@@ -139,9 +139,7 @@ class RelativitiesCalculator:
             base_value = self.base_values[feature]
             self.relativities[feature] = {base_value: 1.0}
             train_row_copy = sample_train_row.copy()
-
-            #values_to_process = (self.modalities[feature] if feature_type == 'CATEGORY' 
-            #                     else sorted(set(self.train_set[feature])))
+            
             values_to_process = self.modalities[feature]
 
             for value in values_to_process:
@@ -257,6 +255,27 @@ class RelativitiesCalculator:
 
         logger.info("Finished compute_base_predictions_new")
         return base_data
+    
+    def compute_base_predictions_variable(self, test_set, used_features, feature):
+        logger.info(f"Starting compute_base_predictions for {feature}")
+        base_data = {}
+        copy_test_df = test_set.copy()
+        copy_test_df[self.model_retriever.exposure_columns] = 1
+
+        feature_df = copy_test_df.groupby(feature, as_index=False).first()
+
+        for other_feature in used_features:
+            if other_feature != feature:
+                feature_df[other_feature] = self.base_values[other_feature]
+
+        predictions = self.model_retriever.predictor.predict(feature_df)
+        base_data[feature] = pd.DataFrame({
+            f'base_{feature}': predictions['prediction'],
+            feature: feature_df[feature]
+        })
+
+        logger.info("Finished compute_base_predictions")
+        return base_data
 
     def get_formated_predicted_base(self):
         logger.info("Getting formatted and predicted base")
@@ -269,6 +288,17 @@ class RelativitiesCalculator:
         logger.info("Successfully got formatted and predicted base")
         return df
     
+    def get_formated_predicted_base_variable(self, variable):
+        logger.info("Getting formatted and predicted base")
+        self.get_predicted_and_base_variable(variable)
+        df = self.predicted_base_df.copy()
+        df.columns = ['definingVariable', 
+                     'Category', 
+                     'observedAverage', 
+                     'fittedAverage', 'Value', 'baseLevelPrediction', 'dataset']
+        logger.info("Successfully got formatted and predicted base")
+        return df
+
     def merge_predictions(self, test_set, base_data):
         logger.info("Merging Base predictions")
         for feature in base_data.keys():
@@ -287,8 +317,31 @@ class RelativitiesCalculator:
         logger.info(f"Processed dataset {dataset_name}")
         return predicted_base_df
     
+    def process_dataset_variable(self, dataset, dataset_name, variable):
+        logger.info(f"Processing dataset {dataset_name}")
+        used_features = self.model_retriever.get_used_features()
+        base_data = self.compute_base_predictions_variable(dataset, used_features, variable)
+        dataset = self.merge_predictions(dataset, base_data)
+        predicted_base = self.data_handler.calculate_weighted_aggregations(dataset, [variable], ([variable] if variable in used_features else []))
+        predicted_base_df = self.data_handler.construct_final_dataframe(predicted_base)
+        predicted_base_df['dataset'] = dataset_name
+        logger.info(f"Processed dataset {dataset_name}")
+        return predicted_base_df
+    
     def get_predicted_and_base(self, nb_bins_numerical=100000):
         logger.info("Getting Predicted and base")
+        
+        test_predictions = self.process_dataset(self.test_set, 'test')
+        train_predictions = self.process_dataset(self.train_set, 'train')
+        
+        self.predicted_base_df = train_predictions.append(test_predictions)
+        categorical_variables = [variable for variable in self.variable_types.keys() if self.variable_types[variable] == 'CATEGORY']
+        self.predicted_base_df['category'] = [str(category) if variable in categorical_variables else category for category, variable in zip(self.predicted_base_df['category'], self.predicted_base_df['feature'])]
+        logger.info("Successfully got Predicted and base")
+        return self.predicted_base_df.copy()
+    
+    def get_predicted_and_base_variable(self, variable, nb_bins_numerical=100000):
+        logger.info(f"Getting Predicted and base for variable {variable}")
         
         test_predictions = self.process_dataset(self.test_set, 'test')
         train_predictions = self.process_dataset(self.train_set, 'train')

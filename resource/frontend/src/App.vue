@@ -48,14 +48,14 @@ export default defineComponent({
       },
     },
     async mounted() {
-      const iframes = window.parent.document.getElementsByTagName('iframe');
-      const url = iframes[0].src;
-      const urlParams = new URLSearchParams(new URL(url).search);
-      const webAppId = urlParams.get('webAppId');
-      if (webAppId === null) {
-        throw new Error('WebAppId not found in URL');
-      }
-      await API.sendWebappId({"webAppId": webAppId});
+      // const iframes = window.parent.document.getElementsByTagName('iframe');
+      // const url = iframes[0].src;
+      // const urlParams = new URLSearchParams(new URL(url).search);
+      // const webAppId = urlParams.get('webAppId');
+      // if (webAppId === null) {
+      //   throw new Error('WebAppId not found in URL');
+      // }
+      // await API.sendWebappId({"webAppId": webAppId});
     }
 })
 </script>
