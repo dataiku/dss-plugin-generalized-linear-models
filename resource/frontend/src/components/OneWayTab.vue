@@ -292,6 +292,12 @@ export default defineComponent({
         async updateVariable(value: VariablePoint) {          
           console.log("update variable");
           this.loading = true;
+          this.relativitiesTable = this.relativitiesData.filter(item => item.variable === value.variable);
+          this.relativitiesColumns = columns;
+          this.relativities = this.relativitiesTable.map( (point) => {
+            const relativity = {'class': point.category, 'relativity': Math.round(point.relativity*1000)/1000};
+            return relativity
+          })
           this.selectedVariable = value;
           const modelTrainPoint = {id: this.active_model.id, name: this.active_model.name, trainTest: this.trainTest, variable: this.selectedVariable.variable, rescale: this.rescale};
           const dataResponse = await API.getData(modelTrainPoint);
