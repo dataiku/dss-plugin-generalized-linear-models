@@ -19,7 +19,7 @@ class RelativitiesCalculator:
         model_info_handler (PredictionModelInformationHandler): Handler for model information.
     """
 
-    def __init__(self,data_handler, model_retriever):
+    def __init__(self,data_handler, model_retriever, prepared_train_set=None, prepared_test_set=None):
         """
         Initializes the ModelHandler with a specific model ID.
 
@@ -32,8 +32,14 @@ class RelativitiesCalculator:
         self.variable_types = {}
         self.model_retriever = model_retriever
         try:
-            self.train_set = self.prepare_dataset('train')
-            self.test_set = self.prepare_dataset('test')
+            if prepared_train_set is not None:
+                self.train_set = prepared_train_set
+            else:
+                self.train_set = self.prepare_dataset('train')
+            if prepared_test_set is not None:
+                self.test_set = prepared_test_set
+            else:
+                self.test_set = self.prepare_dataset('test')
             self.compute_base_values()
             logger.info("Relativities ModelHandler initialized.")
             logger.info(f"length of train set is {len(self.train_set)}")
@@ -139,7 +145,7 @@ class RelativitiesCalculator:
             base_value = self.base_values[feature]
             self.relativities[feature] = {base_value: 1.0}
             train_row_copy = sample_train_row.copy()
-            
+
             values_to_process = self.modalities[feature]
 
             for value in values_to_process:

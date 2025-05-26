@@ -226,7 +226,9 @@ def get_data():
         dataset = 'test' if train_test else 'train'
 
         current_app.logger.info(f"Model ID received: {full_model_id}")
-        # check cache
+        
+        train_set = get_model_test_set(full_model_id)
+        test_set = get_model_test_set(full_model_id)
         if full_model_id in model_cache.list_models():
             model = model_cache.get_model(full_model_id)
             if 'predicted_and_base' in model.keys():
@@ -235,17 +237,17 @@ def get_data():
                     predicted_base_variable = predicted_base.get(variable)
                 else:
                     model_retriever = VisualMLModelRetriver(full_model_id)
-                    relativities_calculator = RelativitiesCalculator(data_handler, model_retriever)
+                    relativities_calculator = RelativitiesCalculator(data_handler, model_retriever, train_set, test_set)
                     predicted_base_variable = relativities_calculator.get_formated_predicted_base_variable(variable)
                     predicted_base[variable] = predicted_base_variable
             else:
                 model_retriever = VisualMLModelRetriver(full_model_id)
-                relativities_calculator = RelativitiesCalculator(data_handler, model_retriever)
+                relativities_calculator = RelativitiesCalculator(data_handler, model_retriever, train_set, test_set)
                 predicted_base_variable = relativities_calculator.get_formated_predicted_base_variable(variable)
                 model_cache.add_model_object(full_model_id, 'predicted_and_base', {variable: predicted_base_variable})
         else:
             model_retriever = VisualMLModelRetriver(full_model_id)
-            relativities_calculator = RelativitiesCalculator(data_handler, model_retriever)
+            relativities_calculator = RelativitiesCalculator(data_handler, model_retriever, train_set, test_set)
             predicted_base_variable = relativities_calculator.get_formated_predicted_base(variable)
             model_cache.add_model_object(full_model_id, 'predicted_and_base', {variable: predicted_base_variable})
 
@@ -285,6 +287,7 @@ def get_base_values():
         current_app.logger.error(f"An error occurred while processing the request: {e}", exc_info=True)
         return jsonify({"error": "An error occurred during data processing."}), 500
 
+
 def get_model_base_values(full_model_id):
 
     if full_model_id in model_cache.list_models():
@@ -292,13 +295,17 @@ def get_model_base_values(full_model_id):
         if 'base_values' in model.keys():
             base_values = model_cache.get_model(full_model_id).get('base_values')
         else:
+            train_set = get_model_test_set(full_model_id)
+            test_set = get_model_test_set(full_model_id)
             model_retriever = VisualMLModelRetriver(full_model_id)
-            relativities_calculator = RelativitiesCalculator(data_handler, model_retriever)
+            relativities_calculator = RelativitiesCalculator(data_handler, model_retriever, train_set, test_set)
             base_values = relativities_calculator.get_base_values()        
             model_cache.add_model_object(full_model_id, 'base_values', base_values)
     else:
+        train_set = get_model_test_set(full_model_id)
+        test_set = get_model_test_set(full_model_id)
         model_retriever = VisualMLModelRetriver(full_model_id)
-        relativities_calculator = RelativitiesCalculator(data_handler, model_retriever)
+        relativities_calculator = RelativitiesCalculator(data_handler, model_retriever, train_set, test_set)
         base_values = relativities_calculator.get_base_values()        
         model_cache.add_model_object(full_model_id, 'base_values', base_values)
     
@@ -393,23 +400,65 @@ def get_relativities():
     return jsonify(relativities.to_dict('records'))
 
 
+def get_model_train_set(full_model_id):
+    if full_model_id in model_cache.list_models():
+        model = model_cache.get_model(full_model_id)
+        if 'train_set' in model.keys():
+            train_set = model_cache.get_model(full_model_id).get('train_set')
+        else:
+            model_retriever = VisualMLModelRetriver(full_model_id)
+            relativities_calculator = RelativitiesCalculator(data_handler, model_retriever)
+            train_set = relativities_calculator.train_set
+            model_cache.add_model_object(full_model_id, 'train_set', train_set)
+    else:
+        model_retriever = VisualMLModelRetriver(full_model_id)
+        relativities_calculator = RelativitiesCalculator(data_handler, model_retriever)
+        train_set = relativities_calculator.train_set
+        model_cache.add_model_object(full_model_id, 'train_set', train_set)
+    
+    return train_set
+
+
+def get_model_test_set(full_model_id):
+    if full_model_id in model_cache.list_models():
+        model = model_cache.get_model(full_model_id)
+        if 'test_set' in model.keys():
+            test_set = model_cache.get_model(full_model_id).get('test_set')
+        else:
+            model_retriever = VisualMLModelRetriver(full_model_id)
+            relativities_calculator = RelativitiesCalculator(data_handler, model_retriever)
+            test_set = relativities_calculator.test_set
+            model_cache.add_model_object(full_model_id, 'test_set', test_set)
+    else:
+        model_retriever = VisualMLModelRetriver(full_model_id)
+        relativities_calculator = RelativitiesCalculator(data_handler, model_retriever)
+        test_set = relativities_calculator.test_set
+        model_cache.add_model_object(full_model_id, 'test_set', test_set)
+    
+    return test_set
+
 def get_model_relativities(full_model_id):
     if full_model_id in model_cache.list_models():
         model = model_cache.get_model(full_model_id)
         if 'relativities' in model.keys():
             relativities = model_cache.get_model(full_model_id).get('relativities')
         else:
+            train_set = get_model_test_set(full_model_id)
+            test_set = get_model_test_set(full_model_id)
             model_retriever = VisualMLModelRetriver(full_model_id)
-            relativities_calculator = RelativitiesCalculator(data_handler, model_retriever)
+            relativities_calculator = RelativitiesCalculator(data_handler, model_retriever, train_set, test_set)
             relativities = relativities_calculator.get_relativities_df()
             model_cache.add_model_object(full_model_id, 'relativities', relativities)
     else:
+        train_set = get_model_test_set(full_model_id)
+        test_set = get_model_test_set(full_model_id)
         model_retriever = VisualMLModelRetriver(full_model_id)
-        relativities_calculator = RelativitiesCalculator(data_handler, model_retriever)
+        relativities_calculator = RelativitiesCalculator(data_handler, model_retriever, train_set, test_set)
         relativities = relativities_calculator.get_relativities_df()
         model_cache.add_model_object(full_model_id, 'relativities', relativities)
     
     return relativities
+
 
 def get_model_relativities_interaction(full_model_id):
     if full_model_id in model_cache.list_models():
@@ -417,17 +466,22 @@ def get_model_relativities_interaction(full_model_id):
         if 'relativities_interaction' in model.keys():
             relativities_interaction = model_cache.get_model(full_model_id).get('relativities_interaction')
         else:
+            train_set = get_model_test_set(full_model_id)
+            test_set = get_model_test_set(full_model_id)
             model_retriever = VisualMLModelRetriver(full_model_id)
-            relativities_calculator = RelativitiesCalculator(data_handler, model_retriever)
+            relativities_calculator = RelativitiesCalculator(data_handler, model_retriever, train_set, test_set)
             relativities_interaction = relativities_calculator.get_relativities_interactions_df()
             model_cache.add_model_object(full_model_id, 'relativities_interaction', relativities_interaction)
     else:
+        train_set = get_model_test_set(full_model_id)
+        test_set = get_model_test_set(full_model_id)
         model_retriever = VisualMLModelRetriver(full_model_id)
-        relativities_calculator = RelativitiesCalculator(data_handler, model_retriever)
+        relativities_calculator = RelativitiesCalculator(data_handler, model_retriever, train_set, test_set)
         relativities_interaction = relativities_calculator.get_relativities_interactions_df()
         model_cache.add_model_object(full_model_id, 'relativities_interaction', relativities_interaction)
     
     return relativities_interaction
+
 
 @fetch_api.route("/get_variable_level_stats", methods=["POST"])
 def get_variable_level_stats():
@@ -445,19 +499,23 @@ def get_variable_level_stats():
         if 'variable_stats' in model.keys():
             variable_stats = model_cache.get_model(full_model_id).get('variable_stats')
         else:
+            train_set = get_model_test_set(full_model_id)
+            test_set = get_model_test_set(full_model_id)
             model_retriever = VisualMLModelRetriver(full_model_id)
             relativities = get_model_relativities(full_model_id)
             relativities_interaction = get_model_relativities_interaction(full_model_id)
             base_values = get_model_base_values(full_model_id)
-            variable_level_stats = VariableLevelStatsFormatter(model_retriever, data_handler, relativities, relativities_interaction, base_values)
+            variable_level_stats = VariableLevelStatsFormatter(model_retriever, data_handler, relativities, relativities_interaction, base_values, train_set, test_set)
             variable_stats = variable_level_stats.get_variable_level_stats()
             model_cache.add_model_object(full_model_id, 'variable_stats', variable_stats)
     else:
+        train_set = get_model_test_set(full_model_id)
+        test_set = get_model_test_set(full_model_id)
         model_retriever = VisualMLModelRetriver(full_model_id)
         relativities = get_model_relativities(full_model_id)
         relativities_interaction = get_model_relativities_interaction(full_model_id)
         base_values = get_model_base_values(full_model_id)
-        variable_level_stats = VariableLevelStatsFormatter(model_retriever, data_handler, relativities, relativities_interaction, base_values)
+        variable_level_stats = VariableLevelStatsFormatter(model_retriever, data_handler, relativities, relativities_interaction, base_values, train_set, test_set)
         variable_stats = variable_level_stats.get_variable_level_stats()
         model_cache.add_model_object(full_model_id, 'variable_stats', variable_stats)
 

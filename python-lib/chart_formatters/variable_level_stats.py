@@ -9,13 +9,13 @@ import pandas as pd
 
 class VariableLevelStatsFormatter:
 
-    def __init__(self, model_retriever, data_handler, relativities, relativities_interaction, base_values):
+    def __init__(self, model_retriever, data_handler, relativities, relativities_interaction, base_values, train_set=None, test_set=None):
         self.model_retriever = model_retriever
         self.data_handler = data_handler
         self.relativities = relativities
         self.relativities_interaction = relativities_interaction
         self.base_values = base_values
-        self.relativities_calculator = RelativitiesCalculator(data_handler, model_retriever)
+        self.relativities_calculator = RelativitiesCalculator(data_handler, model_retriever, train_set, test_set)
         #self.relativities_calculator = relativities_calculator
 
     def get_variable_level_stats(self):
