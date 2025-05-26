@@ -65,6 +65,7 @@ class VariableLevelStatsFormatter:
         coef_table_intercept['value'] = 'base'
         coef_table_intercept['exposure'] = 0
         coef_table_intercept['exposure_pct'] = 0
+        logger.info(relativities)
         coef_table_intercept['relativity'] = relativities[relativities['feature'] == 'base']['relativity'].iloc[0]
         variable_stats = coef_table_intercept[['feature', 'value', 'relativity', 'coef', 'se', 'se_pct', 'exposure', 'exposure_pct']]
         return variable_stats
@@ -73,10 +74,45 @@ class VariableLevelStatsFormatter:
         logger.debug("Retrieving categorical features.")
         return [feature['variable'] for feature in features if feature['variableType'] == 'categorical' and feature['isInModel']]
 
+    def _transform_dataset(self, df):
+        # Get all columns except 'weight'
+        category_columns = df.columns[:-1]
+
+        # Create empty lists to store the transformed data
+        features = []
+        values = []
+        weights = []
+
+        # Process each categorical column
+        for column in category_columns:
+            # Group by the current column and sum weights
+            groups = df.groupby(column)['weight'].sum()
+
+            # Add the results to our lists
+            for value, weight in groups.items():
+                features.append(column)
+                values.append(value)
+                weights.append(weight)
+
+        # Create the new DataFrame
+        new_df = pd.DataFrame({
+            'feature': features,
+            'value': values,
+            'weight': weights
+        })
+
+        # Sort the DataFrame
+        new_df = new_df.sort_values(['feature', 'value']).reset_index(drop=True)
+
+        return new_df
+
     def _process_categorical_features(self, variable_stats, relativities, coef_table, categorical_features):
         logger.debug("Processing categorical features.")
         predicted_cat = self.relativities_calculator.train_set.groupby(categorical_features)['weight'].sum().reset_index()
-        #predicted_cat = predicted_base[predicted_base['feature'].isin(categorical_features)]
+        logger.info(predicted_cat)
+        predicted_cat = self._transform_dataset(predicted_cat)
+        predicted_cat.rename(columns={"weight": "exposure"}, inplace=True)
+        logger.info(predicted_cat)
         relativities_cat = relativities[relativities['feature'].isin(categorical_features)]
         
         coef_table_cat = coef_table[((coef_table['index'] == 'intercept') | (coef_table['index'].str.contains(':'))) & (~coef_table['index'].str.startswith('interaction:')) & (~coef_table['index'].str.endswith(':_'))]
@@ -96,10 +132,9 @@ class VariableLevelStatsFormatter:
         variable_stats_cat = variable_stats_cat.merge(
             predicted_cat,
             how='left',
-            left_on=['feature', 'value'],
-            right_on=['feature', 'category']
+            on=['feature', 'value']
         )
-        variable_stats_cat.drop(['category', 'exposure_sum'], axis=1, inplace=True)
+        variable_stats_cat.drop(['exposure_sum'], axis=1, inplace=True)
         return variable_stats.append(variable_stats_cat)
 
     def _get_numeric_features(self, features):
@@ -121,23 +156,23 @@ class VariableLevelStatsFormatter:
     def _get_interaction_features(self):
         return self.model_retriever.get_interactions()
 
-    def _process_interaction_features(self, variable_stats, predicted_base, relativities_interaction, coef_table, interaction_features, categorical_features, numeric_features):
+    def _process_interaction_features(self, variable_stats, relativities_interaction, coef_table, interaction_features, categorical_features, numeric_features):
         interaction_cat_cat = [interaction for interaction in interaction_features if ((interaction[0] in categorical_features) & (interaction[1] in categorical_features))]
         interaction_num_num = [interaction for interaction in interaction_features if ((interaction[0] in numeric_features) & (interaction[1] in numeric_features))]
         interaction_cat_num = [interaction for interaction in interaction_features if ((interaction not in interaction_cat_cat) & (interaction not in interaction_num_num))]
         
         if interaction_cat_cat:
-            variable_stats = self._process_interaction_features_cat_cat(variable_stats, predicted_base, relativities_interaction, coef_table, interaction_cat_cat)
+            variable_stats = self._process_interaction_features_cat_cat(variable_stats, relativities_interaction, coef_table, interaction_cat_cat)
         
         if interaction_num_num:
-            variable_stats = self._process_interaction_features_num_num(variable_stats, predicted_base, relativities_interaction, coef_table, interaction_num_num)
+            variable_stats = self._process_interaction_features_num_num(variable_stats, relativities_interaction, coef_table, interaction_num_num)
         
         if interaction_cat_num:
-            variable_stats = self._process_interaction_features_cat_num(variable_stats, predicted_base, relativities_interaction, coef_table, interaction_cat_num, numeric_features)
+            variable_stats = self._process_interaction_features_cat_num(variable_stats, relativities_interaction, coef_table, interaction_cat_num, numeric_features)
         
         return variable_stats
 
-    def _process_interaction_features_cat_cat(self, variable_stats, predicted_base, relativities_interaction, coef_table, interaction_features):
+    def _process_interaction_features_cat_cat(self, variable_stats, relativities_interaction, coef_table, interaction_features):
         coef_table_interactions = coef_table[(coef_table['index'].str.startswith('interaction:'))]
         coef_table_interactions[['dummy', 'variable', 'value']] = coef_table_interactions['index'].str.split('::', expand=True)
         coef_table_interactions[['dummy', 'variable_1']] = coef_table_interactions['dummy'].str.split(':', expand=True)
@@ -267,7 +302,7 @@ class VariableLevelStatsFormatter:
         
         return variable_stats.append(variable_stats_interaction)
 
-    def _process_interaction_features_num_num(self, variable_stats, predicted_base, relativities_interaction, coef_table, interactions_num_num):
+    def _process_interaction_features_num_num(self, variable_stats, relativities_interaction, coef_table, interactions_num_num):
         coef_table_interactions = coef_table[(coef_table['index'].str.startswith('interaction:'))]
         coef_table_interactions[['dummy', 'variable', 'value']] = coef_table_interactions['index'].str.split('::', expand=True)
         coef_table_interactions[['dummy', 'variable_1']] = coef_table_interactions['dummy'].str.split(':', expand=True)

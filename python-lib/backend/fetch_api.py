@@ -46,12 +46,6 @@ if not is_local:
             visual_ml_trainer.mltask, 
             visual_ml_config.saved_model_id
             )
-        saved_model_id = visual_ml_trainer.get_latest_model()
-        model_retriever = VisualMLModelRetriver(saved_model_id)
-        relativities_calculator = RelativitiesCalculator(
-            data_handler,
-            model_retriever
-            )
     
         
 def setup_cache():
@@ -454,7 +448,7 @@ def get_variable_level_stats():
             model_retriever = VisualMLModelRetriver(full_model_id)
             relativities = get_model_relativities(full_model_id)
             relativities_interaction = get_model_relativities_interaction(full_model_id)
-            base_values = get_base_values(full_model_id)
+            base_values = get_model_base_values(full_model_id)
             variable_level_stats = VariableLevelStatsFormatter(model_retriever, data_handler, relativities, relativities_interaction, base_values)
             variable_stats = variable_level_stats.get_variable_level_stats()
             model_cache.add_model_object(full_model_id, 'variable_stats', variable_stats)
@@ -462,7 +456,7 @@ def get_variable_level_stats():
         model_retriever = VisualMLModelRetriver(full_model_id)
         relativities = get_model_relativities(full_model_id)
         relativities_interaction = get_model_relativities_interaction(full_model_id)
-        base_values = get_base_values(full_model_id)
+        base_values = get_model_base_values(full_model_id)
         variable_level_stats = VariableLevelStatsFormatter(model_retriever, data_handler, relativities, relativities_interaction, base_values)
         variable_stats = variable_level_stats.get_variable_level_stats()
         model_cache.add_model_object(full_model_id, 'variable_stats', variable_stats)
