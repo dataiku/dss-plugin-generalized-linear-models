@@ -371,6 +371,7 @@ export default defineComponent({
         },
         onClick: function() {
           API.exportModel(this.active_model).then(response => {
+              this.loading = true;
               const url = window.URL.createObjectURL(new Blob([response.data], { type: 'text/csv' }));
               const link = document.createElement('a');
               link.href = url;
@@ -378,8 +379,10 @@ export default defineComponent({
               document.body.appendChild(link);
               link.click();
               window.URL.revokeObjectURL(url); // Clean up
+              this.loading = false;
           }).catch(error => {
               console.error('Error exporting model:', error);
+              this.loading = false;
           });
         },
         onClickOneWay: function() {
@@ -388,6 +391,7 @@ export default defineComponent({
             variable: this.selectedVariable.variable, 
             trainTest: this.trainTest,
             rescale: this.rescale}).then(response => {
+                this.loading = true;
               const url = window.URL.createObjectURL(new Blob([response.data], { type: 'text/csv' }));
               const link = document.createElement('a');
               link.href = url;
@@ -395,8 +399,10 @@ export default defineComponent({
               document.body.appendChild(link);
               link.click();
               window.URL.revokeObjectURL(url); // Clean up
+              this.loading = false;
           }).catch(error => {
               console.error('Error exporting model:', error);
+              this.loading = false;
           });
         },
         notifyError(msg: string) {

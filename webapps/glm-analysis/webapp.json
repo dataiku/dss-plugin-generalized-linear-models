@@ -75,7 +75,7 @@
         "label": "Testing Dataset",
         "description": "Select the Testing Dataset for Modelling",
         "type": "DATASET",
-      "visibilityCondition": "model.policy == 'explicit_test_set'"
+      "visibilityCondition": "model.policy == 'explicit_test_set' && model.analysis_id == 'new'"
     },
      {
         "type": "SEPARATOR",

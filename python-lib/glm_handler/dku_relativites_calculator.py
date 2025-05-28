@@ -19,7 +19,7 @@ class RelativitiesCalculator:
         model_info_handler (PredictionModelInformationHandler): Handler for model information.
     """
 
-    def __init__(self,data_handler, model_retriever, prepared_train_set=None, prepared_test_set=None):
+    def __init__(self,data_handler, model_retriever, prepared_train_set=None, prepared_test_set=None, base_values=None, modalities=None, variable_types=None):
         """
         Initializes the ModelHandler with a specific model ID.
 
@@ -27,9 +27,6 @@ class RelativitiesCalculator:
             model_id (str): The ID of the model to handle.
         """
         self.data_handler = data_handler
-        self.base_values = {}
-        self.modalities = {}
-        self.variable_types = {}
         self.model_retriever = model_retriever
         try:
             if prepared_train_set is not None:
@@ -40,7 +37,15 @@ class RelativitiesCalculator:
                 self.test_set = prepared_test_set
             else:
                 self.test_set = self.prepare_dataset('test')
-            self.compute_base_values()
+            if base_values is None:
+                self.base_values = {}
+                self.modalities = {}
+                self.variable_types = {}
+                self.compute_base_values()
+            else:
+                self.base_values = base_values
+                self.modalities = modalities
+                self.variable_types = variable_types
             logger.info("Relativities ModelHandler initialized.")
             logger.info(f"length of train set is {len(self.train_set)}")
         except Exception as e:
@@ -308,20 +313,9 @@ class RelativitiesCalculator:
     def merge_predictions(self, test_set, base_data):
         logger.info("Merging Base predictions")
         for feature in base_data.keys():
-            test_set = pd.merge(test_set, base_data[feature], how='left', on=feature)
+            test_set = test_set.set_index(feature).join(base_data[feature].set_index(feature), how='left')
         logger.info("Successfully Merged Base predictions")
         return test_set
-    
-    def process_dataset(self, dataset, dataset_name):
-        logger.info(f"Processing dataset {dataset_name}")
-        used_features = self.model_retriever.get_used_features()
-        base_data = self.compute_base_predictions_new(dataset, used_features)
-        dataset = self.merge_predictions(dataset, base_data)
-        predicted_base = self.data_handler.calculate_weighted_aggregations(dataset, self.model_retriever.non_excluded_features, used_features)
-        predicted_base_df = self.data_handler.construct_final_dataframe(predicted_base)
-        predicted_base_df['dataset'] = dataset_name
-        logger.info(f"Processed dataset {dataset_name}")
-        return predicted_base_df
     
     def process_dataset_variable(self, dataset, dataset_name, variable):
         logger.info(f"Processing dataset {dataset_name}")
