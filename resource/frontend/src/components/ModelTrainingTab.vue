@@ -388,21 +388,27 @@
         validateSubmission() {
             this.errorMessage = ''; // Reset error message before validation
             if (!this.modelName) {
-            this.errorMessage = 'Please enter a model name.';
-            console.log('Error Message:', this.errorMessage);
-    
-            return false;
-            }
+                this.errorMessage = 'Please enter a model name.';
+                console.log('Error Message:', this.errorMessage);
+        
+                return false;
+                }
             if (!this.selectedTargetVariable) {
-            this.errorMessage = 'Please select a target variable.';
-            return false;
+                this.errorMessage = 'Please select a target variable.';
+                return false;
+            }
+
+            const newName = this.modelName.trim().toLowerCase();
+            const exists = this.modelsString.some(
+                model => model.toLowerCase() === newName
+            )
+            
+            if (exists) {
+                this.errorMessage = 'This model name already exists';
+                return false;
             }
             return true; // Validation passed
         },
-        // addInteraction() {
-        //     var newInteraction = {interaction_first: "", interaction_second: ""};
-        //     this.interactions.push(newInteraction);
-        // },
         updateDatasetColumnsPreprocessing() {
             const updatedColumns = this.datasetColumns.map(column => {
                 let preprocessing;
@@ -464,8 +470,9 @@
         async submitVariables() {
             this.loading = true;
             if (!this.validateSubmission()) {
-          // If validation fails, stop execution
-            return;
+                // If validation fails, stop execution
+                this.loading = false;
+                return;
             }
             // Define modelParameters outside of the reduce call to ensure it's accessible later
             const modelParameters = {
