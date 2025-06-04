@@ -46,6 +46,8 @@ if not is_local:
             visual_ml_trainer.mltask, 
             visual_ml_config.saved_model_id
             )
+        latest_ml_task = visual_ml_trainer.get_latest_ml_task()
+        model_cache = setup_model_cache(latest_ml_task, model_deployer)
     
         
 def setup_cache():
@@ -53,10 +55,6 @@ def setup_cache():
     if not visual_ml_config.create_new_analysis:
         latest_ml_task = visual_ml_trainer.get_latest_ml_task()
         model_cache = setup_model_cache(latest_ml_task, model_deployer)
-
-loading_thread = threading.Thread(target=setup_cache)
-loading_thread.start()
-
 
 fetch_api = Blueprint("fetch_api", __name__, url_prefix="/api")
 
@@ -96,7 +94,6 @@ def train_model():
     current_app.logger.debug(f"Model error message is {error_message}")
     print(f"Model error message is {error_message}")
     current_app.logger.debug(f"Model details are {model_details}")
-    loading_thread.join()
     if not error_message:
         current_app.logger.info("Model trained and cache updated")
         return jsonify({'message': 'Model training completed successfully.'}), 200
@@ -136,7 +133,6 @@ def get_variables():
     request_json = request.get_json()
     full_model_id = request_json["id"]
     try:
-        loading_thread.join()
         model_retriever = VisualMLModelRetriver(full_model_id)
         variables = model_retriever.get_features_used_in_modelling()
 
@@ -181,7 +177,6 @@ def get_data():
         dummy_df_variable = dummy_df_data[dummy_df_data['definingVariable'] == variable]
         return jsonify(dummy_df_variable.to_dict('records'))
     try:
-        loading_thread.join()
         current_app.logger.info("Received a new request for data prediction.")
         request_json = request.get_json()
         full_model_id = request_json["id"]
@@ -243,7 +238,6 @@ def get_base_values():
         current_app.logger.info("Running Locally")
         return jsonify(dummy_base_values)
     try:
-        loading_thread.join()
         
         # check cache
         base_values = get_model_base_values(full_model_id)
@@ -308,7 +302,6 @@ def get_lift_data():
     
     current_app.logger.info("Received a new request for lift chart data.")
     
-    loading_thread.join()
     request_json = request.get_json()
     full_model_id = request_json["id"]
     nb_bins = request_json["nbBins"]
@@ -357,7 +350,6 @@ def get_updated_data():
 def get_relativities():
     if is_local:
         return jsonify(dummy_relativites.to_dict('records'))
-    loading_thread.join()
     request_json = request.get_json()
     full_model_id = request_json["id"]
     
@@ -480,7 +472,6 @@ def get_variable_level_stats():
     if is_local:
         return jsonify(dummy_variable_level_stats)
     
-    loading_thread.join()
     request_json = request.get_json()
     full_model_id = request_json["id"]
     current_app.logger.info(f"for Model ID: {full_model_id}")
@@ -533,8 +524,7 @@ def get_model_comparison_data():
         variable = request_json["selectedVariable"]
         train_test = request_json["trainTest"]
         dataset = 'test' if train_test else 'train'
-
-        loading_thread.join()
+        
         current_app.logger.info(f"Retrieving {model1} from the cache")
         model_1_predicted_base = get_model_predicted_base(model1, variable)
         model_1_predicted_base = model_1_predicted_base[model_1_predicted_base['dataset']==dataset]
@@ -573,7 +563,6 @@ def get_model_metrics():
     if is_local:
         return jsonify(dummy_model_metrics)
     
-    loading_thread.join()
     request_json = request.get_json()
     current_app.logger.info(f"Getting Model Metrics with request: {request_json}") 
 
@@ -612,7 +601,6 @@ def export_model():
         csv_data = df.to_csv(index=False).encode('utf-8')
     else:
         try:
-            loading_thread.join()
             request_json = request.get_json()
             model = request_json.get("id")
             if not model:
@@ -687,7 +675,6 @@ def export_variable_level_stats():
         csv_data = df.to_csv(index=False).encode('utf-8')
     else:
         try:
-            loading_thread.join()
             request_json = request.get_json()
             full_model_id = request_json["id"]
             
@@ -719,7 +706,6 @@ def export_one_way():
         csv_data = variable_level_stats_df.to_csv(index=False).encode('utf-8')
     else:
         try:
-            loading_thread.join()
             request_json = request.get_json()
             full_model_id = request_json["id"]
             variable = request_json["variable"]
