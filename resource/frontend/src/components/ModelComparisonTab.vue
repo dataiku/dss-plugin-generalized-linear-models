@@ -194,7 +194,12 @@ watch: {
             this.loading = true;
             API.getModels().then((data: any) => {
                 this.models = data.data;
-                this.modelsString = this.models.map(item => item.name);
+                this.modelsString = this.models.map((item: { name: string }) => item.name);
+                this.modelDictionary = this.models.reduce((acc: { [key: string]: string }, model: Model) => {
+                                        acc[model.name] = model.id;
+                                        return acc;
+                                    }, {});
+            
             });
             this.loading = false;
         },
@@ -260,13 +265,13 @@ methods: {
 mounted() {
     this.loading = true;
     API.getModels().then((data: any) => {
-    this.models = data.data;
-    console.log("Retrieved models are:", this.models);
-    this.modelsString = this.models.map((item: { name: string }) => item.name);
-    this.modelDictionary = this.models.reduce((acc: { [key: string]: string }, model: Model) => {
-                            acc[model.name] = model.id;
-                            return acc;
-                        }, {});
+        this.models = data.data;
+        console.log("Retrieved models are:", this.models);
+        this.modelsString = this.models.map((item: { name: string }) => item.name);
+        this.modelDictionary = this.models.reduce((acc: { [key: string]: string }, model: Model) => {
+                                acc[model.name] = model.id;
+                                return acc;
+                            }, {});
     
     });
     this.getDatasetColumnNames();
