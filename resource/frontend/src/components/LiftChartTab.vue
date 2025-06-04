@@ -126,10 +126,12 @@ export default defineComponent({
     watch: {
       reloadModels: {
           handler() {
+            this.loading = true;
             API.getModels().then((data: any) => {
               this.models = data.data;
               this.modelsString = this.models.map(item => item.name);
             });
+            this.loading = false;
           },
       },
       loading(newVal) {
@@ -175,10 +177,12 @@ export default defineComponent({
         }
     },
     mounted() {
+      this.loading = true;
       API.getModels().then((data: any) => {
         this.models = data.data;
         this.modelsString = this.models.map(item => item.name);
       });
+      this.loading = false;
     }
 })
 </script>

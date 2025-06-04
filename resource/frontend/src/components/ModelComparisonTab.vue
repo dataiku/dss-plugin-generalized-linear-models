@@ -191,10 +191,12 @@ computed:{
 watch: {
     reloadModels: {
         handler() {
-        API.getModels().then((data: any) => {
-            this.models = data.data;
-            this.modelsString = this.models.map(item => item.name);
-        });
+            this.loading = true;
+            API.getModels().then((data: any) => {
+                this.models = data.data;
+                this.modelsString = this.models.map(item => item.name);
+            });
+            this.loading = false;
         },
     },
     loading(newVal) {
@@ -256,6 +258,7 @@ methods: {
 },
 
 mounted() {
+    this.loading = true;
     API.getModels().then((data: any) => {
     this.models = data.data;
     console.log("Retrieved models are:", this.models);
@@ -266,7 +269,8 @@ mounted() {
                         }, {});
     
     });
-    this.getDatasetColumnNames(); 
+    this.getDatasetColumnNames();
+    this.loading = false;
 },
 emits: ['update:modelValue']
 })

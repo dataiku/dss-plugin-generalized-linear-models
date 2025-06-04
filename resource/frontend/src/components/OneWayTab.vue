@@ -216,10 +216,12 @@ export default defineComponent({
     watch: {
       reloadModels: {
           handler() {
+            this.loading = true;
             API.getModels().then((data: any) => {
               this.models = data.data;
               this.modelsString = this.models.map(item => item.name);
             });
+            this.loading = false;
           },
       },
       loading(newVal) {
@@ -229,59 +231,6 @@ export default defineComponent({
               useLoader().hide();
           }
       },
-      // selectedVariable(newValue: VariablePoint) {
-      //   console.log("selected Variable")
-      //   this.relativitiesTable = this.relativitiesData.filter(item => item.variable === newValue.variable);
-      //   this.relativitiesColumns = columns;
-      //   this.relativities = this.relativitiesTable.map( (point) => {
-      //     const relativity = {'class': point.category, 'relativity': Math.round(point.relativity*1000)/1000};
-      //     return relativity
-      //   })
-      //   if (this.rescale) {
-      //       const baseCategory = this.baseValues.find(item => item.variable === newValue.variable);
-      //       if (baseCategory) {
-      //         const baseData = this.chartData.find(item => item.Category === baseCategory.base_level);
-      //         if (baseData) {
-      //           const baseLevelPrediction = baseData.baseLevelPrediction;
-      //           const fittedAverage = baseData.fittedAverage;
-      //           const observedAverage = baseData.observedAverage;
-      //           this.chartData = this.chartData.map(item => ({
-      //           ...item,
-      //           baseLevelPrediction: item.baseLevelPrediction / baseLevelPrediction,
-      //           fittedAverage: item.fittedAverage / fittedAverage,
-      //           observedAverage: item.observedAverage / observedAverage
-      //         }));
-      //         }
-      //       }
-      //     }
-      // },
-      // allData(newValue: DataPoint[]) {
-      //    this.chartData = this.allData.filter(item => item.definingVariable === this.selectedVariable.variable);
-      //    if (this.rescale) {
-      //       //const baseCategory = this.relativitiesTable.find(item => item.relativity === 1);
-      //       const baseCategory = this.baseValues.find(item => item.variable === this.selectedVariable.variable);
-      //       if (baseCategory) {
-      //         const baseData = this.allData.find(item => item.Category === baseCategory.base_level && item.definingVariable === this.selectedVariable.variable);
-      //         if (baseData) {
-      //           const baseLevelPrediction = baseData.baseLevelPrediction;
-      //           const fittedAverage = baseData.fittedAverage;
-      //           const observedAverage = baseData.observedAverage;
-      //       this.chartData = this.allData.filter(item => item.definingVariable === this.selectedVariable.variable).map(item => ({
-      //           ...item,
-      //           baseLevelPrediction: item.baseLevelPrediction / baseLevelPrediction,
-      //           fittedAverage: item.fittedAverage / fittedAverage,
-      //           observedAverage: item.observedAverage / observedAverage
-      //         }));
-      //         } else {
-      //       this.chartData = this.allData.filter(item => item.definingVariable === this.selectedVariable.variable);
-      //     }
-      //       } else {
-      //       this.chartData = this.allData.filter(item => item.definingVariable === this.selectedVariable.variable);
-      //     }
-      //     } else {
-      //       this.chartData = this.allData.filter(item => item.definingVariable === this.selectedVariable.variable);
-      //     }
-      // }
     },
     methods: {
       closeSideDrawer() {
@@ -354,9 +303,6 @@ export default defineComponent({
             } else {
               this.variablePoints = variableResponse?.data;
               this.allVariables = this.variablePoints.map(item => item.variable);
-              // const modelTrainPoint = {id: model.id, name: model.name, trainTest: this.trainTest, variable: this.selectedVariable.variable, rescale: this.rescale};
-              // const dataResponse = await API.getData(modelTrainPoint);
-              // this.chartData = dataResponse?.data;
               const relativityResponse = await API.getRelativities(model);
               this.relativitiesData = relativityResponse?.data;
               const baseResponse = await API.getBaseValues(model);
@@ -415,10 +361,12 @@ export default defineComponent({
         },
     },
     mounted() {
+      this.loading = true;
       API.getModels().then((data: any) => {
         this.models = data.data;
         this.modelsString = this.models.map(item => item.name);
       });
+      this.loading = false;
     }
 })
 </script>
