@@ -24,10 +24,12 @@ class LiftChartFormatter:
         logger.debug(f'Processing {dataset_type} dataset.')
         
         try:
-            tempdata = self.data_handler.sort_and_cumsum_exposure(dataset, self.model_retriever.exposure_columns)
+            processed_dataset = dataset.copy()
+            processed_dataset['predicted'] = processed_dataset['predicted'] / processed_dataset['weight']
+            tempdata = self.data_handler.sort_and_cumsum_exposure(processed_dataset)
             binned_data = self.data_handler.bin_data(tempdata, nb_bins)
-            new_data = dataset.join(binned_data[['bin']], how='inner')
-            lift_chart_data = self.data_handler.aggregate_metrics_by_bin(new_data, self.model_retriever.exposure_columns, self.model_retriever.target_column)
+            new_data = processed_dataset.join(binned_data[['bin']], how='inner')
+            lift_chart_data = self.data_handler.aggregate_metrics_by_bin(new_data)
             
             lift_chart_data.columns = ['Category', 'Value', 'observedAverage', 'fittedAverage']
             lift_chart_data['dataset'] = dataset_type

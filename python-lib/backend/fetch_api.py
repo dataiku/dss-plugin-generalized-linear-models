@@ -98,15 +98,6 @@ def train_model():
     current_app.logger.debug(f"Model details are {model_details}")
     loading_thread.join()
     if not error_message:
-        if not model_cache:
-            current_app.logger.info("Creating Model cache For the first time")
-            latest_ml_task = visual_ml_trainer.get_latest_ml_task()
-            model_deployer = visual_ml_trainer.model_deployer
-            model_cache = setup_model_cache(latest_ml_task, model_deployer)
-        else:
-            latest_ml_task = visual_ml_trainer.get_latest_ml_task()
-            model_cache = update_model_cache(latest_ml_task, model_cache)
-
         current_app.logger.info("Model trained and cache updated")
         return jsonify({'message': 'Model training completed successfully.'}), 200
     else: 
@@ -702,7 +693,7 @@ def export_variable_level_stats():
             
             current_app.logger.info(f"Model ID received: {full_model_id}")
 
-            df = get_model_variable_stats()
+            df = get_model_variable_stats(full_model_id)
             df.columns = ['variable', 'value', 'relativity', 'coefficient', 'standard_error', 'standard_error_pct', 'weight', 'weight_pct']
 
             csv_data = df.to_csv(index=False).encode('utf-8')
