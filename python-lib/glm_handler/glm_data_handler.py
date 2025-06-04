@@ -27,7 +27,6 @@ class GlmDataHandler():
         """
         bins = [round(x / nb_bins, 8) for x in range(nb_bins + 1)][:-1] + [float("inf")]
         data['bin'] = pd.cut(data['exposure_cumsum'].round(16), bins=bins, labels=[x + 1 for x in range(nb_bins)])
-        logger.info(data['exposure_cumsum'])
         data['bin'] = data['bin'].astype(int)
         return data
 

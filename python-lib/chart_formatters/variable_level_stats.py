@@ -16,14 +16,10 @@ class VariableLevelStatsFormatter:
         self.relativities_interaction = relativities_interaction
         self.base_values = base_values
         self.relativities_calculator = RelativitiesCalculator(data_handler, model_retriever, train_set, test_set)
-        #self.relativities_calculator = relativities_calculator
 
     def get_variable_level_stats(self):
         logger.info("Starting to get variable level stats.")
         try:
-            #predicted_base = self._get_predicted_base()
-            #relativities = self._get_relativities()
-            #relativities_interaction = self._get_relativities_interaction()
             coef_table = self._prepare_coef_table()
             features = self.model_retriever.get_features_used_in_modelling()
             
@@ -65,7 +61,6 @@ class VariableLevelStatsFormatter:
         coef_table_intercept['value'] = 'base'
         coef_table_intercept['exposure'] = 0
         coef_table_intercept['exposure_pct'] = 0
-        logger.info(relativities)
         coef_table_intercept['relativity'] = relativities[relativities['feature'] == 'base']['relativity'].iloc[0]
         variable_stats = coef_table_intercept[['feature', 'value', 'relativity', 'coef', 'se', 'se_pct', 'exposure', 'exposure_pct']]
         return variable_stats
@@ -109,10 +104,8 @@ class VariableLevelStatsFormatter:
     def _process_categorical_features(self, variable_stats, relativities, coef_table, categorical_features):
         logger.debug("Processing categorical features.")
         predicted_cat = self.relativities_calculator.train_set.groupby(categorical_features)['weight'].sum().reset_index()
-        logger.info(predicted_cat)
         predicted_cat = self._transform_dataset(predicted_cat)
         predicted_cat.rename(columns={"weight": "exposure"}, inplace=True)
-        logger.info(predicted_cat)
         relativities_cat = relativities[relativities['feature'].isin(categorical_features)]
         
         coef_table_cat = coef_table[((coef_table['index'] == 'intercept') | (coef_table['index'].str.contains(':'))) & (~coef_table['index'].str.startswith('interaction:')) & (~coef_table['index'].str.endswith(':_'))]
