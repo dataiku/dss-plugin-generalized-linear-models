@@ -16,7 +16,6 @@ class DataikuApi:
         self._client = dataiku.api_client()
 
     def setup(self, webapp_config: Dict, default_project_key: str):
-        print('setup')
         print(os.environ["DKU_CURRENT_PROJECT_KEY"])
         self._webapp_config = webapp_config
         self._default_project_key = default_project_key

@@ -27,7 +27,6 @@ if not is_local:
     from dku_visual_ml.dku_model_trainer import VisualMLModelTrainer
     from dku_visual_ml.dku_model_retrival import VisualMLModelRetriver
     from glm_handler.dku_relativites_calculator import RelativitiesCalculator
-    from glm_handler.dku_model_deployer import ModelDeployer
     from glm_handler.glm_data_handler import GlmDataHandler
     from backend.model_cache import setup_model_cache, update_model_cache
     
@@ -37,18 +36,10 @@ if not is_local:
     
     if visual_ml_config.create_new_analysis:
         visual_ml_trainer.create_initial_ml_task()
-        logger.info(f"Created new analysis {visual_ml_config.experiment_name}")
-        abort(500, description=f"Created new analysis {visual_ml_config.experiment_name}. Now select and restart backend")
     else:
         visual_ml_trainer.setup_using_existing_ml_task(
-            visual_ml_config.existing_analysis_id
+            visual_ml_config.analysis_id
             )
-        full_model_id = visual_ml_trainer.mltask.get_trained_models_ids()[0]
-        model_retriever = VisualMLModelRetriver(full_model_id)
-        relativities_calculator = RelativitiesCalculator(
-            data_handler,
-            model_retriever
-        )
     
         
 def setup_cache():
@@ -62,7 +53,17 @@ loading_thread.start()
 
 fetch_api = Blueprint("fetch_api", __name__, url_prefix="/api")
 
-
+@fetch_api.route("/send_webapp_id", methods=["POST"])
+def update_config():
+    webapp_id = request.get_json()['webAppId']
+    if visual_ml_config.create_new_analysis:
+        webapp = dataiku_api.default_project.get_webapp(webapp_id)
+        settings = webapp.get_settings()
+        settings.get_raw()['config']['analysis_id'] = visual_ml_trainer.visual_ml_config.analysis_id
+        settings.save()
+        return jsonify({'message': 'Settings updated.'}), 200
+    else:
+        return jsonify({'message': 'No need to update settings'}), 200
     
 @fetch_api.route("/train_model", methods=["POST"])
 def train_model():

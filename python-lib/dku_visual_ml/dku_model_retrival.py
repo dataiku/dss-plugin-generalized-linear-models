@@ -174,10 +174,11 @@ class VisualMLModelRetriver(DataikuClientProject):
         }
 
     def _extract_base_level(self, feature_settings: Dict[str, Any]) -> Optional[str]:
-        pattern = r'self\.mode_column\s*=\s*["\']([^"\']+)["\']'
         custom_handling_code = feature_settings.get('customHandlingCode', '')
+        pattern = r'["\']base_level["\']\s*:\s*(["\'])(.*?)\1'
         match = re.search(pattern, custom_handling_code)
-        return match.group(1) if match else None
+        # If a match is found, the value is in the second captured group.
+        return match.group(2) if match else None
     
     def _process_feature(self, feature: str, preprocessing: Dict[str, Any], 
                          exposure_columns: str, target_column: str) -> Dict[str, Any]:

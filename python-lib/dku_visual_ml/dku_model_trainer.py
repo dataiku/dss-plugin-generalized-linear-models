@@ -8,7 +8,6 @@ import string
 from logging_assist.logging import logger
 from dku_visual_ml.custom_configurations import dku_dataset_selection_params, custom_base_none
 from dku_visual_ml.dku_base import DataikuClientProject
-from glm_handler.dku_model_deployer import ModelDeployer
 from typing import List, Dict, Any
 
 
@@ -45,7 +44,7 @@ class VisualMLModelTrainer(DataikuClientProject):
     def _refresh_mltask(self):
         
         logger.debug("Refreshing the ml task")
-        self.mltask.guess()
+        self.mltask.guess(prediction_type=self.visual_ml_config.prediction_type)
         self.mltask.wait_guess_complete()
         logger.debug("Successfully refreshed the ml task")
     
@@ -99,8 +98,9 @@ class VisualMLModelTrainer(DataikuClientProject):
         
         analysis = self.project.get_analysis(analysis_id)
         new_analysis_defintion = analysis.get_definition().get_raw()
-        experiment_name = str(self.visual_ml_config.experiment_name)
-        new_analysis_defintion['name'] = str(self.visual_ml_config.input_dataset) + "_" + experiment_name
+        analysis_name = str(self.visual_ml_config.analysis_name)
+        new_analysis_defintion['name'] = str(self.visual_ml_config.input_dataset) + "_" + analysis_name
+        self.visual_ml_config.analysis_id = analysis_id
         analysis_definition = analysis.set_definition(new_analysis_defintion)
     
     def create_initial_ml_task(self):
@@ -110,9 +110,9 @@ class VisualMLModelTrainer(DataikuClientProject):
                 input_dataset=self.visual_ml_config.input_dataset,
                 target_variable=target_variable,
                 ml_backend_type='PY_MEMORY',  # ML backend to use
-                guess_policy='DEFAULT'  # Template to use for setting default parameters
+                guess_policy='DEFAULT',  # Template to use for setting default parameters
+                prediction_type=self.visual_ml_config.prediction_type
             )
-        
         self.ml_task_variables = list(self.mltask.get_settings().get_raw().get('preprocessing').get('per_feature').keys())
         
         analysis_id = self.mltask.get_settings().analysis_id
@@ -135,7 +135,7 @@ class VisualMLModelTrainer(DataikuClientProject):
             self.mltask = self.create_initial_ml_task(target)
         else:
             logger.info("ML task already exists")
-            self._refresh_mltask()
+            #self._refresh_mltask()
             
         self.assign_train_test_policy()
         self.update_mltask_modelling_params()
@@ -419,21 +419,11 @@ class VisualMLModelTrainer(DataikuClientProject):
         if base_level is None:
             fs['customHandlingCode'] = ''
         else:
-            fs['customHandlingCode'] = ('import pandas as pd\n'
-            'import numpy as np\n'
-            'class save_base():\n'
-            '    """This processor applies no transformation but saves a base level\n'
-            '    """\n'
-            '    def __init__(self):\n'
-            '        self.mode_column = None\n'
-            '    def fit(self, series):\n'
-            '        # define the base level\n'
-            '        self.mode_column = '+ str(base_level) + '\n'
-            '        self.modalities = np.unique(series)\n'
-            '    def transform(self, series):\n'
-            '        return pd.DataFrame(series)\n'
-            '    \n'
-            'processor = save_base()')
+            fs['customHandlingCode'] = (
+            'from dataiku.base.model_plugin import prepare_for_plugin\n'
+            'prepare_for_plugin(\'generalized-linear-models\', \'generalized-linear-models_regression\')\n'
+            'from processors.processors import save_base\n'
+            'processor = save_base({"base_level": ' + str(base_level) + '})\n')
         fs['customProcessorWantsMatrix'] = True
         fs['sendToInput'] = 'main'
         return fs
@@ -468,34 +458,11 @@ class VisualMLModelTrainer(DataikuClientProject):
         fs['customHandlingCode'] = ''
         fs['customProcessorWantsMatrix'] = False
         fs['sendToInput'] = 'main'
-        fs['customHandlingCode'] = ('import numpy as np\n'
-        'import pandas as pd\n'
-        'class rebase_mode():\n'
-        '    """This processor applies dummy vectorisation, but drops the dummy column with the mode. Only applies to categorical variables\n'
-        '    """\n'
-        '    def __init__(self):\n'
-        '        self.mode_column = None\n'
-        '    def fit(self, series):\n'
-        '        # identify the mode of the column, returns as a text value\n'
-        '        self.modalities = np.unique(series)\n'
-        '        self.mode_column = "' + base_level + '"\n'
-        '        self.columns = set(self.modalities)\n'
-        '        self.columns = list(self.columns)\n'
-        '        self.columns.remove(self.mode_column)\n'
-        '        self.column_name = series.name\n'
-        '    def transform(self, series):\n'
-        '        to_replace={m: self.mode_column for m in np.unique(series) if m not in self.modalities}\n'
-        '        new_series = series.replace(to_replace=to_replace)\n'
-        '        # obtains the dummy encoded dataframe, but drops the dummy column with the mode identified\n'
-        '        df = pd.get_dummies(new_series.values)\n'
-        '        if self.mode_column in df:\n'
-        '            df = df.drop(self.mode_column, axis = 1)\n'
-        '        for c in self.columns:\n'
-        '            if c not in df.columns:\n'
-        '                df[c] = 0\n'
-        '        df = df[self.columns]\n'
-        '        return df\n'
-        'processor = rebase_mode()')
+        fs['customHandlingCode'] = (
+            'from dataiku.base.model_plugin import prepare_for_plugin\n'
+            'prepare_for_plugin(\'generalized-linear-models\', \'generalized-linear-models_regression\')\n'
+            'from processors.processors import rebase_mode\n'
+            'processor = rebase_mode({"base_level": "' + str(base_level) + '"})\n')
         
         return fs      
 

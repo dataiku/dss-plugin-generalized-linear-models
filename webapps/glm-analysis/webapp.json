@@ -1,7 +1,7 @@
 {
   "meta": {
     "label": "GLM Analysis",
-    "description": "Analyze your GLM.",
+    "description": "Analyze your GLM",
     "icon": "icon-picture"
   },
   "baseType": "STANDARD",
@@ -15,16 +15,39 @@
   ],
   "paramsPythonSetup": "web_app_setting_list.py",
   "params": [
+          {
+          "type": "SEPARATOR",
+          "description": "",
+           "label": "Analysis"
+      },
+      {
+      "name": "analysis_id",
+      "label": "Select Analysis",
+      "type": "SELECT",
+      "getChoicesFromPython": true,
+      "description": "Select or create a new analysis",
+      "mandatory": true
+    },
+      {
+        "name": "analysis_name",
+        "label": "Analysis Name",
+        "description": "Your custom name for your experiment",
+        "type": "STRING",
+        "visibilityCondition": "model.analysis_id == 'new'",
+        "mandatory": false
+      },
       {
       "type": "SEPARATOR",
       "description": "",
-       "label": "Dataset Parameters"
+       "label": "Dataset Parameters",
+       "visibilityCondition": "model.analysis_id == 'new'"
   },
     {
         "name": "training_dataset_string",
         "label": "Training Dataset",
         "description": "Select the Training Dataset for Modelling",
-        "type": "DATASET"
+        "type": "DATASET",
+       "visibilityCondition": "model.analysis_id == 'new'"
     },
     {
         "name": "policy",
@@ -34,7 +57,8 @@
           "selectChoices" : [
               { "value": "random_split", "label": "Random 80:20 Split"},
               { "value": "explicit_test_set", "label": "Define a Test Set"}
-          ]
+          ],
+       "visibilityCondition": "model.analysis_id == 'new'"
     },
     {
         "name": "test_dataset_string",
@@ -46,62 +70,26 @@
      {
         "type": "SEPARATOR",
         "description": "",
-         "label": "Modelling Parameters"
+         "label": "Modelling Parameters",
+       "visibilityCondition": "model.analysis_id == 'new'"
     },
-    {
-      "name": "prediction_type",
-      "label": "Prediction Type",
-      "description": "Select the Default Prediction Type",
-       "type": "SELECT",
-        "selectChoices" : [
-            { "value": "REGRESSION", "label": "Regression"}
-        ],
-        "visibilityCondition": "false"
-  },
 
   {
     "name": "target_column",
     "label": "Target Variable",
     "type": "DATASET_COLUMN",
     "datasetParamName": "training_dataset_string",
-    "mandatory": true
+    "mandatory": true,
+       "visibilityCondition": "model.analysis_id == 'new'"
   },
   {
     "name": "exposure_column",
     "label": "Exposure Variable",
     "type": "DATASET_COLUMN",
     "datasetParamName": "training_dataset_string",
-    "mandatory": false
-  },
-      {
-        "type": "SEPARATOR",
-        "description": "",
-         "label": "Analysis Setup"
-    },
+    "mandatory": false,
+       "visibilityCondition": "model.analysis_id == 'new'"
+  }
       
-      {
-          "name": "create_new_analysis",
-          "label": "Create New Analysis?",
-          "description": "Create a new analysis on the selected dataset",
-          "type": "BOOLEAN",
-          "defaultValue": false,
-          "mandatory": true
-      },
-      {
-        "name": "experiment_name",
-        "label": "Experiment Name",
-        "description": "Your custom name for your experiment",
-        "type": "STRING",
-        "visibilityCondition": "model.create_new_analysis == true",
-        "mandatory": false
-      },
-    {
-      "name": "existing_analysis_id",
-      "label": "Existing Analysis",
-      "type": "SELECT",
-       "getChoicesFromPython": true,
-      "mandatory": false,
-      "visibilityCondition": "model.create_new_analysis == false"
-    }
   ]
 }
