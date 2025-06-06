@@ -18,7 +18,7 @@ class DKUVisualMLConfig:
             self.analysis_id = web_app_config.get("analysis_id")
         self.target_column = web_app_config.get("target_column")
         self.input_dataset = web_app_config.get("training_dataset_string")
-        self.prediction_type = web_app_config.get("prediction_type")
+        self.prediction_type = "REGRESSION"
         self.exposure_column = web_app_config.get("exposure_column")
         self.analysis_name = web_app_config.get("analysis_name")
         self.policy = web_app_config.get("policy")

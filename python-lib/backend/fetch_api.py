@@ -27,7 +27,6 @@ if not is_local:
     from dku_visual_ml.dku_model_trainer import VisualMLModelTrainer
     from dku_visual_ml.dku_model_retrival import VisualMLModelRetriver
     from glm_handler.dku_relativites_calculator import RelativitiesCalculator
-    from glm_handler.dku_model_deployer import ModelDeployer
     from glm_handler.glm_data_handler import GlmDataHandler
     from backend.model_cache import setup_model_cache, update_model_cache
     
@@ -39,14 +38,8 @@ if not is_local:
         visual_ml_trainer.create_initial_ml_task()
     else:
         visual_ml_trainer.setup_using_existing_ml_task(
-            visual_ml_config.existing_analysis_id
+            visual_ml_config.analysis_id
             )
-        full_model_id = visual_ml_trainer.mltask.get_trained_models_ids()[0]
-        model_retriever = VisualMLModelRetriver(full_model_id)
-        relativities_calculator = RelativitiesCalculator(
-            data_handler,
-            model_retriever
-        )
     
         
 def setup_cache():

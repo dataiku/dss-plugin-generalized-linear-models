@@ -7,7 +7,6 @@ class rebase_mode():
     def __init__(self, config):
         self.mode_column = config["base_level"]
     def fit(self, series):
-        # identify the mode of the column, returns as a text value
         self.modalities = np.unique(series)
         self.columns = set(self.modalities)
         self.columns = list(self.columns)
@@ -25,3 +24,16 @@ class rebase_mode():
                 df[c] = 0
         df = df[self.columns]
         return df
+
+class save_base():
+    """This processor applies no transformation but saves a base level
+    """
+    def __init__(self, config):
+        self.mode_column = config["base_level"]
+        self.modalities = None  # Initialize modalities here
+
+    def fit(self, series):
+        self.modalities = np.unique(series)
+
+    def transform(self, series):
+        return pd.DataFrame(series)
