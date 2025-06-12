@@ -6,6 +6,31 @@ class ModelCache(ModelConformityChecker):
         super().__init__()
         self.cache = {}
 
+    def add_model_object(self, 
+                        model_id,
+                        model_object_key, 
+                        model_object_value
+                        ):
+        """
+        Add a model object to the cache.
+
+        Parameters:
+        model_name (str): The name of the model.
+        model_object_key: The model object key to be cached.
+        model_object_value: The model object key to be cached.
+        """
+        
+        is_conform = self.check_model_conformity(model_id)
+        
+        if is_conform:
+            if model_id in self.cache.keys():
+                self.cache[model_id][model_object_key] = model_object_value
+            else:
+                self.cache[model_id] = {model_object_key: model_object_value}
+            logger.info(f"Model Object '{model_object_key}' for '{model_id}' added to cache.")
+        else:
+            logger.info(f"Model '{model_id}' does not conform, not added to cache")
+
     def add_model(self, 
                   model_id, 
                   relativities, 
