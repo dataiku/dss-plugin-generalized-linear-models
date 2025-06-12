@@ -17,6 +17,7 @@ from chart_formatters.lift_chart import LiftChartFormatter
 from .api_utils import calculate_base_levels
 from backend.dataiku_api import dataiku_api
 from model_cache.model_cache import ModelCache
+from chart_formatters.variable_level_stats import VariableLevelStatsFormatter
 
 visual_ml_trainer = model_deployer =relativities_calculator = None
 is_local = False
