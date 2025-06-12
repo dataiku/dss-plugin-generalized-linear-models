@@ -6,13 +6,6 @@
                     <img :src="tabInfo.icon" :alt="`${tabInfo.name} Icon`" />
                 </BsTabIcon>
                 <BsHeader>
-                    <!-- <template #content>
-                        <Header
-                            :target="tabInfo.headerInfo.target"
-                            :target-date="tabInfo.headerInfo.targetDate"
-                            :target-type="tabInfo.headerInfo.targetType"
-                        ></Header>
-                    </template> -->
                     <template #documentation>
                         <CustomDocumentation></CustomDocumentation>
                     </template>
@@ -51,8 +44,23 @@
 </template>
 
 <script lang="ts">
-import ModelVisualizationTabContent from './components/ModelVisualizationTabContent.vue';
-import ModelVisualizationTabDrawer from './components/ModelVisualizationTabDrawer.vue';
+// --- DELETED ---
+// import ModelVisualizationTabContent from './components/ModelVisualizationTabContent.vue';
+// import ModelVisualizationTabDrawer from './components/ModelVisualizationTabDrawer.vue';
+// --- DELETED ---
+
+// --- ADDED ---
+// Import the new drawer components you will create in Step 2
+import OneWayVariableTabDrawer from './components/OneWayVariableTabDrawer.vue';
+import VariableLevelStatsTabDrawer from './components/VariableLevelStatsTabDrawer.vue';
+import LiftChartTabDrawer from './components/LiftChartTabDrawer.vue';
+
+// Import the content components that were previously sub-tabs
+import OneWayTabContent from './components/OneWayTabContent.vue';
+import VariableLevelStatsTabContent from './components/VariableLevelStatsTabContent.vue';
+import LiftChartTabContent from './components/LiftChartTabContent.vue';
+// --- ADDED ---
+
 import ModelTrainingTabDrawer from './components/ModelTrainingTabDrawer.vue'
 import ModelTrainingTabContent from './components/ModelTrainingTabContent.vue'
 import EmptyState from './components/EmptyState.vue';
@@ -62,12 +70,28 @@ import { defineComponent } from "vue";
 import { useModelStore } from "./stores/webapp";
 import oneWayIcon from "./assets/images/one-way.svg";
 import trainingIcon from "./assets/images/training.svg";
+// NOTE: You may want to add new icons for the other tabs
+import statsIcon from "./assets/images/variable-level-stats.svg"; // Example: create this icon
+import liftIcon from "./assets/images/lift-chart.svg";   // Example: create this icon
+
 import { useLoader } from "./composables/use-loader";
 
 export default defineComponent({
     components: {
-      ModelVisualizationTabContent,
-      ModelVisualizationTabDrawer,
+      // --- REMOVED ---
+      // ModelVisualizationTabContent,
+      // ModelVisualizationTabDrawer,
+      // --- REMOVED ---
+      
+      // --- ADDED ---
+      OneWayVariableTabDrawer,
+      VariableLevelStatsTabDrawer,
+      LiftChartTabDrawer,
+      OneWayTabContent,
+      VariableLevelStatsTabContent,
+      LiftChartTabContent,
+      // --- ADDED ---
+
       EmptyState,
       ModelTrainingTabDrawer,
       ModelTrainingTabContent,
@@ -82,6 +106,7 @@ export default defineComponent({
     },
     computed: {
     tabs() {
+            // Updated tabs array with 4 main tabs
             return [
                 {
                     name: "Model Training",
@@ -99,18 +124,56 @@ export default defineComponent({
                     }
                 },
                 {
-                    name: "Model Visualization",
+                    name: "One-Way Variable",
                     docTitle: "GLM Hub",
                     icon: oneWayIcon,
-                    drawerComponent: "ModelVisualizationTabDrawer",
-                    contentComponent: "ModelVisualizationTabContent",
-                    contentProps: {},
+                    drawerComponent: "OneWayVariableTabDrawer", // New Drawer
+                    contentComponent: "OneWayTabContent",     // Existing Content
+                    contentProps: { // Pass all necessary props to the content component
+                        'chart-data': this.store.chartData,
+                        'chart-data2': this.store.chartData2,
+                        'selected-variable': this.store.selectedVariable,
+                        relativities: this.store.relativities,
+                        'relativities-columns': this.store.relativitiesColumns
+                    },
                     drawerProps: {},
-                    showEmptyState: !this.store.chartData,
+                    showEmptyState: !this.store.selectedModelString,
                     emptyState: {
-                        title: "Model Visualization",
-                        subtitle:
-                            "Select a model and variable in the left menu",
+                        title: "One-Way Variable Analysis",
+                        subtitle: "Select a model in the left menu to begin",
+                    }
+                },
+                {
+                    name: "Variable-Level Stats",
+                    docTitle: "GLM Hub",
+                    icon: statsIcon, // Use a new or existing icon
+                    drawerComponent: "VariableLevelStatsTabDrawer", // New Drawer
+                    contentComponent: "VariableLevelStatsTabContent", // Existing Content
+                    contentProps: {
+                        'variable-level-stats-data': this.store.variableLevelStatsData,
+                        columns: this.store.variableLevelStatsColumns
+                    },
+                    drawerProps: {},
+                    showEmptyState: !this.store.selectedModelString,
+                    emptyState: {
+                        title: "Variable-Level Statistics",
+                        subtitle: "Select a model in the left menu to view its stats",
+                    }
+                },
+                {
+                    name: "Lift Chart",
+                    docTitle: "GLM Hub",
+                    icon: liftIcon, // Use a new or existing icon
+                    drawerComponent: "LiftChartTabDrawer", // New Drawer
+                    contentComponent: "LiftChartTabContent", // Existing Content
+                    contentProps: {
+                        'chart-data': this.store.liftChartData
+                    },
+                    drawerProps: {},
+                    showEmptyState: !this.store.selectedModelString,
+                    emptyState: {
+                        title: "Lift Chart Analysis",
+                        subtitle: "Select a model in the left menu to generate a lift chart",
                     }
                 }
               ]
@@ -150,20 +213,17 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-
+/* Your existing styles remain unchanged */
 body,
 div {
     color: var(--text-and-icons-bs-color-text, #333e48);
 }
-
 :deep(.toggle-left-button) {
     display: none;
 }
-
 header {
   line-height: 1.5;
 }
-
 .tab-content {
   padding-left: 0px;
   padding-right: 0px;
@@ -173,23 +233,19 @@ header {
   gap: var(--bs-spacing-13, 52px);
   min-height: 350px;
 }
-
 .logo {
   display: block;
   margin: 0 auto 2rem;
 }
-
 @media (min-width: 1024px) {
   header {
     display: flex;
     place-items: center;
     padding-right: calc(var(--section-gap) / 2);
   }
-
   .logo {
     margin: 0 2rem 0 0;
   }
-
   header .wrapper {
     display: flex;
     place-items: flex-start;
