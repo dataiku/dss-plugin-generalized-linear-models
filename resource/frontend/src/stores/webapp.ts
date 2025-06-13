@@ -105,7 +105,7 @@ export const useModelStore = defineStore("GLMStore", {
       },
       async updateTrainTest(value: boolean) {
         this.trainTest = value;
-        const modelTrainPoint = {id: this.activeModel.id, name: this.activeModel.name, trainTest: this.trainTest};
+        const modelTrainPoint = {id: this.activeModel.id, name: this.activeModel.name, trainTest: this.trainTest, variable: this.selectedVariable.variable, rescale: this.rescale};
         const dataResponse = await API.getData(modelTrainPoint);
         this.allData = dataResponse?.data;
         const modelLiftPoint = { nbBins: this.nbBins, id: modelTrainPoint.id, name: modelTrainPoint.name, trainTest: this.trainTest};
@@ -124,9 +124,9 @@ export const useModelStore = defineStore("GLMStore", {
                 } else {
                   this.variablePoints = variableResponse?.data;
                   this.allVariables = this.variablePoints.map(item => item.variable);
-                  const modelTrainPoint = {id: model.id, name: model.name, trainTest: this.trainTest};
-                  const dataResponse = await API.getData(modelTrainPoint);
-                  this.allData = dataResponse?.data;
+                  // const modelTrainPoint = {id: model.id, name: model.name, trainTest: this.trainTest, variable: this.selectedVariable.variable, rescale: this.rescale};
+                  // const dataResponse = await API.getData(modelTrainPoint);
+                  // this.allData = dataResponse?.data;
                   const relativityResponse = await API.getRelativities(model);
                   this.relativitiesData = relativityResponse?.data;
                   this.selectedModelString = value;
@@ -158,9 +158,9 @@ export const useModelStore = defineStore("GLMStore", {
                 this.selectedVariable = {} as VariablePoint;
                 const model = this.models.filter( (v: ModelPoint) => v.name==value)[0];
                 this.comparedModel = model;
-                const modelTrainPoint = {id: model.id, name: model.name, trainTest: this.trainTest};
-                const dataResponse = await API.getData(modelTrainPoint);
-                this.allData2 = dataResponse?.data;
+                // const modelTrainPoint = {id: model.id, name: model.name, trainTest: this.trainTest, variable: this.selectedVariable.variable, rescale: this.rescale};
+                // const dataResponse = await API.getData(modelTrainPoint);
+                // this.allData2 = dataResponse?.data;
                 const relativityResponse = await API.getRelativities(model);
                 this.relativitiesData2 = relativityResponse?.data;
                 this.selectedModelString2 = value;
@@ -189,6 +189,10 @@ export const useModelStore = defineStore("GLMStore", {
         const relativity = {'class': point.category, 'relativity': Math.round(point.relativity*1000)/1000};
         return relativity
       })
+          const model = this.models.filter( (v: ModelPoint) => v.name==this.selectedModelString)[0];
+          const modelTrainPoint = {id: model.id, name: model.name, trainTest: this.trainTest, variable: this.selectedVariable.variable, rescale: this.rescale};
+          const dataResponse = await API.getData(modelTrainPoint);
+          this.allData = dataResponse?.data;
       if (this.rescale) {
           const baseCategory = this.baseValues1.find(item => item.variable === this.selectedVariable.variable);
           if (baseCategory) {
@@ -210,6 +214,10 @@ export const useModelStore = defineStore("GLMStore", {
             this.chartData = this.allData.filter(item => item.definingVariable === this.selectedVariable.variable);
           }
           if (this.selectedModelString2) {
+            const model = this.models.filter( (v: ModelPoint) => v.name==this.selectedModelString2)[0];
+            const modelTrainPoint = {id: model.id, name: model.name, trainTest: this.trainTest, variable: this.selectedVariable.variable, rescale: this.rescale};
+            const dataResponse = await API.getData(modelTrainPoint);
+            this.allData2 = dataResponse?.data;
             const baseCategory2 = this.baseValues2.find(item => item.variable === this.selectedVariable.variable);
             if (baseCategory2) {
             const baseData2 = this.allData2.find(item => item.Category === baseCategory2.base_level && item.definingVariable === this.selectedVariable.variable);
