@@ -7,8 +7,8 @@ class ModelCache(ModelConformityChecker):
         self.cache = {}
 
     def add_model_object(self, 
-                        model_id,
-                        model_object_key, 
+                        model_id: str,
+                        model_object_key: str, 
                         model_object_value
                         ):
         """
@@ -30,41 +30,30 @@ class ModelCache(ModelConformityChecker):
             logger.info(f"Model Object '{model_object_key}' for '{model_id}' added to cache.")
         else:
             logger.info(f"Model '{model_id}' does not conform, not added to cache")
-
-    def add_model(self, 
-                  model_id, 
-                  relativities, 
-                  relativities_interaction,
-                  predicted_and_base, 
-                  base_values,
-                  relativities_dict,
-                  lift_chart_data,
-                  variable_stats
-                 ):
+    
+    def get_or_create_cached_item(self, model_id: str, model_object_key: str, creation_func, *args, **kwargs):
         """
-        Add a model to the cache.
+        Generic function to retrieve an item from the cache or create it if it doesn't exist.
 
-        Parameters:
-        model_name (str): The name of the model.
-        model: The model object to be cached.
+        :param model_id: The ID of the model.
+        :param item_key: The key for the object within the model's cache (e.g., 'train_set').
+        :param creation_func: A function to call to create the item if not found.
         """
-        
-        is_conform = self.check_model_conformity(model_id)
-        
-        if is_conform:
-            self.cache[model_id] = {
-                        'relativities': relativities,
-                        'relativities_interaction': relativities_interaction,
-                        'predicted_and_base': predicted_and_base,
-                        'base_values': base_values,
-                        'relativities_dict': relativities_dict,
-                        'lift_chart_data':lift_chart_data,
-                        'variable_stats':variable_stats,
-                    }
-            logger.info(f"Model '{model_id}' added to cache.")
-        else:
-            logger.info(f"Model '{model_id}' does not conform, not added to cache")
 
+        if model_id not in self.list_models():
+            logger.info(f"Cache miss for model '{model_id}'. Creating new entry.")
+            model_object_value = creation_func(*args, **kwargs)
+            self.add_model_object(model_id, model_object_key, model_object_value)
+
+        model_data = self.get_model(model_id)
+        if model_object_key not in model_data:
+            logger.info(f"Cache miss for item '{model_object_key}' in model '{model_id}'. Creating.")
+            model_object_value = creation_func(*args, **kwargs)
+            self.add_model_object(model_id, model_object_key, model_object_value)
+        
+        logger.info(f"Cache hit for item '{model_object_key}' in model '{model_id}'.")
+        return model_data.get(model_object_key)
+    
     def get_model(self, model_name):
         """
         Retrieve a model from the cache.
@@ -81,7 +70,7 @@ class ModelCache(ModelConformityChecker):
         else:
             print(f"Model '{model_name}' not found in cache.")
             return None
-
+    
     def model_exists(self, model_name):
         """
         Check if a model exists in the cache.
@@ -115,3 +104,4 @@ class ModelCache(ModelConformityChecker):
         A list of model names.
         """
         return list(self.cache.keys())
+    

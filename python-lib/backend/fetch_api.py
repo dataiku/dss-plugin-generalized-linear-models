@@ -14,7 +14,7 @@ import numpy as np
 import time
 from dataiku.customwebapp import get_webapp_config
 from chart_formatters.lift_chart import LiftChartFormatter
-from .api_utils import calculate_base_levels
+from .api_utils import calculate_base_levels, get_model_train_set, get_model_test_set, get_model_predicted_base, get_model_base_values_modalities_types, get_model_relativities, get_model_relativities_interaction, get_model_variable_level_stats
 from backend.dataiku_api import dataiku_api
 from model_cache.model_cache import ModelCache
 from chart_formatters.variable_level_stats import VariableLevelStatsFormatter
@@ -174,7 +174,11 @@ def get_data():
         variable = request_json['variable']
 
         current_app.logger.info(f"Model ID received: {full_model_id}")
-        predicted_base_variable = get_model_predicted_base(full_model_id, variable)
+        creation_args = {"data_handler": data_handler,
+                        "model_cache": model_cache,
+                        "full_model_id": full_model_id,
+                        "variable": variable}
+        predicted_base_variable = model_cache.get_or_create_cached_item(full_model_id, f'predicted_base_variable_{variable}', get_model_predicted_base, **creation_args)
         predicted_base_variable = predicted_base_variable[predicted_base_variable['dataset']==dataset]
         
         current_app.logger.info(f"Successfully generated predictions. Sample is {predicted_base_variable}")
@@ -184,38 +188,6 @@ def get_data():
     except Exception as e:
         current_app.logger.error(f"An error occurred while processing the request: {e}", exc_info=True)
         return jsonify({"error": "An error occurred during data processing."}), 500
-
-
-def get_model_predicted_base(full_model_id, variable):
-    
-    train_set = get_model_train_set(full_model_id)
-    test_set = get_model_test_set(full_model_id)
-    base_values = get_model_base_values(full_model_id)
-    modalities = get_model_modalities(full_model_id)
-    variable_types = get_model_variable_types(full_model_id)
-    if full_model_id in model_cache.list_models():
-        model = model_cache.get_model(full_model_id)
-        if 'predicted_and_base' in model.keys():
-            predicted_base = model.get('predicted_and_base')
-            if variable in predicted_base.keys():
-                predicted_base_variable = predicted_base.get(variable)
-            else:
-                model_retriever = VisualMLModelRetriver(full_model_id)
-                relativities_calculator = RelativitiesCalculator(data_handler, model_retriever, train_set, test_set, base_values, modalities, variable_types)
-                predicted_base_variable = relativities_calculator.get_formated_predicted_base_variable(variable)
-                predicted_base[variable] = predicted_base_variable
-        else:
-            model_retriever = VisualMLModelRetriver(full_model_id)
-            relativities_calculator = RelativitiesCalculator(data_handler, model_retriever, train_set, test_set, base_values, modalities, variable_types)
-            predicted_base_variable = relativities_calculator.get_formated_predicted_base_variable(variable)
-            model_cache.add_model_object(full_model_id, 'predicted_and_base', {variable: predicted_base_variable})
-    else:
-        model_retriever = VisualMLModelRetriver(full_model_id)
-        relativities_calculator = RelativitiesCalculator(data_handler, model_retriever, train_set, test_set, base_values, modalities, variable_types)
-        predicted_base_variable = relativities_calculator.get_formated_predicted_base(variable)
-        model_cache.add_model_object(full_model_id, 'predicted_and_base', {variable: predicted_base_variable})
-    
-    return predicted_base_variable
 
 @fetch_api.route("/base_values", methods=["POST"])
 def get_base_values():
@@ -227,8 +199,10 @@ def get_base_values():
         current_app.logger.info("Running Locally")
         return jsonify(dummy_base_values)
     try:
-        
-        base_values = get_model_base_values(full_model_id)
+        creation_args = {"data_handler": data_handler,
+                        "model_cache": model_cache,
+                        "full_model_id": full_model_id}
+        base_values = model_cache.get_or_create_cached_item(full_model_id, 'base_values_modalities_types', get_model_base_values_modalities_types, **creation_args)['base_values']
         
         base_values = [{'variable': k, 'base_level': v} for k, v in base_values.items()]
 
@@ -239,47 +213,6 @@ def get_base_values():
     except Exception as e:
         current_app.logger.error(f"An error occurred while processing the request: {e}", exc_info=True)
         return jsonify({"error": "An error occurred during data processing."}), 500
-
-def get_model_base_values(full_model_id):
-    logger.info("get model base values")
-    if full_model_id in model_cache.list_models():
-        model = model_cache.get_model(full_model_id)
-        if 'base_values' in model.keys():
-            base_values = model_cache.get_model(full_model_id).get('base_values')
-        else:
-            train_set = get_model_train_set(full_model_id)
-            test_set = get_model_test_set(full_model_id)
-            model_retriever = VisualMLModelRetriver(full_model_id)
-            relativities_calculator = RelativitiesCalculator(data_handler, model_retriever, train_set, test_set)
-            base_values = relativities_calculator.get_base_values()        
-            model_cache.add_model_object(full_model_id, 'base_values', base_values)
-            model_cache.add_model_object(full_model_id, 'modalities', relativities_calculator.modalities)
-            model_cache.add_model_object(full_model_id, 'variable_types', relativities_calculator.variable_types)
-    else:
-        train_set = get_model_train_set(full_model_id)
-        test_set = get_model_test_set(full_model_id)
-        model_retriever = VisualMLModelRetriver(full_model_id)
-        relativities_calculator = RelativitiesCalculator(data_handler, model_retriever, train_set, test_set)
-        base_values = relativities_calculator.get_base_values()        
-        model_cache.add_model_object(full_model_id, 'base_values', base_values)
-        model_cache.add_model_object(full_model_id, 'modalities', relativities_calculator.modalities)
-        model_cache.add_model_object(full_model_id, 'variable_types', relativities_calculator.variable_types)
-    
-    return base_values
-
-
-def get_model_modalities(full_model_id):
-    logger.info("get model modalities")
-    model = model_cache.get_model(full_model_id)
-    modalities = model.get('modalities')
-    return modalities
-
-def get_model_variable_types(full_model_id):
-    logger.info("get model variable types")
-    model = model_cache.get_model(full_model_id)
-    variable_types = model.get('variable_types')
-    return variable_types
-
 
 @fetch_api.route("/lift_data", methods=["POST"])
 def get_lift_data():
@@ -302,9 +235,12 @@ def get_lift_data():
     lift_chart = LiftChartFormatter(
                 model_retriever,
                 data_handler
-    ) 
-    train_set = get_model_train_set(full_model_id)
-    test_set = get_model_test_set(full_model_id)
+    )
+    creation_args = {"data_handler": data_handler,
+                        "model_cache": model_cache,
+                        "full_model_id": full_model_id}
+    train_set = model_cache.get_or_create_cached_item(full_model_id, 'train_set', get_model_train_set, **creation_args)
+    test_set = model_cache.get_or_create_cached_item(full_model_id, 'test_set', get_model_test_set, **creation_args)
 
     lift_chart_data = lift_chart.get_lift_chart(nb_bins, train_set, test_set)
     
@@ -321,115 +257,15 @@ def get_relativities():
     full_model_id = request_json["id"]
     
     current_app.logger.info(f"Model ID received: {full_model_id}")
-    relativities = get_model_relativities(full_model_id)
+    creation_args = {"data_handler": data_handler,
+                        "model_cache": model_cache,
+                        "full_model_id": full_model_id}
+    relativities = model_cache.get_or_create_cached_item(full_model_id, 'relativities', get_model_relativities, **creation_args)['relativities']
     
     relativities_df = relativities.copy()
     relativities_df.columns = ['variable', 'category', 'relativity']
     current_app.logger.info(f"relativites are {relativities_df.head()}")
     return jsonify(relativities_df.to_dict('records'))
-
-def get_model_train_set(full_model_id):
-    logger.info("get model train set")
-    if full_model_id in model_cache.list_models():
-        model = model_cache.get_model(full_model_id)
-        logger.info(model.keys())
-        if 'train_set' in model.keys():
-            train_set = model_cache.get_model(full_model_id).get('train_set')
-        else:
-            model_retriever = VisualMLModelRetriver(full_model_id)
-            relativities_calculator = RelativitiesCalculator(data_handler, model_retriever)
-            train_set = relativities_calculator.train_set
-            model_cache.add_model_object(full_model_id, 'train_set', train_set)
-    else:
-        model_retriever = VisualMLModelRetriver(full_model_id)
-        relativities_calculator = RelativitiesCalculator(data_handler, model_retriever)
-        train_set = relativities_calculator.train_set
-        model_cache.add_model_object(full_model_id, 'train_set', train_set)
-    
-    return train_set
-
-
-def get_model_test_set(full_model_id):
-    logger.info("get model test set")
-    if full_model_id in model_cache.list_models():
-        model = model_cache.get_model(full_model_id)
-        if 'test_set' in model.keys():
-            test_set = model_cache.get_model(full_model_id).get('test_set')
-        else:
-            model_retriever = VisualMLModelRetriver(full_model_id)
-            relativities_calculator = RelativitiesCalculator(data_handler, model_retriever)
-            test_set = relativities_calculator.test_set
-            model_cache.add_model_object(full_model_id, 'test_set', test_set)
-    else:
-        model_retriever = VisualMLModelRetriver(full_model_id)
-        relativities_calculator = RelativitiesCalculator(data_handler, model_retriever)
-        test_set = relativities_calculator.test_set
-        model_cache.add_model_object(full_model_id, 'test_set', test_set)
-    
-    return test_set
-
-def get_model_relativities(full_model_id):
-    logger.info("get model relativities")
-    if full_model_id in model_cache.list_models():
-        model = model_cache.get_model(full_model_id)
-        if 'relativities' in model.keys():
-            relativities = model_cache.get_model(full_model_id).get('relativities')
-        else:
-            train_set = get_model_train_set(full_model_id)
-            test_set = get_model_test_set(full_model_id)
-            base_values = get_model_base_values(full_model_id)
-            modalities = get_model_modalities(full_model_id)
-            variable_types = get_model_variable_types(full_model_id)
-            model_retriever = VisualMLModelRetriver(full_model_id)
-            relativities_calculator = RelativitiesCalculator(data_handler, model_retriever, train_set, test_set, base_values=base_values, modalities=modalities, variable_types=variable_types)
-            relativities = relativities_calculator.get_relativities_df()
-            relativities_dict = relativities_calculator.relativities
-            model_cache.add_model_object(full_model_id, 'relativities', relativities)
-            model_cache.add_model_object(full_model_id, 'relativities_dict', relativities_dict)
-    else:
-        train_set = get_model_train_set(full_model_id)
-        test_set = get_model_test_set(full_model_id)
-        base_values = get_model_base_values(full_model_id)
-        modalities = get_model_modalities(full_model_id)
-        variable_types = get_model_variable_types(full_model_id)
-        model_retriever = VisualMLModelRetriver(full_model_id)
-        relativities_calculator = RelativitiesCalculator(data_handler, model_retriever, train_set, test_set, base_values=base_values, modalities=modalities, variable_types=variable_types)
-        relativities = relativities_calculator.get_relativities_df()
-        model_cache.add_model_object(full_model_id, 'relativities', relativities)
-        relativities_dict = relativities_calculator.relativities
-        model_cache.add_model_object(full_model_id, 'relativities_dict', relativities_dict)
-    
-    return relativities
-
-
-def get_model_relativities_interaction(full_model_id):
-    if full_model_id in model_cache.list_models():
-        model = model_cache.get_model(full_model_id)
-        if 'relativities_interaction' in model.keys():
-            relativities_interaction = model_cache.get_model(full_model_id).get('relativities_interaction')
-        else:
-            train_set = get_model_train_set(full_model_id)
-            test_set = get_model_test_set(full_model_id)
-            base_values = get_model_base_values(full_model_id)
-            modalities = get_model_modalities(full_model_id)
-            variable_types = get_model_variable_types(full_model_id)
-            model_retriever = VisualMLModelRetriver(full_model_id)
-            relativities_calculator = RelativitiesCalculator(data_handler, model_retriever, train_set, test_set, base_values=base_values, modalities=modalities, variable_types=variable_types)
-            relativities_interaction = relativities_calculator.get_relativities_interactions_df()
-            model_cache.add_model_object(full_model_id, 'relativities_interaction', relativities_interaction)
-    else:
-        train_set = get_model_train_set(full_model_id)
-        test_set = get_model_test_set(full_model_id)
-        base_values = get_model_base_values(full_model_id)
-        modalities = get_model_modalities(full_model_id)
-        variable_types = get_model_variable_types(full_model_id)
-        model_retriever = VisualMLModelRetriver(full_model_id)
-        relativities_calculator = RelativitiesCalculator(data_handler, model_retriever, train_set, test_set, base_values=base_values, modalities=modalities, variable_types=variable_types)
-        relativities_interaction = relativities_calculator.get_relativities_interactions_df()
-        model_cache.add_model_object(full_model_id, 'relativities_interaction', relativities_interaction)
-    
-    return relativities_interaction
-
 
 @fetch_api.route("/get_variable_level_stats", methods=["POST"])
 def get_variable_level_stats():
@@ -441,41 +277,12 @@ def get_variable_level_stats():
     full_model_id = request_json["id"]
     current_app.logger.info(f"for Model ID: {full_model_id}")
 
-    variable_stats = get_model_variable_stats(full_model_id)
+    creation_args = {"data_handler": data_handler,
+                        "model_cache": model_cache,
+                        "full_model_id": full_model_id}
+    variable_stats = model_cache.get_or_create_cached_item(full_model_id, 'variable_level_stats', get_model_variable_level_stats, **creation_args)
     
     return jsonify(variable_stats.to_dict('records'))
-
-def get_model_variable_stats(full_model_id):
-    
-    if full_model_id in model_cache.list_models():
-        model = model_cache.get_model(full_model_id)
-        if 'variable_stats' in model.keys():
-            variable_stats = model_cache.get_model(full_model_id).get('variable_stats')
-        else:
-            train_set = get_model_train_set(full_model_id)
-            test_set = get_model_test_set(full_model_id)
-            model_retriever = VisualMLModelRetriver(full_model_id)
-            relativities = get_model_relativities(full_model_id)
-            relativities_interaction = get_model_relativities_interaction(full_model_id)
-            base_values = get_model_base_values(full_model_id)
-            variable_level_stats = VariableLevelStatsFormatter(model_retriever, data_handler, relativities, relativities_interaction, base_values, train_set, test_set)
-            variable_stats = variable_level_stats.get_variable_level_stats()
-            model_cache.add_model_object(full_model_id, 'variable_stats', variable_stats)
-    else:
-        train_set = get_model_train_set(full_model_id)
-        test_set = get_model_test_set(full_model_id)
-        model_retriever = VisualMLModelRetriver(full_model_id)
-        relativities = get_model_relativities(full_model_id)
-        relativities_interaction = get_model_relativities_interaction(full_model_id)
-        base_values = get_model_base_values(full_model_id)
-        variable_level_stats = VariableLevelStatsFormatter(model_retriever, data_handler, relativities, relativities_interaction, base_values, train_set, test_set)
-        variable_stats = variable_level_stats.get_variable_level_stats()
-        model_cache.add_model_object(full_model_id, 'variable_stats', variable_stats)
-        
-    return variable_stats
-
-
-
 
 @fetch_api.route("/get_model_comparison_data", methods=["POST"])
 def get_model_comparison_data():
@@ -493,12 +300,20 @@ def get_model_comparison_data():
         dataset = 'test' if train_test else 'train'
 
         current_app.logger.info(f"Retrieving {model1} from the cache")
-        model_1_predicted_base = get_model_predicted_base(model1, variable)
+        creation_args = {"data_handler": data_handler,
+                        "model_cache": model_cache,
+                        "full_model_id": model1,
+                        "variable": variable}
+        model_1_predicted_base = model_cache.get_or_create_cached_item(model1, f'predicted_base_variable_{variable}', get_model_predicted_base, **creation_args)
         model_1_predicted_base = model_1_predicted_base[model_1_predicted_base['dataset']==dataset]
         current_app.logger.info(f"Successfully retrieved {model1} from the cache")
         
         current_app.logger.info(f"Retrieving {model2} from the cache")
-        model_2_predicted_base = get_model_predicted_base(model2, variable)
+        creation_args = {"data_handler": data_handler,
+                        "model_cache": model_cache,
+                        "full_model_id": model2,
+                        "variable": variable}
+        model_2_predicted_base = model_cache.get_or_create_cached_item(model2, f'predicted_base_variable_{variable}', get_model_predicted_base, **creation_args)
         model_2_predicted_base = model_2_predicted_base[model_2_predicted_base['dataset']==dataset]
         current_app.logger.info(f"Successfully retrieved {model2} from the cache")
         model_1_predicted_base = model_1_predicted_base.rename(columns={
@@ -563,6 +378,10 @@ def export_model():
                 current_app.logger.error("error: Model ID not provided")
 
             relativities_dict = model_cache.get_model(model).get('relativities_dict')
+            creation_args = {"data_handler": data_handler,
+                            "model_cache": model_cache,
+                            "full_model_id": model}
+            relativities_dict = model_cache.get_or_create_cached_item(model, 'relativities', get_model_relativities, **creation_args)['relativities_dict']
             if not relativities_dict:
                 current_app.logger.error("error: Model Cache not found for {model} cache only has {model_cache.keys()}")
             
@@ -587,8 +406,7 @@ def export_model():
                         csv_output += ",,,"
                 csv_output += "\n"
             
-            variable_stats = get_model_variable_stats(model)
-            relativities_interaction = get_model_relativities_interaction(model)
+            relativities_interaction = model_cache.get_or_create_cached_item(model, 'relativities_interaction', get_model_relativities_interaction, **creation_args)
             
             if len(relativities_interaction) > 0:
                 unique_interactions = relativities_interaction.groupby(['feature_1', 'feature_2']).count().reset_index()
@@ -635,8 +453,10 @@ def export_variable_level_stats():
             full_model_id = request_json["id"]
             
             current_app.logger.info(f"Model ID received: {full_model_id}")
-
-            df = get_model_variable_stats(full_model_id)
+            creation_args = {"data_handler": data_handler,
+                            "model_cache": model_cache,
+                            "full_model_id": model}
+            df = model_cache.get_or_create_cached_item(full_model_id, 'variable_level_stats', get_model_variable_level_stats, **creation_args)
             df.columns = ['variable', 'value', 'relativity', 'coefficient', 'standard_error', 'standard_error_pct', 'weight', 'weight_pct']
 
             csv_data = df.to_csv(index=False).encode('utf-8')
@@ -674,11 +494,18 @@ def export_one_way():
             current_app.logger.info(f"Train/Test received: {dataset}")
             current_app.logger.info(f"Rescale received: {rescale}")
 
-            predicted_base = get_model_predicted_base(full_model_id, variable)
+            creation_args = {"data_handler": data_handler,
+                            "model_cache": model_cache,
+                            "full_model_id": full_model_id, 
+                            "variable": variable}
+            predicted_base = model_cache.get_or_create_cached_item(full_model_id, f'predicted_base_variable_{variable}', get_model_predicted_base, **creation_args)
             predicted_base = predicted_base[predicted_base['dataset']==dataset]
 
             if rescale:
-                base_values = get_model_base_values(full_model_id)
+                creation_args = {"data_handler": data_handler,
+                            "model_cache": model_cache,
+                            "full_model_id": full_model_id}
+                base_values = model_cache.get_or_create_cached_item(full_model_id, 'base_values_modalities_types', get_model_base_values_modalities_types, **creation_args)['base_values']
                 predicted_base_denominator = predicted_base[predicted_base['Category']==base_values[variable]].iloc[0]
                 predicted_base['observedAverage'] = predicted_base['observedAverage'] / predicted_base_denominator['observedAverage']
                 predicted_base['fittedAverage'] = predicted_base['fittedAverage'] / predicted_base_denominator['fittedAverage']
