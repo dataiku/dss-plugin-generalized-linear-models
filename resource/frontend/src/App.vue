@@ -213,43 +213,28 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-/* Your existing styles remain unchanged */
+/* General text color for the component */
 body,
 div {
     color: var(--text-and-icons-bs-color-text, #333e48);
 }
+
+/* This likely hides a button in the child BsLayoutDefault component */
 :deep(.toggle-left-button) {
     display: none;
 }
+
+/* Basic styling for the <BsHeader> component's rendered <header> element */
 header {
   line-height: 1.5;
 }
-.tab-content {
-  padding-left: 0px;
-  padding-right: 0px;
-  padding-top: 20px;
-  display: flex;
-  align-items: center;
-  gap: var(--bs-spacing-13, 52px);
-  min-height: 350px;
-}
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
+
+/* Responsive styling for the header on larger screens */
 @media (min-width: 1024px) {
   header {
     display: flex;
-    place-items: center;
+    /* The var() here might be from a global stylesheet */
     padding-right: calc(var(--section-gap) / 2);
-  }
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
   }
 }
 </style>

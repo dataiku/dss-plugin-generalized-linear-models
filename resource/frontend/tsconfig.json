@@ -1,23 +1,21 @@
 {
-  "extends": "@vue/tsconfig/tsconfig.web.json",
-  "include": ["env.d.ts", "src/**/*", "src/**/*.vue"],
   "compilerOptions": {
     "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    },
-    "types": ["quasar-ui-bs/dist/types/volar"],
-    "lib": [
-      "ES2019",
-      "DOM",
-      "DOM.Iterable"
-    ],
-    "ignoreDeprecations": "5.0"
+    "allowJs": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "forceConsistentCasingInFileNames": true,
+    "sourceMap": true,
+    "strict": true,
+    "target": "es6",
+    "jsx": "preserve",
+    "types": [
+      "quasar-ui-bs/dist/types/volar",
+      "vite/client"
+    ]
   },
-
-  "references": [
-    {
-      "path": "./tsconfig.node.json"
-    }
-  ]
+  "exclude": ["dist", ".quasar", "node_modules"]
 }
