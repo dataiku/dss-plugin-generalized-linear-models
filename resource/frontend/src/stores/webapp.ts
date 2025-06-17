@@ -85,14 +85,15 @@ export const useModelStore = defineStore("GLMStore", {
     }),
     actions: {
       async sendWebappId() {
-        const iframes = window.parent.document.getElementsByTagName('iframe');
-        const url = iframes[0].src;
-        const urlParams = new URLSearchParams(new URL(url).search);
-        const webAppId = urlParams.get('webAppId');
-        if (webAppId === null) {
-          throw new Error('WebAppId not found in URL');
-        }
-        await API.sendWebappId({"webAppId": webAppId});
+        // TODO: uncomment
+        // const iframes = window.parent.document.getElementsByTagName('iframe');
+        // const url = iframes[0].src;
+        // const urlParams = new URLSearchParams(new URL(url).search);
+        // const webAppId = urlParams.get('webAppId');
+        // if (webAppId === null) {
+        //   throw new Error('WebAppId not found in URL');
+        // }
+        // await API.sendWebappId({"webAppId": webAppId});
       },
       async loadModels() {
         try {
@@ -124,9 +125,6 @@ export const useModelStore = defineStore("GLMStore", {
                 } else {
                   this.variablePoints = variableResponse?.data;
                   this.allVariables = this.variablePoints.map(item => item.variable);
-                  // const modelTrainPoint = {id: model.id, name: model.name, trainTest: this.trainTest, variable: this.selectedVariable.variable, rescale: this.rescale};
-                  // const dataResponse = await API.getData(modelTrainPoint);
-                  // this.allData = dataResponse?.data;
                   const relativityResponse = await API.getRelativities(model);
                   this.relativitiesData = relativityResponse?.data;
                   this.selectedModelString = value;
@@ -158,9 +156,6 @@ export const useModelStore = defineStore("GLMStore", {
                 this.selectedVariable = {} as VariablePoint;
                 const model = this.models.filter( (v: ModelPoint) => v.name==value)[0];
                 this.comparedModel = model;
-                // const modelTrainPoint = {id: model.id, name: model.name, trainTest: this.trainTest, variable: this.selectedVariable.variable, rescale: this.rescale};
-                // const dataResponse = await API.getData(modelTrainPoint);
-                // this.allData2 = dataResponse?.data;
                 const relativityResponse = await API.getRelativities(model);
                 this.relativitiesData2 = relativityResponse?.data;
                 this.selectedModelString2 = value;

@@ -20,7 +20,7 @@ from model_cache.model_cache import ModelCache
 from chart_formatters.variable_level_stats import VariableLevelStatsFormatter
 
 visual_ml_trainer = model_deployer =relativities_calculator = None
-is_local = False
+is_local = True
 
 logger.debug(f"Starting web application with is_local: {is_local}")
 

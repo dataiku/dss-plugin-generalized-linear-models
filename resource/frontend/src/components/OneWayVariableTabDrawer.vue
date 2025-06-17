@@ -13,11 +13,34 @@
         
         <BsLabel v-if="store.selectedModelString" label="Select a Variable" info-text="Charts will be generated with respect to this variable" />
         <BsSelect
+              v-if="store.selectedModelString"
+                  v-model="store.selectedVariable"
+                  :all-options="store.variablePoints"
+                  @update:modelValue="updateVariable">
+                  <template v-slot:selected-item="scope">
+                    <q-item v-if="scope.opt">
+                      {{ store.selectedVariable.variable }}
+                    </q-item>
+                </template>
+                      <template #option="props">
+                          <q-item v-if="props.opt.isInModel || store.includeSuspectVariables" v-bind="props.itemProps" clickable>
+                              <q-item-section side>
+                                <div v-if="props.opt.isInModel">selected</div>
+                                <div v-else>unselected</div>
+                              </q-item-section>
+                            <q-item-section class="bs-font-medium-2-normal">
+                                {{ props.opt.variable }}
+                            </q-item-section>
+                          </q-item>
+                    </template>
+              </BsSelect>
+
+        <!-- <BsSelect
             v-if="store.selectedModelString"
             v-model="selectedVariable"
             :all-options="store.variablePoints"
             @update:modelValue="updateVariable">
-            </BsSelect>
+            </BsSelect> -->
         
         <BsCheckbox v-if="store.selectedModelString" v-model="store.rescale" @update:modelValue="updateRescale" label="Rescale?" />
         
@@ -39,38 +62,34 @@
     </template>
     
     <script lang="ts">
-    // Script content is almost identical to ModelVisualizationDrawer.vue
-    // We remove logic for other tabs like nbBins for lift chart.
     import { defineComponent } from "vue";
     import { useModelStore } from "../stores/webapp";
     import type { VariablePoint } from '../models';
     import { useLoader } from "../composables/use-loader";
     import { useNotification } from "../composables/use-notification";
-    import { BsButton, BsCheckbox, BsToggle } from "quasar-ui-bs";
     
     export default defineComponent({
-        // Props and emits can remain if needed
         emits: ["update:loading"],
         data() {
             return {
                 store: useModelStore(),
-                selectedVariable: {} as VariablePoint,
                 loading: false as boolean
             };
         },
         watch: {
-          loading(newVal) { this.$emit("update:loading", newVal); },
-          selectedVariable(newValue: VariablePoint) {
-            this.loading = true;
-            this.store.selectedVariable = newValue;
-            this.store.updateChartData();
-            this.loading = false;
-          },
+          loading(newVal: any) { this.$emit("update:loading", newVal); },
+          // selectedVariable(newValue: VariablePoint) {
+          //   this.loading = true;
+          //   this.store.selectedVariable = newValue;
+          //   this.store.updateChartData();
+          //   this.loading = false;
+          // },
         },
         methods: {
             async updateVariable(value: VariablePoint) {
               this.loading = true;
               this.store.selectedVariable = value;
+              await this.store.updateChartData();
               this.loading = false;
             },
             async updateTrainTest(value: boolean) {

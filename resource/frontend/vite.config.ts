@@ -12,6 +12,20 @@ const config = defineConfig({
       template: { transformAssetUrls },
     })
   ],
+  css: {
+    preprocessorOptions: {
+      scss: {
+        additionalData: `@use "quasar/src/css/index.sass" as *;`,
+        quietDeps: true,
+        silenceDeprecations: ['legacy-js-api', 'slash-div']
+
+      },
+      sass: {
+        quietDeps: true,
+        silenceDeprecations: ['legacy-js-api', 'slash-div']
+      },
+    },
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))

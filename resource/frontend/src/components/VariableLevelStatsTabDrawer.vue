@@ -16,7 +16,6 @@
     import { BsLayoutDefault } from "quasar-ui-bs";
     import { defineComponent } from "vue";
     import { useModelStore } from "../stores/webapp";
-    // ... other necessary imports
     
     export default defineComponent({
         emits: ["update:loading"],
@@ -42,7 +41,8 @@
                 this.loading = false;
             },
         },
-        mounted() { /* ... loadModels ... */ }
+        mounted() { 
+         }
     })
     </script>
     

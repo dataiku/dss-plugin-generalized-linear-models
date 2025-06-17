@@ -32,7 +32,7 @@ import BarChart from './BarChart.vue'
 import DocumentationContent from './DocumentationContent.vue'
 import EmptyState from './EmptyState.vue';
 import * as echarts from "echarts";
-import type { DataPoint, ModelPoint, RelativityPoint, VariablePoint, ModelVariablePoint } from '../models';
+import type { DataPoint, VariablePoint } from '../models';
 import { isErrorPoint } from '../models';
 import { defineComponent } from "vue";
 import type {PropType} from "vue";
