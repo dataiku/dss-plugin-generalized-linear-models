@@ -19,8 +19,7 @@ from backend.dataiku_api import dataiku_api
 from model_cache.model_cache import ModelCache
 from chart_formatters.variable_level_stats import VariableLevelStatsFormatter
 
-visual_ml_trainer = model_deployer =relativities_calculator = None
-is_local = True
+is_local = False
 
 logger.debug(f"Starting web application with is_local: {is_local}")
 
@@ -30,7 +29,6 @@ if not is_local:
     from dku_visual_ml.dku_model_retrival import VisualMLModelRetriver
     from glm_handler.dku_relativites_calculator import RelativitiesCalculator
     from glm_handler.glm_data_handler import GlmDataHandler
-    from backend.model_cache import setup_model_cache, update_model_cache
     
     visual_ml_config = DKUVisualMLConfig()
     data_handler = GlmDataHandler()
@@ -71,7 +69,6 @@ def train_model():
     global visual_ml_trainer, model_cache
     
     visual_ml_config.update_model_parameters(request.get_json())
-
 
     current_app.logger.debug("Creating Visual ML Trainer")
     visual_ml_trainer.update_visual_ml_config(visual_ml_config)
@@ -315,26 +312,6 @@ def get_lift_data():
     current_app.logger.info(f"Successfully generated Lift chart data")
     
     return jsonify(lift_chart_data.to_dict('records'))
-
-
-
-@fetch_api.route("/update_bins", methods=["POST"])
-def get_updated_data(): 
-    if is_local:
-        return jsonify(dummy_get_updated_data.to_dict('records'))
-    request_json = request.get_json()
-
-    feature = request_json["feature"]
-    nb_bins = request_json["nbBin"]
-    predicted_base = relativities_calculator.get_predicted_and_base_feature(feature, nb_bins)
-    df = predicted_base.copy()
-    df.columns = ['definingVariable', 'Category', 'observedAverage', 'fittedAverage', 'Value', 'baseLevelPrediction']
-    
-    
-    return jsonify(df.to_dict('records'))
-#     local dev
-    return jsonify(dummy_get_updated_data.to_dict('records'))
-
 
 @fetch_api.route("/relativities", methods=["POST"])
 def get_relativities():
