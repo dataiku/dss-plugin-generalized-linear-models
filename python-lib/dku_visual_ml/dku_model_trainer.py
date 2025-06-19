@@ -6,7 +6,7 @@ from dataikuapi.dss.ml import DSSMLTask
 import random
 import string
 from logging_assist.logging import logger
-from dku_visual_ml.custom_configurations import dku_dataset_selection_params, custom_base_none
+from dku_visual_ml.custom_configurations import dku_dataset_selection_params
 from dku_visual_ml.dku_base import DataikuClientProject
 from typing import List, Dict, Any
 
@@ -68,7 +68,7 @@ class VisualMLModelTrainer(DataikuClientProject):
             settings = self.mltask.get_settings()
             settings.split_params.set_split_explicit(
                 dku_dataset_selection_params, 
-                dku_dataset_selection_params, 
+                #dku_dataset_selection_params, 
                 dataset_name=self.visual_ml_config.input_dataset,
                 test_dataset_name=self.visual_ml_config.test_dataset_string)
             settings.save()

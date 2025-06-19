@@ -132,22 +132,19 @@ export let API = {
     sendWebappId: (data: any) => axios.post<number>("/api/send_webapp_id", data),
     getLatestMLTaskParams: (data:any) => axios.post<MLTaskParams>("/api/get_latest_mltask_params", data),
     getExcludedColumns: () => axios.get<ExcludedColumns>("/api/get_excluded_columns"),
-    getData: (data: ModelVariablePoint) => axios.post<DataPoint[]>("/api/data", data),
+    getPredictedBase: (data: ModelVariablePoint) => axios.post<DataPoint[]>("/api/predicted_base", data),
     getBaseValues: (data: ModelPoint) => axios.post<BaseValue[]>("/api/base_values", data),
     getLiftData: (data: ModelNbBins) => axios.post<LiftDataPoint[]>("/api/lift_data", data),
     updateData: (data: FeatureNbBin) => axios.post<DataPoint[]>("/api/update_bins", data),
     getRelativities: (data: ModelPoint) => axios.post<RelativityPoint[]>("/api/relativities", data),
     getModels: () => axios.get<ModelPoint[]>("/api/models"),
     getVariables: (data: ModelPoint) => axios.post<VariablePoint[] | ErrorPoint>("/api/variables", data),
-    getProjectDataset: () => axios.get<string[]>("/api/get_project_dataset", {}),
     getDatasetColumns: () => axios.get("/api/get_dataset_columns", {}),
-    getTrainDatasetColumnNames: () => axios.get("/api/get_train_dataset_column_names", {}),
     trainModel: (payload: any) => 
         axios.post<string[]>("/api/train_model", payload)
         .catch((error: AxiosError<ErrorResponse>) => {
             throw error;
         }),
-    getModelComparisonData: (data: any) => axios.post<ModelComparisonDataPoint[]>("/api/get_model_comparison_data", data),
     getModelMetrics: (data: any) => axios.post<ModelMetricsDataPoint>("/api/get_model_metrics", data),
     exportModel: (model: ModelPoint) => axios.post<Blob>("/api/export_model", model),
     exportVariableLevelStats: (model: ModelPoint) => axios.post<Blob>("/api/export_variable_level_stats", model),

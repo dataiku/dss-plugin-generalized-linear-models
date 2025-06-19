@@ -107,7 +107,7 @@ export const useModelStore = defineStore("GLMStore", {
       async updateTrainTest(value: boolean) {
         this.trainTest = value;
         const modelTrainPoint = {id: this.activeModel.id, name: this.activeModel.name, trainTest: this.trainTest, variable: this.selectedVariable.variable, rescale: this.rescale};
-        const dataResponse = await API.getData(modelTrainPoint);
+        const dataResponse = await API.getPredictedBase(modelTrainPoint);
         this.allData = dataResponse?.data;
         const modelLiftPoint = { nbBins: this.nbBins, id: modelTrainPoint.id, name: modelTrainPoint.name, trainTest: this.trainTest};
         const liftDataResponse = await API.getLiftData(modelLiftPoint);
@@ -186,7 +186,7 @@ export const useModelStore = defineStore("GLMStore", {
       })
           const model = this.models.filter( (v: ModelPoint) => v.name==this.selectedModelString)[0];
           const modelTrainPoint = {id: model.id, name: model.name, trainTest: this.trainTest, variable: this.selectedVariable.variable, rescale: this.rescale};
-          const dataResponse = await API.getData(modelTrainPoint);
+          const dataResponse = await API.getPredictedBase(modelTrainPoint);
           this.allData = dataResponse?.data;
       if (this.rescale) {
           const baseCategory = this.baseValues1.find(item => item.variable === this.selectedVariable.variable);
@@ -211,7 +211,7 @@ export const useModelStore = defineStore("GLMStore", {
           if (this.selectedModelString2) {
             const model = this.models.filter( (v: ModelPoint) => v.name==this.selectedModelString2)[0];
             const modelTrainPoint = {id: model.id, name: model.name, trainTest: this.trainTest, variable: this.selectedVariable.variable, rescale: this.rescale};
-            const dataResponse = await API.getData(modelTrainPoint);
+            const dataResponse = await API.getPredictedBase(modelTrainPoint);
             this.allData2 = dataResponse?.data;
             const baseCategory2 = this.baseValues2.find(item => item.variable === this.selectedVariable.variable);
             if (baseCategory2) {
