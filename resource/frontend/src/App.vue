@@ -44,13 +44,6 @@
 </template>
 
 <script lang="ts">
-// --- DELETED ---
-// import ModelVisualizationTabContent from './components/ModelVisualizationTabContent.vue';
-// import ModelVisualizationTabDrawer from './components/ModelVisualizationTabDrawer.vue';
-// --- DELETED ---
-
-// --- ADDED ---
-// Import the new drawer components you will create in Step 2
 import OneWayVariableTabDrawer from './components/OneWayVariableTabDrawer.vue';
 import VariableLevelStatsTabDrawer from './components/VariableLevelStatsTabDrawer.vue';
 import LiftChartTabDrawer from './components/LiftChartTabDrawer.vue';
@@ -70,28 +63,22 @@ import { defineComponent } from "vue";
 import { useModelStore } from "./stores/webapp";
 import oneWayIcon from "./assets/images/one-way.svg";
 import trainingIcon from "./assets/images/training.svg";
-// NOTE: You may want to add new icons for the other tabs
-import statsIcon from "./assets/images/variable-level-stats.svg"; // Example: create this icon
-import liftIcon from "./assets/images/lift-chart.svg";   // Example: create this icon
+import statsIcon from "./assets/images/variable-level-stats.svg";
+import liftIcon from "./assets/images/lift-chart.svg"; 
+import { useOneWayChartStore } from "./stores/oneWayChartStore.ts"
+import { useLiftChartStore } from "./stores/liftChartStore.ts"
+import { useVariableLevelStatsStore } from "./stores/variableLevelStatsStore.ts"
 
 import { useLoader } from "./composables/use-loader";
 
 export default defineComponent({
     components: {
-      // --- REMOVED ---
-      // ModelVisualizationTabContent,
-      // ModelVisualizationTabDrawer,
-      // --- REMOVED ---
-      
-      // --- ADDED ---
       OneWayVariableTabDrawer,
       VariableLevelStatsTabDrawer,
       LiftChartTabDrawer,
       OneWayTabContent,
       VariableLevelStatsTabContent,
       LiftChartTabContent,
-      // --- ADDED ---
-
       EmptyState,
       ModelTrainingTabDrawer,
       ModelTrainingTabContent,
@@ -101,12 +88,14 @@ export default defineComponent({
     return {
         reloadModels: false as boolean,
         store: useModelStore(),
+        oneWayStore: useOneWayChartStore(),
+        liftChartStore: useLiftChartStore(),
+        variableStatsStore: useVariableLevelStatsStore(),
         loading: false as boolean
       }
     },
     computed: {
     tabs() {
-            // Updated tabs array with 4 main tabs
             return [
                 {
                     name: "Model Training",
@@ -127,17 +116,17 @@ export default defineComponent({
                     name: "One-Way Variable",
                     docTitle: "GLM Hub",
                     icon: oneWayIcon,
-                    drawerComponent: "OneWayVariableTabDrawer", // New Drawer
-                    contentComponent: "OneWayTabContent",     // Existing Content
-                    contentProps: { // Pass all necessary props to the content component
-                        'chart-data': this.store.chartData,
-                        'chart-data2': this.store.chartData2,
-                        'selected-variable': this.store.selectedVariable,
-                        relativities: this.store.relativities,
+                    drawerComponent: "OneWayVariableTabDrawer",
+                    contentComponent: "OneWayTabContent",
+                    contentProps: {
+                        'chart-data': this.oneWayStore.primaryChartData,
+                        'chart-data2': this.oneWayStore.comparisonChartData,
+                        'selected-variable': this.oneWayStore.selectedVariable,
+                        relativities: this.oneWayStore.relativities,
                         'relativities-columns': this.store.relativitiesColumns
                     },
                     drawerProps: {},
-                    showEmptyState: !this.store.selectedModelString,
+                    showEmptyState: !this.store.activeModelName,
                     emptyState: {
                         title: "One-Way Variable Analysis",
                         subtitle: "Select a model in the left menu to begin",
@@ -150,11 +139,11 @@ export default defineComponent({
                     drawerComponent: "VariableLevelStatsTabDrawer", // New Drawer
                     contentComponent: "VariableLevelStatsTabContent", // Existing Content
                     contentProps: {
-                        'variable-level-stats-data': this.store.variableLevelStatsData,
-                        columns: this.store.variableLevelStatsColumns
+                        'variable-level-stats-data': this.variableStatsStore.modelStats,
+                        columns: this.variableStatsStore.columns
                     },
                     drawerProps: {},
-                    showEmptyState: !this.store.selectedModelString,
+                    showEmptyState: !this.store.activeModelName,
                     emptyState: {
                         title: "Variable-Level Statistics",
                         subtitle: "Select a model in the left menu to view its stats",
@@ -167,10 +156,10 @@ export default defineComponent({
                     drawerComponent: "LiftChartTabDrawer", // New Drawer
                     contentComponent: "LiftChartTabContent", // Existing Content
                     contentProps: {
-                        'chart-data': this.store.liftChartData
+                        'chart-data': this.liftChartStore.liftChartData
                     },
                     drawerProps: {},
-                    showEmptyState: !this.store.selectedModelString,
+                    showEmptyState: !this.store.activeModelName,
                     emptyState: {
                         title: "Lift Chart Analysis",
                         subtitle: "Select a model in the left menu to generate a lift chart",

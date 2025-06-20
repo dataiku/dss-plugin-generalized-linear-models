@@ -132,8 +132,6 @@
         },
       ];
 
-      console.log(this.fittedAverageLine2);
-
       if (this.fittedAverageLine2) {
         series.push({
           name: "Fitted Average 2",

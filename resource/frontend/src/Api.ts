@@ -138,7 +138,7 @@ export let API = {
     updateData: (data: FeatureNbBin) => axios.post<DataPoint[]>("/api/update_bins", data),
     getRelativities: (data: ModelPoint) => axios.post<RelativityPoint[]>("/api/relativities", data),
     getModels: () => axios.get<ModelPoint[]>("/api/models"),
-    getVariables: (data: ModelPoint) => axios.post<VariablePoint[] | ErrorPoint>("/api/variables", data),
+    getVariables: (data: ModelPoint) => axios.post<VariablePoint[]>("/api/variables", data),
     getDatasetColumns: () => axios.get("/api/get_dataset_columns", {}),
     trainModel: (payload: any) => 
         axios.post<string[]>("/api/train_model", payload)

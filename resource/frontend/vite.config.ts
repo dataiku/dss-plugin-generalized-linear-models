@@ -10,6 +10,8 @@ const config = defineConfig({
   plugins: [
     vue({
       template: { transformAssetUrls },
+    }),
+    quasar({
     })
   ],
   css: {

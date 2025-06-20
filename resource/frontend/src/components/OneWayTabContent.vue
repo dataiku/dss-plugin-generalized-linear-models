@@ -33,15 +33,9 @@ import DocumentationContent from './DocumentationContent.vue'
 import EmptyState from './EmptyState.vue';
 import * as echarts from "echarts";
 import type { DataPoint, VariablePoint } from '../models';
-import { isErrorPoint } from '../models';
 import { defineComponent } from "vue";
 import type {PropType} from "vue";
-import { API } from '../Api';
-import { useLoader } from "../composables/use-loader";
-import { useNotification } from "../composables/use-notification";
 import { BsButton, BsLayoutDefault, BsTable, BsCheckbox, BsSlider, BsToggle } from "quasar-ui-bs";
-import docLogo from "../assets/images/doc-logo-example.svg";
-import oneWayIcon from "../assets/images/one-way.svg";
 import type { QTableColumn } from 'quasar';
 
 const columns: QTableColumn[] = [
