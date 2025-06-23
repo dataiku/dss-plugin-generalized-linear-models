@@ -35,10 +35,10 @@
                         </template>
               </BsSelect>
         
-        <BsCheckbox v-if="store.activeModelName" v-model="store.rescale" label="Rescale?" />
+        <BsCheckbox v-if="store.activeModelName" v-model="oneWayStore.rescale" @update:model-value="onRescaleChange" label="Rescale?" />
         
         <BsLabel v-if="store.activeModelName" label="Run Analysis on" />
-        <BsToggle v-if="store.activeModelName" v-model="store.trainTest" labelRight="Test" labelLeft="Train" />
+        <BsToggle v-if="store.activeModelName" v-model="store.trainTest" @update:model-value="onTrainTestChange" labelRight="Test" labelLeft="Train" />
         
         <div v-if="store.activeModelName" class="button-container">
             <BsButton class="bs-primary-button" unelevated dense no-caps padding="4" @click="onClickOneWay">Export One-Way Data</BsButton>
@@ -82,19 +82,7 @@
                   }
               },
               deep: true
-            },
-            'store.trainTest': {
-              handler() {
-                this.oneWayStore.fetchVariablesForModel(this.store.activeModel.id);
-              },
-              deep: true
-            },
-            'store.rescale': {
-              handler() {
-                  this.oneWayStore.processAndFilterData();
-              },
-              deep: true
-            },
+            }
         },
         computed: {
           isLoading() { 
@@ -109,7 +97,6 @@
                 this.store.setComparedModel(value);
             },
             async onVariableChange(value: string) {
-                console.log(value);
                 this.oneWayStore.selectVariable(value);
             },
             async onClickOneWay() {
@@ -118,6 +105,22 @@
             async onClick() {
                 this.store.exportActiveModel();
             },
+            async onRescaleChange(value: boolean) {
+                console.log("on rescale")
+                console.log(value)
+                this.oneWayStore.setRescale(value)
+                console.log('setted')
+                this.oneWayStore.processAndFilterData();
+                console.log('processed')
+            },
+            async onTrainTestChange(value: boolean) {
+                console.log("on train test")
+                console.log(value)
+                this.store.setTrainTest(value)
+                console.log('setted')
+                this.oneWayStore.selectVariable(this.oneWayStore.selectedVariable.name)
+                console.log('processed')
+            }
         },
         mounted() {
             this.store.loadModels();

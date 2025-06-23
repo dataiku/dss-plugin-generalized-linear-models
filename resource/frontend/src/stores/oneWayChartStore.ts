@@ -28,6 +28,7 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
         relativitiesColumns: RELATIVITIES_COLUMNS,
 
         includeSuspectVariables: true,
+        rescale: false,
         isLoading: false,
     }),
 
@@ -50,6 +51,10 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
             useNotification("negative", errorMessage);
         },
 
+        setRescale(shouldRescale: boolean) {
+            this.rescale = shouldRescale;
+        },
+        
         async fetchVariablesForModel(modelId: string) {
             console.log('fetchVariables')
             console.log(modelId);
@@ -76,8 +81,6 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
         async selectVariable(variableName: string) {
             const store = useModelStore();
             this.selectedVariable = this.availableVariables.find(v => v === variableName);
-            console.log(store.trainTest);
-            console.log(store.rescale);
             if (!this.selectedVariable || !store.activeModel?.id) {
                 this.primaryChartData = [];
                 this.comparisonChartData = [];
@@ -86,14 +89,14 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
 
             this.isLoading = true;
             try {
-                const modelTrainPoint = {id: store.activeModel.id, name: store.activeModel.name, trainTest: store.trainTest, variable: this.selectedVariable.variable, rescale: store.rescale};
+                const modelTrainPoint = {id: store.activeModel.id, name: store.activeModel.name, trainTest: store.trainTest, variable: this.selectedVariable.variable, rescale: this.rescale};
                 // Fetch data for both primary and comparison models in parallel for efficiency.
                 const promises = [
                     API.getPredictedBase(modelTrainPoint)
                 ];
 
                 if (store.comparedModel?.id) {
-                    const comparedModelTrainPoint = {id: store.comparedModel.id, name: store.comparedModel.name, trainTest: store.trainTest, variable: this.selectedVariable.variable, rescale: store.rescale};
+                    const comparedModelTrainPoint = {id: store.comparedModel.id, name: store.comparedModel.name, trainTest: store.trainTest, variable: this.selectedVariable.variable, rescale: this.rescale};
                     promises.push(API.getPredictedBase(comparedModelTrainPoint));
                 }
 
@@ -114,17 +117,17 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
         
         processAndFilterData() {
             const store = useModelStore();
-            console.log(store.rescale);
+            console.log(this.rescale);
             let filteredPrimary = this.primaryModelRawData;
-            if (store.rescale) {
+            if (this.rescale) {
+                console.log('rescaling')
                 filteredPrimary = this._applyRescaling(this.primaryModelRawData, store.baseValues1);
             }
             this.primaryChartData = filteredPrimary;
-            console.log(this.primaryChartData);
 
             if (this.comparisonModelRawData.length > 0) {
                 let filteredComparison = this.comparisonModelRawData;
-                if (store.rescale) {
+                if (this.rescale) {
                     filteredComparison = this._applyRescaling(filteredComparison, store.baseValues2);
                 }
                 this.comparisonChartData = filteredComparison;
@@ -156,7 +159,7 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
                                             name: store.activeModel.name, 
                                             variable: this.selectedVariable.variable, 
                                             trainTest: store.trainTest,
-                                            rescale: store.rescale});
+                                            rescale: this.rescale});
                 this._triggerDownload(response.data, store.activeModel.name + '_' + this.selectedVariable.variable + '_' + (this.trainTest ? "test" : "train") + (this.rescale ? "_rescaled" : "") + '.csv');
             } catch (error) {
                 this.handleError(error);
@@ -175,13 +178,18 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
         },
 
         _applyRescaling(dataPoints: DataPoint[], baseValues: any[]): DataPoint[] {
+            console.log('apply rescaling');
+            console.log(this.selectedVariable)
             if (!this.selectedVariable) return dataPoints;
 
+            console.log(baseValues)
             const baseCategory = baseValues.find(item => item.variable === this.selectedVariable!.variable);
+            console.log(baseCategory)
             if (!baseCategory) return dataPoints;
 
             const baseDataPoint = dataPoints.find(item => item.Category === baseCategory.base_level);
-            if (!baseDataPoint) return dataPoints; // Base level not in current dataset
+            console.log(baseDataPoint)
+            if (!baseDataPoint) return dataPoints;
 
             const { baseLevelPrediction, fittedAverage, observedAverage } = baseDataPoint;
 

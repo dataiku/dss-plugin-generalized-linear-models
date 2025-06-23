@@ -17,7 +17,6 @@ export const useModelStore = defineStore("ModelStore", {
         baseValues2: [] as BaseValue[],
 
         trainTest: false,
-        rescale: false,
 
         isLoading: false,
     }),
@@ -115,10 +114,6 @@ export const useModelStore = defineStore("ModelStore", {
 
         setTrainTest(isTest: boolean) {
             this.trainTest = isTest;
-        },
-
-        setRescale(shouldRescale: boolean) {
-            this.rescale = shouldRescale;
         },
         
         async exportActiveModel() {

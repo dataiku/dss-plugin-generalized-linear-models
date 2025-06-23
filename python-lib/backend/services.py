@@ -53,12 +53,14 @@ class MockDataService:
         return dummy_base_values
 
     def get_lift_data(self, request_json: dict):
+        time.sleep(1)
         return dummy_lift_data.to_dict('records')
     
     def get_relativities(self, request_json: dict):
         return dummy_relativites.to_dict('records')
     
     def get_variable_level_stats(self, request_json: dict):
+        time.sleep(1)
         current_app.logger.info("Getting Variable Level Stats")
         return dummy_variable_level_stats
     
@@ -211,13 +213,15 @@ class DataikuDataService:
     
     def get_base_values(self, request_json: dict):
         full_model_id = request_json["id"]
-        current_app.logger.info(f"Request recieved for base_values for {full_model_id}")
+        current_app.logger.info(f"Request received for base_values for {full_model_id}")
 
         creation_args = {"data_handler": self.data_handler,
                         "model_cache": self.model_cache,
                         "full_model_id": full_model_id}
         base_values = self.model_cache.get_or_create_cached_item(full_model_id, 'base_values_modalities_types', get_model_base_values_modalities_types, **creation_args)['base_values']
         
+        current_app.logger.info(base_values)
+
         base_values = [{'variable': k, 'base_level': v} for k, v in base_values.items()]
 
         current_app.logger.info("base_values")
