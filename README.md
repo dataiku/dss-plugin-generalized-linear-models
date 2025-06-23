@@ -7,9 +7,9 @@ and its accuracy therefore is not able to be guaranteed. The regression spline c
 # Components
 
 The plugin contains the following components:
+- Visual Webapp to train GLM and assess their fit using One-Way Variable Charts, Variable-Level Stats and Lift Charts
 - Generalized Linear Model Regression to run GLM regression inside the visual ML interface
 - Generalized Linear Model Classification to run GLM binary classification inside the visual ML interface
-- Actual vs Expected view inside the Visual Analysis and the Deployed Model windows
 - Regression Spline Prepare step to compute B-Spline basis row by row
 - Regression Spline Recipe to compute B-spline basis in a separate recipe
 
