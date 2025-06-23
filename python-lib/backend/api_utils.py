@@ -3,6 +3,9 @@ from flask import current_app
 from logging_assist.logging import logger
 from model_cache.model_conformity_checker import ModelConformityChecker
 import pandas as pd
+from dku_visual_ml.dku_model_retrival import VisualMLModelRetriver
+from glm_handler.dku_relativites_calculator import RelativitiesCalculator
+from chart_formatters.variable_level_stats import VariableLevelStatsFormatter
 
 pattern = r'\((.*?)\)'
 
@@ -65,3 +68,89 @@ def calculate_base_levels(df, exposure_column=None):
         })
     
     return cols_json
+
+def get_model_train_set(full_model_id, model_cache, data_handler):
+    model_retriever = VisualMLModelRetriver(full_model_id)
+    relativities_calculator = RelativitiesCalculator(data_handler, model_retriever)
+    train_set = relativities_calculator.train_set
+    return train_set
+
+def get_model_test_set(full_model_id, model_cache, data_handler):
+    model_retriever = VisualMLModelRetriver(full_model_id)
+    relativities_calculator = RelativitiesCalculator(data_handler, model_retriever)
+    test_set = relativities_calculator.test_set
+    return test_set
+
+def get_model_base_values_modalities_types(full_model_id, model_cache, data_handler):
+    creation_args = {"data_handler": data_handler,
+                     "model_cache": model_cache,
+                    "full_model_id": full_model_id}
+    train_set = model_cache.get_or_create_cached_item(full_model_id, 'train_set', get_model_train_set, **creation_args)
+    test_set = model_cache.get_or_create_cached_item(full_model_id, 'test_set', get_model_test_set, **creation_args)
+    model_retriever = VisualMLModelRetriver(full_model_id)
+    relativities_calculator = RelativitiesCalculator(data_handler, model_retriever, train_set, test_set)
+    base_values = relativities_calculator.get_base_values()
+    return {'base_values': base_values, 
+            'modalities': relativities_calculator.modalities, 
+            'types': relativities_calculator.variable_types}
+
+def get_model_relativities(full_model_id, model_cache, data_handler):
+    creation_args = {"data_handler": data_handler,
+                     "model_cache": model_cache,
+                    "full_model_id": full_model_id}
+    train_set = model_cache.get_or_create_cached_item(full_model_id, 'train_set', get_model_train_set, **creation_args)
+    test_set = model_cache.get_or_create_cached_item(full_model_id, 'test_set', get_model_test_set, **creation_args)
+    base_values_modalities_types = model_cache.get_or_create_cached_item(full_model_id, 'base_values_modalities_types', get_model_base_values_modalities_types, **creation_args)
+    base_values = base_values_modalities_types['base_values']
+    modalities = base_values_modalities_types['modalities']
+    variable_types = base_values_modalities_types['types']
+    model_retriever = VisualMLModelRetriver(full_model_id)
+    relativities_calculator = RelativitiesCalculator(data_handler, model_retriever, train_set, test_set, base_values=base_values, modalities=modalities, variable_types=variable_types)
+    relativities = relativities_calculator.get_relativities_df()
+    relativities_dict = relativities_calculator.relativities
+    return {'relativities': relativities, 'relativities_dict': relativities_dict}
+
+def get_model_relativities_interaction(full_model_id, model_cache, data_handler):
+    creation_args = {"data_handler": data_handler,
+                     "model_cache": model_cache,
+                    "full_model_id": full_model_id}
+    train_set = model_cache.get_or_create_cached_item(full_model_id, 'train_set', get_model_train_set, **creation_args)
+    test_set = model_cache.get_or_create_cached_item(full_model_id, 'test_set', get_model_test_set, **creation_args)
+    base_values_modalities_types = model_cache.get_or_create_cached_item(full_model_id, 'base_values_modalities_types', get_model_base_values_modalities_types, **creation_args)
+    base_values = base_values_modalities_types['base_values']
+    modalities = base_values_modalities_types['modalities']
+    variable_types = base_values_modalities_types['types']
+    model_retriever = VisualMLModelRetriver(full_model_id)
+    relativities_calculator = RelativitiesCalculator(data_handler, model_retriever, train_set, test_set, base_values=base_values, modalities=modalities, variable_types=variable_types)
+    relativities_interaction = relativities_calculator.get_relativities_interactions_df()
+    return relativities_interaction
+
+def get_model_variable_level_stats(full_model_id, model_cache, data_handler):
+    creation_args = {"data_handler": data_handler,
+                     "model_cache": model_cache,
+                    "full_model_id": full_model_id}
+    train_set = model_cache.get_or_create_cached_item(full_model_id, 'train_set', get_model_train_set, **creation_args)
+    test_set = model_cache.get_or_create_cached_item(full_model_id, 'test_set', get_model_test_set, **creation_args)
+    relativities = model_cache.get_or_create_cached_item(full_model_id, 'relativities', get_model_relativities, **creation_args)['relativities']
+    relativities_interaction = model_cache.get_or_create_cached_item(full_model_id, 'relativities_interaction', get_model_relativities_interaction, **creation_args)
+    base_values_modalities_types = model_cache.get_or_create_cached_item(full_model_id, 'base_values_modalities_types', get_model_base_values_modalities_types, **creation_args)
+    base_values = base_values_modalities_types['base_values']
+    model_retriever = VisualMLModelRetriver(full_model_id)
+    variable_level_stats = VariableLevelStatsFormatter(model_retriever, data_handler, relativities, relativities_interaction, base_values, train_set, test_set)
+    variable_stats = variable_level_stats.get_variable_level_stats()
+    return variable_stats
+
+def get_model_predicted_base(full_model_id, model_cache, data_handler, variable):
+    creation_args = {"data_handler": data_handler,
+                     "model_cache": model_cache,
+                    "full_model_id": full_model_id}
+    train_set = model_cache.get_or_create_cached_item(full_model_id, 'train_set', get_model_train_set, **creation_args)
+    test_set = model_cache.get_or_create_cached_item(full_model_id, 'test_set', get_model_test_set, **creation_args)
+    base_values_modalities_types = model_cache.get_or_create_cached_item(full_model_id, 'base_values_modalities_types', get_model_base_values_modalities_types, **creation_args)
+    base_values = base_values_modalities_types['base_values']
+    modalities = base_values_modalities_types['modalities']
+    variable_types = base_values_modalities_types['types']
+    model_retriever = VisualMLModelRetriver(full_model_id)
+    relativities_calculator = RelativitiesCalculator(data_handler, model_retriever, train_set, test_set, base_values, modalities, variable_types)
+    predicted_base_variable = relativities_calculator.get_formated_predicted_base_variable(variable)
+    return predicted_base_variable

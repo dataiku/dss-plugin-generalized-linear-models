@@ -1,9 +1,5 @@
-import dataiku
-from dataiku.doctor.posttraining.model_information_handler import PredictionModelInformationHandler
 import pandas as pd
 import numpy as np
-from dataiku import pandasutils as pdu
-from glm_handler.dku_utils import extract_active_fullModelId
 from logging_assist.logging import logger
 from time import time
 import re
@@ -19,7 +15,7 @@ class RelativitiesCalculator:
         model_info_handler (PredictionModelInformationHandler): Handler for model information.
     """
 
-    def __init__(self,data_handler, model_retriever, prepared_train_set=None, prepared_test_set=None, base_values=None, modalities=None, variable_types=None):
+    def __init__(self, data_handler, model_retriever, prepared_train_set=None, prepared_test_set=None, base_values=None, modalities=None, variable_types=None):
         """
         Initializes the ModelHandler with a specific model ID.
 
@@ -74,16 +70,14 @@ class RelativitiesCalculator:
         Extracts Base Level from preprocessing custom code
         """
         base_level = None
-        pattern = r'self\.mode_column\s*=\s*["\']([^"\']+)["\']'
-        # Search for the pattern in the code string
+        # pattern = r'self\.mode_column\s*=\s*["\']([^"\']+)["\']'
+        pattern = r'"base_level":\s*(?:"([^"]+)"|(\d+))'
         match = re.search(pattern, custom_code)
         if match:
-            base_level = match.group(1)
-        else:
-            pattern = r'self\.mode_column\s*=\s*(\d+)'
-            match = re.search(pattern, custom_code)
-            if match:
-                base_level = int(match.group(1))
+            if match.group(1) is not None:
+                base_level = match.group(1)
+            elif match.group(2) is not None:
+                base_level = int(match.group(2))
         logger.debug(f"returning base_level {base_level}")
         return base_level
 

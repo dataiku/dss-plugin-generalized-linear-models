@@ -5,18 +5,34 @@ import vue from '@vitejs/plugin-vue'
 import { quasar, transformAssetUrls } from "@quasar/vite-plugin";
 
 
-
 // https://vitejs.dev/config/
 const config = defineConfig({
   plugins: [
     vue({
       template: { transformAssetUrls },
+    }),
+    quasar({
     })
   ],
+  css: {
+    preprocessorOptions: {
+      scss: {
+        additionalData: `@use "quasar/src/css/index.sass" as *;`,
+        quietDeps: true,
+        silenceDeprecations: ['legacy-js-api', 'slash-div']
+
+      },
+      sass: {
+        quietDeps: true,
+        silenceDeprecations: ['legacy-js-api', 'slash-div']
+      },
+    },
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
-    }
+    },
+    dedupe: ['vue']
   },
   server: {
     port: 5173,

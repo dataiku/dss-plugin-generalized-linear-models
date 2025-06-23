@@ -2,59 +2,68 @@
     <div class="variable-select-container">
         <BsLabel label="Select a model" info-text="Lift chart will be generated for this model" />
         <BsSelect
-            :modelValue="store.selectedModelString"
-            :all-options="store.modelsString"
-            @update:modelValue="updateModelString"
+            :modelValue="store.activeModelName"
+            :all-options="store.modelOptions"
+            @update:modelValue="onModelChange"
         />
     
-        <BsLabel v-if="store.selectedModelString" label="Select the number of bins" />
-        <BsSlider v-if="store.selectedModelString" @update:modelValue="updateNbBins" v-model="store.nbBins" :min="2" :max="20" />
+        <BsLabel v-if="store.activeModelName" label="Select the number of bins" />
+        <BsSlider v-if="store.activeModelName" @update:modelValue="onNbBinsChange" v-model="liftChartStore.nbBins" :min="2" :max="20" />
         
-        <BsLabel v-if="store.selectedModelString" label="Run Analysis on" />
-        <BsToggle v-if="store.selectedModelString" v-model="store.trainTest" @update:modelValue="updateTrainTest" labelRight="Test" labelLeft="Train"/>
+        <BsLabel v-if="store.activeModelName" label="Run Analysis on" />
+        <BsToggle v-if="store.activeModelName" v-model="store.trainTest" @update:modelValue="onTrainTestChange" labelRight="Test" labelLeft="Train"/>
     </div>
     </template>
     
 <script lang="ts">
-    import { BsLayoutDefault } from "quasar-ui-bs";
     import { defineComponent } from "vue";
-    import EmptyState from './EmptyState.vue';
-    import LiftChartTabContent from './LiftChartTabContent.vue'
     import { useModelStore } from "../stores/webapp";
-    // ... other necessary imports
+    import { useOneWayChartStore } from "../stores/oneWayChartStore.ts"
+    import { useLiftChartStore } from "../stores/liftChartStore.ts"
+    import { useVariableLevelStatsStore } from "../stores/variableLevelStatsStore.ts"
     
     export default defineComponent({
-        components: {
-            BsLayoutDefault,
-            EmptyState,
-            LiftChartTabContent
-        },
         emits: ["update:loading"],
         data() { 
             return {
                 store: useModelStore(),
-                layoutRef: undefined as undefined | InstanceType<typeof BsLayoutDefault>,
-                loading: false as boolean,
+                oneWayStore: useOneWayChartStore(),
+                liftChartStore: useLiftChartStore(),
+                variableStatsStore: useVariableLevelStatsStore()
             };  
         },
-        methods: {
-            async updateModelString(value: string) {
-                this.loading = true;
-                await this.store.updateModelString(value);
-              this.loading = false;
+        watch: {
+          isLoading(newVal: any) { this.$emit("update:loading", newVal); },
+          'store.activeModel': {
+              handler(newModel) {
+                  if (newModel?.id) {
+                      this.oneWayStore.fetchVariablesForModel(newModel.id);
+                      this.liftChartStore.fetchLiftData(newModel.id);
+                      this.variableStatsStore.fetchStatsForModel(newModel.id);
+                  }
+              },
+              deep: true
             },
-            async updateNbBins(value: number) {
-                this.loading = true;
-                await this.store.updateNbBins(value);
-                this.loading = false;
-            },
-            async updateTrainTest(value: boolean) {
-              this.loading = true;
-              await this.store.updateTrainTest(value);
-              this.loading = false;
-            },
+            'store.trainTest': {
+              handler(trainTest) {
+                  this.oneWayStore.processAndFilterData();
+                  this.liftChartStore.updateTrainTest(trainTest);
+              },
+              deep: true
+            }
         },
-        mounted() { /* ... loadModels ... */ }
+        methods: {
+            async onModelChange(value: string) {
+                this.store.setActiveModel(value);
+            },
+            async onNbBinsChange(value: number) {
+                this.liftChartStore.updateNbBins(value);
+            },
+            async onTrainTestChange(value: boolean) {
+                this.liftChartStore.updateTrainTest(value);
+            }
+        },
+        mounted() {}
     })
     </script>
     
