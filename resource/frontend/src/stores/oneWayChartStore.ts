@@ -117,7 +117,6 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
         
         processAndFilterData() {
             const store = useModelStore();
-            console.log(this.rescale);
             let filteredPrimary = this.primaryModelRawData;
             if (this.rescale) {
                 console.log('rescaling')
@@ -135,7 +134,7 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
                 this.comparisonChartData = [];
             }
 
-            if (this.selectedVariable.isInModel) {
+            if (this.selectedVariable?.isInModel) {
                 const relativitiesTable = store.relativitiesData.filter(item => item.variable === this.selectedVariable?.variable);
                 this.relativities = relativitiesTable.map( (point) => {
                         const relativity = {'class': point.category, 'relativity': Math.round(point.relativity*1000)/1000};

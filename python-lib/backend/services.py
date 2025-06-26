@@ -16,6 +16,7 @@ from dku_visual_ml.dku_model_trainer import VisualMLModelTrainer
 from dku_visual_ml.dku_model_retrival import VisualMLModelRetriver
 from glm_handler.glm_data_handler import GlmDataHandler
 from dku_visual_ml.dku_train_model_config import DKUVisualMLConfig
+from dku_visual_ml.dku_model_deployer import VisualMLModelDeployer
 
 class MockDataService:
     """
@@ -26,6 +27,11 @@ class MockDataService:
         time.sleep(2)
         return {'message': 'Model training initiated successfully.'}
     
+    def deploy_model(self, request_json: dict):
+        current_app.logger.info("Local set up: No model deployment completed")
+        time.sleep(2)
+        return {'message': 'Model deployed successfully.'}
+
     def get_latest_mltask_params(self, request_json: dict):
         current_app.logger.info("Getting Latest ML task set up parameters")
         full_model_id = request_json["id"]
@@ -120,15 +126,16 @@ class DataikuDataService:
     """
     def __init__(self):
         self.model_cache = ModelCache()
-        visual_ml_config = DKUVisualMLConfig()
-        self.visual_ml_trainer = VisualMLModelTrainer(visual_ml_config)
+        self.visual_ml_config = DKUVisualMLConfig()
+        self.visual_ml_trainer = VisualMLModelTrainer(self.visual_ml_config)
         self.data_handler = GlmDataHandler()
-        if visual_ml_config.create_new_analysis:
+        if self.visual_ml_config.create_new_analysis:
             self.visual_ml_trainer.create_initial_ml_task()
         else:
             self.visual_ml_trainer.setup_using_existing_ml_task(
-                visual_ml_config.analysis_id
+                self.visual_ml_config.analysis_id
             )
+        self.visual_ml_deployer = VisualMLModelDeployer(self.visual_ml_trainer.mltask, self.visual_ml_config.saved_model_id)
     
     def train_model(self, request_json: dict):
         current_app.logger.info(f"Initalising Model Training with request {request_json}")
@@ -151,6 +158,14 @@ class DataikuDataService:
         else:
             current_app.logger.debug("Model training error: {error_message}")
             raise ValueError("Model training error: {error_message}")
+    
+    def deploy_model(self, request_json: dict):
+        current_app.logger.info(f"Initalising Model Deployment with request {request_json}")
+    
+        model_id = request_json['id']
+        self.visual_ml_deployer.set_new_active_version(model_id, self.visual_ml_config.input_dataset, self.visual_ml_config.analysis_name)
+
+        return {'message': 'Model deployed successfully.'}
     
     def get_latest_mltask_params(self, request_json: dict):
         current_app.logger.info("Getting Latest ML task set up parameters")
@@ -452,6 +467,7 @@ class DataikuDataService:
 
     def update_config(self, request_json):
         webapp_id = request_json['webAppId']
+        self.visual_ml_deployer._set_webapp_id(webapp_id)
         if self.visual_ml_config.create_new_analysis:
             webapp = dataiku_api.default_project.get_webapp(webapp_id)
             settings = webapp.get_settings()
