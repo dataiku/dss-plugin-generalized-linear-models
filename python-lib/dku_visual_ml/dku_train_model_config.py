@@ -9,9 +9,7 @@ class DKUVisualMLConfig:
         logger.debug("Initalising a dku visual ML config with the existing web app settings")
         
         web_app_config = get_webapp_config()
-        print(web_app_config)
         self.create_new_analysis = web_app_config.get("analysis_id") == 'new'
-        print(self.create_new_analysis)
         if self.create_new_analysis:
             self.analysis_id = None
         else:
@@ -24,6 +22,7 @@ class DKUVisualMLConfig:
         self.policy = web_app_config.get("policy")
         self.test_dataset_string = web_app_config.get("test_dataset_string")
         self.code_env_string = web_app_config.get("code_env_string")
+        self.saved_model_id = web_app_config.get("saved_model_id")
         
         logger.debug("Successfully initalised a dku visual ML config with the existing web app settings")
         self.log_configuration()

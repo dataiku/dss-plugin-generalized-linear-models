@@ -10,7 +10,7 @@
                         <CustomDocumentation></CustomDocumentation>
                     </template>
                 </BsHeader>
-                <BsDrawer>
+                <BsDrawer v-if="tabInfo.drawerComponent">
                     <component
                         :is="tabInfo.drawerComponent"
                         v-bind="tabInfo.drawerProps"
@@ -48,11 +48,10 @@ import OneWayVariableTabDrawer from './components/OneWayVariableTabDrawer.vue';
 import VariableLevelStatsTabDrawer from './components/VariableLevelStatsTabDrawer.vue';
 import LiftChartTabDrawer from './components/LiftChartTabDrawer.vue';
 
-// Import the content components that were previously sub-tabs
 import OneWayTabContent from './components/OneWayTabContent.vue';
 import VariableLevelStatsTabContent from './components/VariableLevelStatsTabContent.vue';
 import LiftChartTabContent from './components/LiftChartTabContent.vue';
-// --- ADDED ---
+import ModelManagement from './components/ModelManagement.vue'
 
 import ModelTrainingTabDrawer from './components/ModelTrainingTabDrawer.vue'
 import ModelTrainingTabContent from './components/ModelTrainingTabContent.vue'
@@ -79,6 +78,7 @@ export default defineComponent({
       OneWayTabContent,
       VariableLevelStatsTabContent,
       LiftChartTabContent,
+      ModelManagement,
       EmptyState,
       ModelTrainingTabDrawer,
       ModelTrainingTabContent,
@@ -152,9 +152,9 @@ export default defineComponent({
                 {
                     name: "Lift Chart",
                     docTitle: "GLM Hub",
-                    icon: liftIcon, // Use a new or existing icon
-                    drawerComponent: "LiftChartTabDrawer", // New Drawer
-                    contentComponent: "LiftChartTabContent", // Existing Content
+                    icon: liftIcon,
+                    drawerComponent: "LiftChartTabDrawer",
+                    contentComponent: "LiftChartTabContent",
                     contentProps: {
                         'chart-data': this.liftChartStore.liftChartData
                     },
@@ -163,6 +163,19 @@ export default defineComponent({
                     emptyState: {
                         title: "Lift Chart Analysis",
                         subtitle: "Select a model in the left menu to generate a lift chart",
+                    }
+                },
+                {
+                    name: "Model Management",
+                    docTitle: "GLM Hub",
+                    icon: liftIcon,
+                    contentComponent: "ModelManagement",
+                    contentProps: {
+                    },
+                    showEmptyState: !this.store.models,
+                    emptyState: {
+                        title: "Model Management",
+                        subtitle: "Train a first GLM in the Training screen",
                     }
                 }
               ]

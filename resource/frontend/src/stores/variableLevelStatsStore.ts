@@ -58,10 +58,6 @@ export const useVariableLevelStatsStore = defineStore("variableLevelStats", {
         },
 
         async exportVariableLevelStats() {
-            if (!this.selectedVariable) {
-                this.notifyError("No variable selected to export.");
-                return;
-            }
             const store = useModelStore();
             if (!store.activeModel) {
                 this.notifyError("No variable selected to export.");
@@ -88,6 +84,10 @@ export const useVariableLevelStatsStore = defineStore("variableLevelStats", {
 
         _round(value: number): number {
             return Math.round(value * 1000) / 1000;
-        }
+        },
+
+        notifyError(message: string) {
+            useNotification("negative", message);
+        },
     }
 });

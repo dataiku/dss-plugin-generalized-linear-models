@@ -118,7 +118,7 @@
                 console.log(value)
                 this.store.setTrainTest(value)
                 console.log('setted')
-                this.oneWayStore.selectVariable(this.oneWayStore.selectedVariable.name)
+                this.oneWayStore.selectVariable(this.oneWayStore.selectedVariable?.name)
                 console.log('processed')
             }
         },
