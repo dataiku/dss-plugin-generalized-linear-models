@@ -54,6 +54,23 @@ export const useTrainingStore = defineStore("TrainingStore", {
         ],
         datasetColumns: [] as Column[],
     }),
+    getters: {
+        isModelNameValid(state) {
+            const trimmedName = state.modelName.trim();
+            
+            if (trimmedName === '') {
+                return { valid: false, reason: 'Model name cannot be empty.' };
+            }
+            
+            if (this.models.lenth>0) { 
+                if (this.modelsString.includes(trimmedName)) {
+                    return { valid: false, reason: 'This model name already exists.' };
+                }
+            }
+            
+            return { valid: true, reason: '' };
+        }
+    },
     actions: {
         updateInteractions(newInteractions: Array<string>) {
             // Convert the formatted strings back to interaction objects
@@ -84,21 +101,6 @@ export const useTrainingStore = defineStore("TrainingStore", {
         } catch (error) {
         console.error('Error fetching excluded columns:', error);
         }
-    },
-
-    isModelNameValid(state) {
-        const trimmedName = state.modelName.trim();
-        
-        if (trimmedName === '') {
-            return { valid: false, reason: 'Model name cannot be empty.' };
-        }
-
-        // Check if the name already exists in the list of models
-        if (this.modelOptions.includes(trimmedName)) {
-            return { valid: false, reason: 'This model name already exists.' };
-        }
-        
-        return { valid: true, reason: '' };
     },
 
     async updateModelString(value: string) {
