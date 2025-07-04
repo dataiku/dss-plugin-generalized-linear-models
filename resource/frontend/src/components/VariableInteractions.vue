@@ -1,4 +1,4 @@
-<template>
+<!-- <template>
     <div class="interactions-container">
       <div v-if="interactions.length === 0" class="add-initial">
         <BsButton 
@@ -12,7 +12,6 @@
       </div>
       
       <div v-else class="interactions-list">
-        <!-- Headers -->
         <div class="interaction-header-row">
           <BsLabel class="interaction-label" label="Interaction"></BsLabel>
           <BsLabel class="variable-header" label="Variable 1"></BsLabel>
@@ -59,6 +58,89 @@
         />
       </div>
     </div>
+  </template> -->
+  
+  <template>
+    <q-card flat bordered>
+      <q-card-section>
+        <div class="text-h6">Variable Interactions</div>
+      </q-card-section>
+
+      <q-separator />
+  
+      <q-card-section>
+        <div class="interactions-container">
+          <div v-if="interactions.length === 0" class="add-initial">
+            <BsButton 
+              unelevated
+              no-caps
+              color="primary" 
+              label="Add an interaction?" 
+              @click="addInteraction"
+            />
+          </div>
+          
+          <div v-else class="interactions-list">
+    
+            <div v-for="(interaction, index) in interactions" :key="index" class="interaction-row">
+              
+
+            <div class="interaction-name-col">
+              <div class="static-name">{{ `Interaction ${index + 1}` }}</div>
+            </div>
+            
+              <div class="variable-col">
+              <BsLabel label="Select First Variable" class="field-label" />
+              <BsSelect
+                dense
+                borderless
+                :modelValue="interaction.first"
+                class="variable-col"
+                :all-options="(filteredColumns as Column[]).map(col => col.name).filter(name => name !== interaction.second)"
+                @update:modelValue="value => updateInteraction(index, 'first', value)"
+                placeholder="Select variable"
+              />
+            </div>
+            <div class="variable-col">
+              <BsLabel label="Select Second Variable" class="field-label" />
+              <BsSelect
+                dense
+                borderless
+                :modelValue="interaction.second"
+                class="variable-col"
+                :all-options="(filteredColumns as Column[]).map(col => col.name).filter(name => name !== interaction.first)"
+                @update:modelValue="value => updateInteraction(index, 'second', value)"
+                placeholder="Select variable"
+              />
+            </div>
+    
+              <div class="action-col">
+                <q-btn 
+                  color="negative" 
+                  flat
+                  round
+                  dense
+                  icon="mdi-delete"
+                  @click="removeInteraction(index)"
+                >
+                  <BsTooltip>Remove interaction</BsTooltip>
+                </q-btn>
+              </div>
+            </div>
+            
+            <div class="row justify-end q-mt-md">
+              <BsButton 
+                unelevated
+                no-caps
+                color="primary"
+                label="Add another interaction" 
+                @click="addInteraction"
+              />
+            </div>
+          </div>
+        </div>
+      </q-card-section>
+    </q-card>
   </template>
   
   <script lang="ts">
@@ -234,4 +316,63 @@
   :deep(.q-btn) {
     text-transform: none;
   }
+
+  .interactions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px; /* More spacing between each interaction row */
+}
+
+.interaction-row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end; /* Align to bottom for better label alignment */
+  gap: 24px; /* Spacing between elements in a row */
+}
+
+.interaction-name-col {
+  flex: 1.5;
+  min-width: 150px;
+}
+
+.variable-col {
+  flex: 2;
+  min-width: 200px;
+}
+
+.action-col {
+  flex: 0 0 40px;
+  text-align: right;
+  padding-bottom: 8px; /* Align button with inputs */
+}
+
+.field-label {
+  font-size: 0.8rem;
+  color: #666;
+  margin-bottom: 4px;
+  display: block;
+}
+
+.editable-name-display {
+  border-bottom: 1px solid transparent; /* Reserve space for border */
+  padding: 6px 0;
+  cursor: text;
+  &:hover {
+    background-color: #f5f5f5;
+  }
+}
+
+.editable-name {
+  font-weight: 500;
+}
+
+.name-input {
+  /* Style to match the look of the other inputs */
+  border-bottom: 1px solid var(--q-primary);
+}
+
+.add-initial {
+  text-align: center;
+  padding: 20px;
+}
   </style>

@@ -53,7 +53,6 @@ import VariableLevelStatsTabContent from './components/VariableLevelStatsTabCont
 import LiftChartTabContent from './components/LiftChartTabContent.vue';
 import ModelManagement from './components/ModelManagement.vue'
 
-import ModelTrainingTabDrawer from './components/ModelTrainingTabDrawer.vue'
 import ModelTrainingTabContent from './components/ModelTrainingTabContent.vue'
 import EmptyState from './components/EmptyState.vue';
 import CustomDocumentation from './components/CustomDocumentation.vue';
@@ -62,6 +61,7 @@ import { defineComponent } from "vue";
 import { useModelStore } from "./stores/webapp";
 import oneWayIcon from "./assets/images/one-way.svg";
 import trainingIcon from "./assets/images/training.svg";
+import globeIcon from "./assets/images/globe.svg";
 import statsIcon from "./assets/images/variable-level-stats.svg";
 import liftIcon from "./assets/images/lift-chart.svg"; 
 import { useOneWayChartStore } from "./stores/oneWayChartStore.ts"
@@ -80,7 +80,6 @@ export default defineComponent({
       LiftChartTabContent,
       ModelManagement,
       EmptyState,
-      ModelTrainingTabDrawer,
       ModelTrainingTabContent,
       CustomDocumentation
     },
@@ -101,10 +100,10 @@ export default defineComponent({
                     name: "Model Training",
                     docTitle: "GLM Hub",
                     icon: trainingIcon,
-                    drawerComponent: "ModelTrainingTabDrawer",
+                    // drawerComponent: "ModelTrainingTabDrawer",
                     contentComponent: "ModelTrainingTabContent",
                     contentProps: {},
-                    drawerProps: {},
+                    // drawerProps: {},
                     showEmptyState: false,
                     emptyState: {
                         title: "Model Training",
@@ -168,7 +167,7 @@ export default defineComponent({
                 {
                     name: "Model Management",
                     docTitle: "GLM Hub",
-                    icon: liftIcon,
+                    icon: globeIcon,
                     contentComponent: "ModelManagement",
                     contentProps: {
                     },

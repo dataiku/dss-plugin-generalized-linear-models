@@ -1,53 +1,25 @@
 <template>
     <div class="tab-content-wrapper">
-    <q-card-section>
-                <BsLabel class="bs-font-medium-4-semi-bold" label="Feature Handling"></BsLabel>
-            </q-card-section>
-            <q-card class="q-pa-xl">
-                <div v-for="(column, index) in filteredColumns" class="column-management row-spacing">
-                    <div class="column-name-container">
-                        <BsLabel :label="store.abbreviateColumnName(column.name)"></BsLabel>
-                    </div>
-                    <div class="checkbox-container">
-                        <BsCheckbox v-model="column.isIncluded" label="Include?" class="custom-label-spacing"></BsCheckbox>
-                    </div>
-                    <div class="radio-group-container">
-                        <div class="q-gutter-sm row items-center bs-colored-text">
-                            <q-radio v-model="column.type as any" val="numerical" label="Numerical" />
-                        </div>
-                        <div class="q-gutter-sm row items-center bs-colored-text">
-                            <q-radio v-model="column.type as any" val="categorical" label="Categorical" />
-                        </div>
-                    </div>
-                    <div class="radio-group-container">
-                        <div class="q-gutter-sm row items-center">
-                            <BsSelect
-                                label=""
-                                :modelValue="column.baseLevel"
-                                :all-options="column.options"
-                                @update:modelValue="value => column.baseLevel = value">
-                            </BsSelect>
-                        </div>
-                    </div>
-                </div>
-                
-            </q-card>
-            <q-card-section>
-                <BsLabel class="bs-font-medium-4-semi-bold" label="Variable Interactions"></BsLabel>
-            </q-card-section>
-            <q-card class="q-pa-xl">
+        <div class="left-column">
+        <ModelTrainingConfiguration/>
+    </div>
+
+    <div class="right-column">
+        <VariableConfiguration/>
             <VariableInteractions
                 :filtered-columns="selectedColumns"
                 :initial-interactions="store.previousInteractions"
                  @update:interactions="store.updateInteractions"
             />
-            </q-card>
         </div>
+    </div>
 </template>
 
 <script lang="ts">
     import { defineComponent } from "vue";
     import EmptyState from './EmptyState.vue';
+    import ModelTrainingConfiguration from './ModelTrainingConfiguration.vue';
+    import VariableConfiguration from './VariableConfiguration.vue';
     import { BsTab, BsLabel, BsTabIcon, BsLayoutDefault, BsHeader, BsButton, BsDrawer, BsContent, BsTooltip, BsSlider, BsCard } from "quasar-ui-bs";
     import docLogo from "../assets/images/doc-logo-example.svg";
     import trainingIcon from "../assets/images/training.svg";
@@ -70,6 +42,8 @@
         QRadio,
         BsSlider,
         BsCard,
+        ModelTrainingConfiguration,
+        VariableConfiguration
     
     },
     props: [],
@@ -81,6 +55,7 @@
             trainingIcon,
             docLogo,
             errorMessage: "" as string,
+            loading: false as boolean
         };
     },
     computed:{
@@ -100,8 +75,7 @@
                 this.store.updateDatasetColumnsPreprocessing();
             },
             deep: true
-        },        
-        
+        }
     }
 })
 </script>   
@@ -140,7 +114,22 @@
     min-width: 150px;
 }
 .tab-content-wrapper {
-    padding-left: 20px;
+    padding-left: 0;
     padding-top: 20px;
+    display: flex;
+    flex-direction: row;
+    gap: 100px; /* Adjust spacing between columns */
+    align-items: flex-start; /* Aligns items to the top */
+}
+
+.left-column {
+    flex: 0 0 300px; /* Does not grow, does not shrink, base width is 350px */
+}
+
+.right-column {
+    flex: 1; /* Takes up the remaining available space */
+    display: flex;
+    flex-direction: column;
+    gap: 16px; /* Spacing between the cards in the right column */
 }
 </style>

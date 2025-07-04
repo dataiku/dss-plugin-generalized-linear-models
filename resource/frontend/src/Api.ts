@@ -146,6 +146,7 @@ export let API = {
             throw error;
         }),
     deployModel: (model: ModelPoint) => axios.post<number>("/api/deploy_model", model),
+    deleteModel: (model: ModelPoint) => axios.post<number>("/api/delete_model", model),
     getModelMetrics: (data: any) => axios.post<ModelMetricsDataPoint>("/api/get_model_metrics", data),
     exportModel: (model: ModelPoint) => axios.post<Blob>("/api/export_model", model),
     exportVariableLevelStats: (model: ModelPoint) => axios.post<Blob>("/api/export_variable_level_stats", model),

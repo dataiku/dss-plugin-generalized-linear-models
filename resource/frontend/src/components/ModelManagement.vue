@@ -6,7 +6,7 @@
     :globalSearch="false"
     row-key="id"
     >
-    <template #body-cell-actions="props">
+    <template #body-cell-deploy="props">
             <q-td :props="props" style="text-align: center;">
                 <BsButton 
                     flat 
@@ -15,6 +15,18 @@
                     @click="deployModel(props.row)">
                     <q-icon name="rocket_launch" />
                     <q-tooltip>Deploy Model</q-tooltip>
+                </BsButton>
+            </q-td>
+        </template>
+        <template #body-cell-delete="props">
+            <q-td :props="props" style="text-align: center;">
+                <BsButton 
+                    flat 
+                    round 
+                    dense
+                    @click="deleteModel(props.row)">
+                    <q-icon name="delete" />
+                    <q-tooltip>Delete Model</q-tooltip>
                 </BsButton>
             </q-td>
         </template>
@@ -35,7 +47,8 @@ import { API } from "../Api";
 const columns: QTableColumn[] = [
       { name: 'model_name', align: 'center', label: 'Model Name', field: 'name', sortable: true},
       { name: 'model_id', align: 'center', label: 'Model Id', field: 'id', sortable: true},
-      { name: 'actions', align: 'center', label: 'Actions', field: '' }
+      { name: 'deploy', align: 'center', label: 'Deploy', field: '' },
+      { name: 'delete', align: 'center', label: 'Delete', field: '' }
     ]
 
 export default defineComponent({
@@ -66,7 +79,12 @@ export default defineComponent({
       console.log('Deploying model:', model.name, 'with ID:', model.id);
       this.store.loading = true;
       const status = API.deployModel(model);
-      console.log(status);
+      this.store.loading = false;
+    },
+    async deleteModel(model: ModelPoint) {
+      console.log('Deleting model:', model.name, 'with ID:', model.id);
+      this.store.loading = true;
+      const status = API.deleteModel(model);
       this.store.loading = false;
     }
   },

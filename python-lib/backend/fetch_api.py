@@ -20,6 +20,12 @@ def deploy_model():
     data_service = current_app.data_service
     result = data_service.deploy_model(request.get_json())
     return jsonify(result)
+
+@fetch_api.route("/delete_model", methods=["POST"])
+def delete_model():
+    data_service = current_app.data_service
+    result = data_service.delete_model(request.get_json())
+    return jsonify(result)
     
 @fetch_api.route("/get_latest_mltask_params", methods=["POST"])
 def get_latest_mltask_params():

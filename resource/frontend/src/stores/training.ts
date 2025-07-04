@@ -86,6 +86,21 @@ export const useTrainingStore = defineStore("TrainingStore", {
         }
     },
 
+    isModelNameValid(state) {
+        const trimmedName = state.modelName.trim();
+        
+        if (trimmedName === '') {
+            return { valid: false, reason: 'Model name cannot be empty.' };
+        }
+
+        // Check if the name already exists in the list of models
+        if (this.modelOptions.includes(trimmedName)) {
+            return { valid: false, reason: 'This model name already exists.' };
+        }
+        
+        return { valid: true, reason: '' };
+    },
+
     async updateModelString(value: string) {
           this.selectedModelString = value;
           //const model = this.models.filter( (v: ModelPoint) => v.name==value)[0];

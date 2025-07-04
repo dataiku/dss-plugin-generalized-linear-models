@@ -6,7 +6,7 @@ import type { ModelPoint, ModelMetricsDataPoint, BaseValue, RelativityPoint } fr
 export const useModelStore = defineStore("ModelStore", {
     state: () => ({
         models: [] as ModelPoint[],
-      
+
         activeModel: null as ModelPoint | null,
         comparedModel: null as ModelPoint | null,
         relativitiesData: [] as RelativityPoint[],

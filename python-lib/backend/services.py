@@ -31,6 +31,11 @@ class MockDataService:
         current_app.logger.info("Local set up: No model deployment completed")
         time.sleep(2)
         return {'message': 'Model deployed successfully.'}
+    
+    def delete_model(self, request_json: dict):
+        current_app.logger.info("Local set up: No model deletion completed")
+        time.sleep(1)
+        return {'message': 'Model deleted successfully.'}
 
     def get_latest_mltask_params(self, request_json: dict):
         current_app.logger.info("Getting Latest ML task set up parameters")
@@ -166,6 +171,16 @@ class DataikuDataService:
         self.visual_ml_deployer.set_new_active_version(model_id, self.visual_ml_config.input_dataset, self.visual_ml_config.analysis_name)
 
         return {'message': 'Model deployed successfully.'}
+    
+    def delete_model(self, request_json: dict):
+        current_app.logger.info(f"Deleting Model with request {request_json}")
+    
+        model_id = request_json['id']
+        self.visual_ml_deployer.delete_model(model_id)
+        model_retriver = VisualMLModelRetriver(model_id)
+        model_retriver.delete_model(model_id)
+
+        return {'message': 'Model deleted successfully.'}
     
     def get_latest_mltask_params(self, request_json: dict):
         current_app.logger.info("Getting Latest ML task set up parameters")
