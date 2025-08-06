@@ -311,6 +311,8 @@ class DataikuDataService:
                             "full_model_id": full_model_id}
         variable_stats = self.model_cache.get_or_create_cached_item(full_model_id, 'variable_level_stats', get_model_variable_level_stats, **creation_args)
         
+        current_app.logger.info(variable_stats)
+        current_app.logger.info(variable_stats.columns)
         return variable_stats.to_dict('records')
     
     def get_model_metrics(self, request_json: dict):

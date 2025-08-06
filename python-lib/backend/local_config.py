@@ -248,6 +248,7 @@ def get_dummy_model_comparison_data():
 dummy_variable_level_stats = pd.DataFrame({'variable': ['VehBrand', 'VehBrand', 'VehBrand', 'VehPower', 'VehPower'], 
                        'value': ['B1', 'B10', 'B12', 'Diesel', 'Regular'], 
                        'coefficient': [0, 0.5, 0.32, 0, 0.0234],
+                       'p_value': [0, 0.05, 0.302, 0.002, 0.0234],
                        'standard_error': [0, 1.23, 1.74, 0, 0.9],
                        'standard_error_pct': [0, 1.23, 1.74, 0, 0.9],
                         'weight': [234, 87, 73, 122, 90], 

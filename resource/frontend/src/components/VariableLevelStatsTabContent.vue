@@ -31,6 +31,7 @@ const columns: QTableColumn[] = [
         { name: 'variable', align: 'center', label: 'Variable', field: 'variable',sortable: true},
         { name: 'value', align: 'center', label: 'Value', field: 'value',sortable: true},
         { name: 'coefficient', align: 'center', label: 'Coefficient', field: 'coefficient',sortable: true},
+        { name: 'p_value', align: 'center', label: 'P-value', field: 'p_value',sortable: true},
         { name: 'standard_error', align: 'center', label: 'Standard Error', field: 'standard_error',sortable: true},
         { name: 'standard_error_pct', align: 'center', label: 'Standard Error PCT', field: 'standard_error_pct',sortable: true},
         { name: 'weight', align: 'center', label: 'Weight', field: 'weight',sortable: true},

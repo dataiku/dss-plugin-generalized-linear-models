@@ -30,6 +30,7 @@ export type VariableLevelStatsPoint = {
     variable: string;
     value: string;
     coefficient: number;
+    p_value: number;
     standard_error: number;
     standard_error_pct: number;
     weight: number;
