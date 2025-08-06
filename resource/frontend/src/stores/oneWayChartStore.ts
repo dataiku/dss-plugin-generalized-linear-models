@@ -78,9 +78,12 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
             }
         },
 
-        async selectVariable(variableName: string) {
+        async selectVariable(variableName: VariablePoint) {
             const store = useModelStore();
-            this.selectedVariable = this.availableVariables.find(v => v === variableName);
+            let foundVariable = this.availableVariables.find(v => v === variableName);
+            if (foundVariable) {
+                this.selectedVariable = foundVariable
+            }
             if (!this.selectedVariable || !store.activeModel?.id) {
                 this.primaryChartData = [];
                 this.comparisonChartData = [];

@@ -60,6 +60,7 @@
     import { useOneWayChartStore } from "../stores/oneWayChartStore.ts"
     import { useLiftChartStore } from "../stores/liftChartStore.ts"
     import { useVariableLevelStatsStore } from "../stores/variableLevelStatsStore.ts"
+import { VariablePoint } from "src/models";
     
     export default defineComponent({
         emits: ["update:loading"],
@@ -96,7 +97,7 @@
             async onComparisonModelChange(value: string | null) {
                 this.store.setComparedModel(value);
             },
-            async onVariableChange(value: string) {
+            async onVariableChange(value: VariablePoint) {
                 this.oneWayStore.selectVariable(value);
             },
             async onClickOneWay() {
@@ -106,20 +107,14 @@
                 this.store.exportActiveModel();
             },
             async onRescaleChange(value: boolean) {
-                console.log("on rescale")
-                console.log(value)
                 this.oneWayStore.setRescale(value)
-                console.log('setted')
                 this.oneWayStore.processAndFilterData();
-                console.log('processed')
             },
             async onTrainTestChange(value: boolean) {
-                console.log("on train test")
-                console.log(value)
-                this.store.setTrainTest(value)
-                console.log('setted')
-                this.oneWayStore.selectVariable(this.oneWayStore.selectedVariable?.name)
-                console.log('processed')
+                if (this.oneWayStore.selectedVariable) {
+                    this.store.setTrainTest(value)
+                    this.oneWayStore.selectVariable(this.oneWayStore.selectedVariable)
+                }
             }
         },
         mounted() {
