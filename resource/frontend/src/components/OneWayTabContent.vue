@@ -7,8 +7,8 @@
       <div class="tab-content" v-else>
           <BarChart
             v-if="selectedVariable"
-            :xaxisLabels="chartData.map(item => ((selectedVariable.variableType == 'categorical') ? item.Category : Number(item.Category)))"
-            :xaxisType="selectedVariable.variableType"
+            :xaxisLabels="chartXaxisLabels"
+            :xaxisType="chartXaxisType"
             :barData="chartData.map(item => item.Value)"
             :observedAverageLine="chartData.map(item => item.observedAverage)"
             :fittedAverageLine="chartData.map(item => item.fittedAverage)"
@@ -16,6 +16,7 @@
             :fittedAverageLine2="chartData2.map(item => item.fittedAverage)"
             :baseLevelPredictionLine2="chartData2.map(item => item.baseLevelPrediction)"
             :chartTitle="selectedVariable.variable"
+            :levelOrder="levelOrder"
             />
           <BsTable v-if="selectedVariable.isInModel"
             :title="selectedVariable.variable"
@@ -87,6 +88,10 @@ export default defineComponent({
       relativitiesColumns: {
         type: Array<QTableColumn>,
         default: columns
+      },
+      levelOrder: {
+        type: String,
+        required: true
       }
     },
     components: {
@@ -99,6 +104,28 @@ export default defineComponent({
         BsCheckbox,
         BsSlider,
         BsToggle
+    },
+    computed: {
+        isBinned(): boolean {
+            if (this.selectedVariable?.variableType !== 'categorical' && this.chartData.length > 0) {
+                return typeof this.chartData[0].Category === 'string';
+            }
+            return false;
+        },
+        
+        chartXaxisType(): 'category' | 'value' {
+            if (this.isBinned || this.selectedVariable?.variableType === 'categorical') {
+                return 'category';
+            }
+            return 'value';
+        },
+
+        chartXaxisLabels(): (string | number)[] {
+            if (this.chartXaxisType === 'category') {
+                return this.chartData.map(item => String(item.Category));
+            }
+            return this.chartData.map(item => Number(item.Category));
+        }
     },
     data() {
         return {

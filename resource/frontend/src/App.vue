@@ -122,7 +122,8 @@ export default defineComponent({
                         'chart-data2': this.oneWayStore.comparisonChartData,
                         'selected-variable': this.oneWayStore.selectedVariable,
                         relativities: this.oneWayStore.relativities,
-                        'relativities-columns': this.store.relativitiesColumns
+                        'relativities-columns': this.store.relativitiesColumns,
+                        'level-order': this.oneWayStore.levelOrder
                     },
                     drawerProps: {},
                     showEmptyState: !this.store.activeModelName,

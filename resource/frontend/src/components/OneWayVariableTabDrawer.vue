@@ -1,6 +1,8 @@
 <template>
-    <div class="variable-select-container">
-        <BsLabel label="Select a model" info-text="Charts will be generated with respect to this model" />
+    
+        <BsCollapsiblePanel title="Configure">
+            <div class="variable-select-container">
+        <BsLabel label="Select model *" info-text="Charts will be generated with respect to this model" />
         <BsSelect
             :modelValue="store.activeModelName"
             :all-options="store.modelOptions.filter(option => option !== store.comparedModelName)"
@@ -9,9 +11,8 @@
         <div v-if="store.comparedModelName" class="button-container">
             <BsButton class="bs-primary-button" unelevated dense no-caps padding="4" @click="onClick">Export Full Model</BsButton>
         </div>
-        <BsCheckbox v-if="store.activeModelName" v-model="oneWayStore.includeSuspectVariables" label="Include Suspect Variables" />
         
-        <BsLabel v-if="store.activeModelName" label="Select a Variable" info-text="Charts will be generated with respect to this variable" />
+        <BsLabel v-if="store.activeModelName" label="Select variable *" info-text="Charts will be generated with respect to this variable" />
         <BsSelect
               v-if="store.activeModelName"
                   v-model="oneWayStore.selectedVariable"
@@ -34,16 +35,43 @@
                                 </q-item>
                         </template>
               </BsSelect>
+
+        <BsLabel label="Level order" info-text="Levels on the X-axis will be ordered as defined" />
+        <BsSelect
+            :modelValue="oneWayStore.levelOrder"
+            :all-options="levelOrderOptions"
+            @update:model-value="onLevelOrderChange"
+        />
         
-        <BsCheckbox v-if="store.activeModelName" v-model="oneWayStore.rescale" @update:model-value="onRescaleChange" label="Rescale?" />
+        <BsLabel label="Chart distribution" info-text="Display the raw values or bin them" />
+        <BsSelect
+            :modelValue="oneWayStore.chartDistribution"
+            :all-options="chartDistributionOptions"
+            @update:model-value="onChartDistributionChange"
+        />
+
+        <BsLabel v-if="oneWayStore.chartDistribution == 'Binning'" label="Select the number of bins" />
+        <BsSlider v-if="oneWayStore.chartDistribution == 'Binning'" @update:modelValue="onNbBinsChange" v-model="oneWayStore.nbBins" :min="2" :max="30" />
+
+        <BsLabel label="Chart rescaling" info-text="Rescale the chart on base level, or compute the ratio between predicted and observed" />
+        <BsSelect
+            :modelValue="oneWayStore.chartRescaling"
+            :all-options="chartRescalingOptions"
+            @update:model-value="onChartRescalingChange"
+        />
+
+        <!-- <BsCheckbox v-if="store.activeModelName" v-model="oneWayStore.rescale" @update:model-value="onRescaleChange" label="Rescale?" /> -->
         
+        <BsCheckbox v-if="store.activeModelName" v-model="oneWayStore.includeSuspectVariables" label="Include Suspect Variables" />
+
         <BsLabel v-if="store.activeModelName" label="Run Analysis on" />
         <BsToggle v-if="store.activeModelName" v-model="store.trainTest" @update:model-value="onTrainTestChange" labelRight="Test" labelLeft="Train" />
         
         <div v-if="store.activeModelName" class="button-container">
             <BsButton class="bs-primary-button" unelevated dense no-caps padding="4" @click="onClickOneWay">Export One-Way Data</BsButton>
         </div>
-    
+        </div>
+    </BsCollapsiblePanel>
         <BsLabel v-if="store.activeModelName" label="Compare with model" info-text="Second model to compare with the first one" />
         <BsSelect
             v-if="store.activeModelName"
@@ -51,7 +79,6 @@
             :all-options="store.modelOptions.filter(option => option !== store.activeModelName)"
             @update:modelValue="onComparisonModelChange"
         />
-    </div>
     </template>
     
     <script lang="ts">
@@ -60,7 +87,7 @@
     import { useOneWayChartStore } from "../stores/oneWayChartStore.ts"
     import { useLiftChartStore } from "../stores/liftChartStore.ts"
     import { useVariableLevelStatsStore } from "../stores/variableLevelStatsStore.ts"
-import { VariablePoint } from "src/models";
+    import { VariablePoint } from "src/models";
     
     export default defineComponent({
         emits: ["update:loading"],
@@ -70,6 +97,9 @@ import { VariablePoint } from "src/models";
                 oneWayStore: useOneWayChartStore(),
                 liftChartStore: useLiftChartStore(),
                 variableStatsStore: useVariableLevelStatsStore(),
+                levelOrderOptions: ["Natural order", "Ascending observed", "Ascending predicted", "Descending observed", "Descending predicted"],
+                chartDistributionOptions: ["Raw data", "Binning"],
+                chartRescalingOptions: ["None", "Base level", "Ratio"]
             };
         },
         watch: {
@@ -106,9 +136,20 @@ import { VariablePoint } from "src/models";
             async onClick() {
                 this.store.exportActiveModel();
             },
-            async onRescaleChange(value: boolean) {
-                this.oneWayStore.setRescale(value)
+            async onChartRescalingChange(value: string) {
+                this.oneWayStore.setRescale(value);
                 this.oneWayStore.processAndFilterData();
+            },
+            async onChartDistributionChange(value: string) {
+                this.oneWayStore.setChartDistribution(value);
+                this.oneWayStore.processAndFilterData();
+            },
+            async onNbBinsChange(value: number) {
+                this.oneWayStore.setNbBins(value);
+                this.oneWayStore.processAndFilterData();
+            },
+            async onLevelOrderChange(value: string) {
+                this.oneWayStore.setLevelOrder(value);
             },
             async onTrainTestChange(value: boolean) {
                 if (this.oneWayStore.selectedVariable) {

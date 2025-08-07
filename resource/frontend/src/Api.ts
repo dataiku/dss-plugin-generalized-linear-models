@@ -60,7 +60,7 @@ interface ModelVariablePoint {
     name: string;
     variable: string;
     trainTest: boolean;
-    rescale: boolean;
+    chartRescaling: string;
 }
 
 interface ModelNbBins {

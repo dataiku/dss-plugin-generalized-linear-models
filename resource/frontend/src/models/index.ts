@@ -1,6 +1,6 @@
 export type DataPoint = { 
     definingVariable: string;
-    Category: string;
+    Category: string | number;
     Value: number;
     observedAverage: number;
     fittedAverage: number;
