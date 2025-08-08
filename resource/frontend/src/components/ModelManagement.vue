@@ -6,6 +6,13 @@
     :globalSearch="false"
     row-key="id"
     >
+    <template #body-cell-model_name="props">
+        <q-td :props="props">
+            <a :href="getModelUrl(props.row)" class="table-link">
+                {{ props.value }}
+            </a>
+        </q-td>
+    </template>
     <template #body-cell-deploy="props">
             <q-td :props="props" style="text-align: center;">
                 <BsButton 
@@ -15,6 +22,18 @@
                     @click="deployModel(props.row)">
                     <q-icon name="rocket_launch" />
                     <q-tooltip>Deploy Model</q-tooltip>
+                </BsButton>
+            </q-td>
+        </template>
+        <template #body-cell-export="props">
+            <q-td :props="props" style="text-align: center;">
+                <BsButton 
+                    flat 
+                    round 
+                    dense
+                    @click="exportModel(props.row)">
+                    <q-icon name="download" />
+                    <q-tooltip>Export Model</q-tooltip>
                 </BsButton>
             </q-td>
         </template>
@@ -47,7 +66,9 @@ import { API } from "../Api";
 const columns: QTableColumn[] = [
       { name: 'model_name', align: 'center', label: 'Model Name', field: 'name', sortable: true},
       { name: 'model_id', align: 'center', label: 'Model Id', field: 'id', sortable: true},
+      { name: 'model_date', align: 'center', label: 'Creation Date', field: 'date', sortable: true},
       { name: 'deploy', align: 'center', label: 'Deploy', field: '' },
+      { name: 'export', align: 'center', label: 'Export', field: '' },
       { name: 'delete', align: 'center', label: 'Delete', field: '' }
     ]
 
@@ -75,17 +96,26 @@ export default defineComponent({
       };
   },
   methods: {
+    getModelUrl(model: ModelPoint): string {
+        return `/projects/${this.store.projectKey}/analysis/${this.store.analysisId}/ml/p/${this.store.mlTaskId}/${model.id}/report/tabular-summary`;
+    },
     async deployModel(model: ModelPoint) {
       console.log('Deploying model:', model.name, 'with ID:', model.id);
-      this.store.loading = true;
+      this.loading = true;
       const status = API.deployModel(model);
-      this.store.loading = false;
+      this.loading = false;
     },
     async deleteModel(model: ModelPoint) {
       console.log('Deleting model:', model.name, 'with ID:', model.id);
-      this.store.loading = true;
+      this.loading = true;
       const status = API.deleteModel(model);
-      this.store.loading = false;
+      this.loading = false;
+    },
+    async exportModel(model: ModelPoint) {
+      console.log('Exporting model:', model.name, 'with ID:', model.id);
+      this.loading = true;
+      this.store.exportModel(model);
+      this.loading = false;
     }
   },
   mounted() {
@@ -105,5 +135,14 @@ align-items: center;
 gap: var(--bs-spacing-13, 52px);
 min-height: 350px;
 }
+
+.table-link {
+    text-decoration: none;
+    color: black;
+  }
+
+  .table-link:hover {
+    text-decoration: underline;
+  }
 
 </style>

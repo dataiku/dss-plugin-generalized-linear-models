@@ -53,6 +53,10 @@ interface BaseValue {
 interface ModelPoint {
     id: string;
     name: string;
+    date: string;
+    project_key: string;
+    ml_task_id: string;
+    analysis_id: string;
 }
 
 interface ModelVariablePoint {

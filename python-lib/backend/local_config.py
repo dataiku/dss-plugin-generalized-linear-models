@@ -58,7 +58,9 @@ def setup_dataiku_client():
     dataiku_api.setup(**dataiku_setup)
 
     
-dummy_models = [{"id": "model_interaction", "name": "Interaction"}, {"id": "model_1", "name": "Generalized Linear Model Regression (GLM 1)"}, {"id": "model_2", "name": "Generalized Linear Model Regression (GLM 2)"}]
+dummy_models = [{"id": "model_interaction", "name": "Interaction", "date": "2025-07-08T10:40:16.466+0200", "project_key": "GLM", "ml_task_id": "AZERTY", "analysis_id": "QSDFGH"}, 
+                {"id": "model_1", "name": "Generalized Linear Model Regression (GLM 1)", "date": "2025-07-08T10:40:16.466+0200", "project_key": "GLM", "ml_task_id": "AZERTY", "analysis_id": "QSDFGH"}, 
+                {"id": "model_2", "name": "Generalized Linear Model Regression (GLM 2)", "date": "2025-07-08T10:40:16.466+0200", "project_key": "GLM", "ml_task_id": "AZERTY", "analysis_id": "QSDFGH"}]
 
 dummy_variables = [{'variable': 'Variable1', 'isInModel': True, 'variableType': 'categorical'},
                     {'variable': 'Variable2', 'isInModel': False, 'variableType': 'numeric'}]

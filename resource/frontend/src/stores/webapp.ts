@@ -17,6 +17,9 @@ export const useModelStore = defineStore("ModelStore", {
         baseValues1: [] as BaseValue[],
         baseValues2: [] as BaseValue[],
 
+        projectKey: "",
+        mlTaskId: "",
+        analysisId: "",
         trainTest: true,
 
         isLoading: false,
@@ -52,6 +55,10 @@ export const useModelStore = defineStore("ModelStore", {
             try {
                 const response = await API.getModels();
                 this.models = response.data;
+                console.log(this.models[0]);
+                this.projectKey = this.models[0].project_key;
+                this.mlTaskId = this.models[0].ml_task_id;
+                this.analysisId = this.models[0].analysis_id;
             } catch (error) {
                 this.handleError(error);
             } finally {
@@ -116,6 +123,15 @@ export const useModelStore = defineStore("ModelStore", {
 
         setTrainTest(isTest: boolean) {
             this.trainTest = isTest;
+        },
+
+        async exportModel(model: ModelPoint) {
+            try {
+                const response = await API.exportModel(model);
+                this._triggerDownload(response.data, `${model.name}.csv`);
+            } catch (error) {
+                this.handleError(error);
+            }
         },
         
         async exportActiveModel() {
