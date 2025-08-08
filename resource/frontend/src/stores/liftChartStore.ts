@@ -7,8 +7,19 @@ import type { LiftDataPoint, ModelPoint } from '../models';
 export const useLiftChartStore = defineStore("liftChart", {
     state: () => ({
         liftChartData: [] as LiftDataPoint[],
-        nbBins: 8,
         isLoading: false,
+
+        formOptions: {
+            model: "",
+            nbBins: 8,
+            trainTest: true
+        },
+        
+        chartOptions: {
+            model: "",
+            nbBins: 8,
+            trainTest: true
+        }
     }),
 
     actions: {
@@ -18,8 +29,21 @@ export const useLiftChartStore = defineStore("liftChart", {
             useNotification("negative", errorMessage);
         },
 
-        async fetchLiftData(modelId: string) {
-            if (!modelId) {
+        setModel(model: string) {
+            this.formOptions.model = model;
+        },
+        
+        setNbBins(nbBins: number) {
+            this.formOptions.nbBins = nbBins;
+        },
+
+        setTrainTest(trainTest: boolean) {
+            this.formOptions.trainTest = trainTest;
+        },
+
+        async fetchLiftData() {
+            const modelName = this.chartOptions.model;
+            if (!modelName) {
                 this.liftChartData = [];
                 return;
             }
@@ -27,9 +51,9 @@ export const useLiftChartStore = defineStore("liftChart", {
             this.isLoading = true;
             try {
                 const store = useModelStore();
-                const model = store.models.filter( (v: ModelPoint) => v.id==modelId)[0];
+                const model = store.models.filter( (v: ModelPoint) => v.name==modelName)[0];
                 store.activeModel = model;
-                const modelNbBins = { nbBins: this.nbBins, id: model.id, name: model.name, trainTest: store.trainTest};
+                const modelNbBins = { nbBins: this.chartOptions.nbBins, id: model.id, name: model.name, trainTest: this.chartOptions.trainTest};
                 const response = await API.getLiftData(modelNbBins);
                 this.liftChartData = response.data;
             } catch (err) {
@@ -40,22 +64,27 @@ export const useLiftChartStore = defineStore("liftChart", {
             }
         },
 
-        async updateNbBins(newBinValue: number) {
-            this.nbBins = newBinValue;
-            
-            const store = useModelStore();
-            if (store.activeModel?.id) {
-                // Re-fetch data with the new bin value.
-                await this.fetchLiftData(store.activeModel.id);
-            }
+        applyForm() {
+            this.chartOptions.model = this.formOptions.model;
+            this.chartOptions.nbBins = this.formOptions.nbBins;
+            this.chartOptions.trainTest = this.formOptions.trainTest;
         },
 
-        async updateTrainTest(trainTest: boolean) {
-            const store = useModelStore();
-            store.setTrainTest(trainTest);
-            if (store.activeModel?.id) {
-                await this.fetchLiftData(store.activeModel.id);
-            }
-        }
+        // async updateNbBins(newBinValue: number) {
+        //     this.nbBins = newBinValue;
+            
+        //     const store = useModelStore();
+        //     if (store.activeModel?.id) {
+        //         await this.fetchLiftData(store.activeModel.id);
+        //     }
+        // },
+
+        // async updateTrainTest(trainTest: boolean) {
+        //     const store = useModelStore();
+        //     store.setTrainTest(trainTest);
+        //     if (store.activeModel?.id) {
+        //         await this.fetchLiftData(store.activeModel.id);
+        //     }
+        // }
     }
 });

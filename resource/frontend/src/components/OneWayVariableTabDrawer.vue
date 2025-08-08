@@ -117,7 +117,7 @@
               handler(newModel) {
                   if (newModel?.id) {
                       this.oneWayStore.fetchVariablesForModel(newModel.id);
-                      this.liftChartStore.fetchLiftData(newModel.id);
+                      this.liftChartStore.fetchLiftData();
                       this.variableStatsStore.fetchStatsForModel(newModel.id);
                   }
               },
@@ -134,9 +134,6 @@
           isFormUnchanged() {
             const form = this.oneWayStore.formOptions;
             const chart = this.oneWayStore.chartOptions;
-            console.log("check form")
-            console.log(form.comparisonModel);
-            console.log(chart.comparisonModel);
             return (
                 form.selectedVariable?.variable === chart.selectedVariable?.variable &&
                 form.levelOrder === chart.levelOrder &&
@@ -200,11 +197,8 @@
                 this.oneWayStore.setLevelOrder(value);
             },
             async onTrainTestChange(value: string) {
-                // if (this.oneWayStore.formOptions.selectedVariable) {
                 this.oneWayStore.setTrainTest(value == 'Train' ? true : false);
                 this.store.setTrainTest(value == 'Train' ? true : false);
-                //     this.oneWayStore.selectVariable(this.oneWayStore.formOptions.selectedVariable)
-                // }
             }
         },
         mounted() {

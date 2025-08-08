@@ -8,13 +8,13 @@ import { useModelStore } from "./webapp";
 const VARIABLE_STATS_COLUMNS: QTableColumn[] = [
     { name: 'variable', align: 'left', label: 'Variable', field: 'variable', sortable: true },
     { name: 'value', align: 'left', label: 'Value', field: 'value', sortable: true },
+    { name: 'relativity', align: 'right', label: 'Relativity', field: 'relativity', sortable: true },
     { name: 'coefficient', align: 'right', label: 'Coefficient', field: 'coefficient', sortable: true },
     { name: 'p_value', align: 'right', label: 'P-value', field: 'p_value', sortable: true },
     { name: 'standard_error', align: 'right', label: 'Standard Error', field: 'standard_error', sortable: true },
-    { name: 'standard_error_pct', align: 'right', label: 'Standard Error Pct', field: 'standard_error_pct', sortable: true },
+    { name: 'standard_error_pct', align: 'right', label: 'Standard Error %', field: 'standard_error_pct', sortable: true, format: (val) => `${val}%`},
     { name: 'weight', align: 'right', label: 'Weight', field: 'weight', sortable: true },
-    { name: 'weight_pct', align: 'right', label: 'Weight Pct', field: 'weight_pct', sortable: true },
-    { name: 'relativity', align: 'right', label: 'Relativity', field: 'relativity', sortable: true },
+    { name: 'weight_pct', align: 'right', label: 'Weight %', field: 'weight_pct', sortable: true, format: (val) => `${val}%`},
 ];
 
 export const useVariableLevelStatsStore = defineStore("variableLevelStats", {

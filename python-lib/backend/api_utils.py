@@ -21,6 +21,8 @@ def format_models(global_dku_mltask):
         if is_conform:
             model_name = model_details.get_user_meta()['name']
             matches = re.findall(pattern, model_name)
+            print("model_details")
+            print(model_details)
             models.append({"id": ml_id, "name": matches[0]})
         else:
             current_app.logger.info(f"model {ml_id} is not conform")

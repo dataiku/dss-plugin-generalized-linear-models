@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="stats-container">
   <div class="top-row">
     <div class="model-selector">
       <BsLabel label="Select a model" info-text="Stats will be generated for this model" />
@@ -37,8 +37,22 @@
               :rows="variableLevelStatsData"
               :columns="columns"
               :globalSearch="false"
-              row-key="variable"
-            />
+              row-key="variable">
+                <template v-slot:body-cell-p_value="props">
+                  <q-td :props="props">
+                    <span :class="{ 'table-value-highlight': props.row.p_value > p_value_threshold }">
+                      {{ props.value }}
+                    </span>
+                  </q-td>
+                </template>
+                <template v-slot:body-cell-standard_error_pct="props">
+                  <q-td :props="props">
+                    <span :class="{ 'table-value-highlight': props.row.standard_error_pct > standard_error_pct_threshold }">
+                      {{ props.value }}
+                    </span>
+                  </q-td>
+                </template>
+      </BsTable>
         </div>
       </div>
   </template>
@@ -62,13 +76,13 @@ import { useVariableLevelStatsStore } from "../stores/variableLevelStatsStore.ts
 const columns: QTableColumn[] = [
         { name: 'variable', align: 'center', label: 'Variable', field: 'variable',sortable: true},
         { name: 'value', align: 'center', label: 'Value', field: 'value',sortable: true},
+        { name: 'relativity', align: 'center', label: 'Relativity', field: 'relativity', sortable: true},
         { name: 'coefficient', align: 'center', label: 'Coefficient', field: 'coefficient',sortable: true},
         { name: 'p_value', align: 'center', label: 'P-value', field: 'p_value',sortable: true},
         { name: 'standard_error', align: 'center', label: 'Standard Error', field: 'standard_error',sortable: true},
-        { name: 'standard_error_pct', align: 'center', label: 'Standard Error PCT', field: 'standard_error_pct',sortable: true},
+        { name: 'standard_error_pct', align: 'center', label: 'Standard Error %', field: 'standard_error_pct',sortable: true},
         { name: 'weight', align: 'center', label: 'Weight', field: 'weight',sortable: true},
-        { name: 'weight_pct', align: 'center', label: 'Weight PCT', field: 'weight_pct',sortable: true},
-        { name: 'relativity', align: 'center', label: 'Relativity', field: 'relativity', sortable: true},
+        { name: 'weight_pct', align: 'center', label: 'Weight %', field: 'weight_pct',sortable: true},
       ]
 
 export default defineComponent({
@@ -106,7 +120,9 @@ export default defineComponent({
             store: useModelStore(),
             variableStatsStore: useVariableLevelStatsStore(),
             oneWayStore: useOneWayChartStore(),
-            liftChartStore: useLiftChartStore()
+            liftChartStore: useLiftChartStore(),
+            p_value_threshold: 0.05,
+            standard_error_pct_threshold: 100 
         };
     },
     watch: {
@@ -156,12 +172,7 @@ header {
 }
 
 .tab-content {
-  padding-left: 0px;
-  padding-right: 0px;
   padding-top: 20px;
-  display: flex;
-  align-items: center;
-  gap: var(--bs-spacing-13, 52px);
   min-height: 350px;
 }
 
@@ -204,4 +215,18 @@ header {
   gap: 12px;
   margin-left: auto;
 }
+
+.table-value-highlight {
+  background-color: #FEF5D3; /* A light yellow */
+}
+
+.stats-container {
+  width: 100%;
+}
+
+.empty-state {
+      display: flex;
+      justify-content: flex-start; /* Aligns to the left */
+      width: 100%;
+    }
 </style>
