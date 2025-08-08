@@ -9,9 +9,6 @@
             :all-options="store.modelOptions.filter(option => option !== store.comparedModelName)"
             @update:modelValue="onPrimaryModelChange"
         />
-        <!-- <div v-if="store.comparedModelName" class="button-container">
-            <BsButton class="bs-primary-button" unelevated dense no-caps padding="4" @click="onClick">Export Full Model</BsButton>
-        </div> -->
         
         <BsLabel v-if="store.activeModelName" label="Select variable *" info-text="Charts will be generated with respect to this variable" />
         <BsSelect
@@ -68,18 +65,16 @@
             <GLMToggle v-if="store.activeModelName" v-model="trainTestValue" @update:model-value="onTrainTestChange" option1="Train" option2="Test" />
         </div>
 
-        <!-- <div v-if="store.activeModelName" class="button-container">
-            <BsButton class="bs-primary-button" unelevated dense no-caps padding="4" @click="onClickOneWay">Export One-Way Data</BsButton>
-        </div> -->
         </div>
     </BsCollapsiblePanel>
     <BsCollapsiblePanel title="Compare (optional)">
             <div class="variable-select-container">
         <BsLabel v-if="store.activeModelName" label="Select model" info-text="Second model to compare with the first one" />
         <BsSelect
+            clearable
             v-if="store.activeModelName"
             :modelValue="store.comparedModelName"
-            :all-options="store.modelOptions.filter(option => option !== store.activeModelName)"
+            :all-options="comparisonModelOptions"
             @update:modelValue="onComparisonModelChange"
         />
         </div>
@@ -139,8 +134,9 @@
           isFormUnchanged() {
             const form = this.oneWayStore.formOptions;
             const chart = this.oneWayStore.chartOptions;
-            console.log(form.selectedVariable);
-            console.log(chart.selectedVariable);
+            console.log("check form")
+            console.log(form.comparisonModel);
+            console.log(chart.comparisonModel);
             return (
                 form.selectedVariable?.variable === chart.selectedVariable?.variable &&
                 form.levelOrder === chart.levelOrder &&
@@ -150,7 +146,14 @@
                 form.trainTest === chart.trainTest &&
                 form.comparisonModel === chart.comparisonModel
             );
-        }
+            },
+            comparisonModelOptions() {
+                const availableModels = this.store.modelOptions.filter(
+                    option => option !== this.store.activeModelName
+                );
+                
+                return availableModels;
+            }
         },
         methods: {
             async onPrimaryModelChange(value: string) {
@@ -159,6 +162,7 @@
             async onComparisonModelChange(value: string | null) {
                 console.log("comparison model change");
                 this.store.setComparedModel(value);
+                this.oneWayStore.setComparisonModel(value);
                 console.log("selected variable");
                 if (this.oneWayStore.formOptions.selectedVariable) {
                     console.log("go");

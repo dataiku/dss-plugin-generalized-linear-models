@@ -5,10 +5,17 @@ import { useModelStore } from "./webapp";
 import type { DataPoint, VariablePoint, ModelPoint } from '../models';
 import { QTableColumn } from "quasar";
 
-const RELATIVITIES_COLUMNS: QTableColumn[] = [
-    { name: 'class', align: 'center', label: 'Class', field: 'class',sortable: true},
-    { name: 'relativity', align: 'center', label: 'Relativity', field: 'relativity', sortable: true},
-  ]
+// const RELATIVITIES_COLUMNS: QTableColumn[] = [
+//     { name: 'class', align: 'center', label: 'Class', field: 'class',sortable: true},
+//     { name: 'relativity', align: 'center', label: 'Relativity', field: 'relativity', sortable: true},
+//     { name: 'compared_relativity', align: 'center', label: 'Compared Relativity', field: 'compared_relativity', sortable: true, required: false},
+//   ]
+
+  interface RelativityRow {
+  class: string;
+  relativity: number;
+  compared_relativity?: number;
+}
 
 /**
  * Manages the state and logic exclusively for the "One-Way Variable" analysis tab.
@@ -24,7 +31,6 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
         comparisonChartData: [] as DataPoint[],
 
         relativities: {},
-        relativitiesColumns: RELATIVITIES_COLUMNS,
 
         includeSuspectVariables: true,
         isLoading: false,
@@ -100,8 +106,12 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
             this.formOptions.levelOrder = levelOrder;
         },
 
-        setComparisonModel(comparisonModel: string) {
-            this.formOptions.comparisonModel = comparisonModel;
+        setComparisonModel(comparisonModel: string | null) {
+            if (!comparisonModel) {
+                this.formOptions.comparisonModel = "";
+            } else {
+                this.formOptions.comparisonModel = comparisonModel;
+            }
         },
         
         async fetchVariablesForModel(modelId: string) {
@@ -198,10 +208,26 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
 
             if (this.chartOptions.selectedVariable?.isInModel) {
                 const relativitiesTable = store.relativitiesData.filter(item => item.variable === this.chartOptions.selectedVariable?.variable);
-                this.relativities = relativitiesTable.map( (point) => {
-                        const relativity = {'class': point.category, 'relativity': Math.round(point.relativity*1000)/1000};
-                        return relativity
-                })
+                const relativitiesMap2 = new Map();
+                if (store.relativitiesData2.length > 0) {
+                    const relativitiesTable2 = store.relativitiesData2.filter(item => item.variable === this.chartOptions.selectedVariable?.variable);
+                    relativitiesTable2.forEach(item => {
+                        relativitiesMap2.set(item.category, item.relativity);
+                    });
+                }
+
+                this.relativities = relativitiesTable.map((point) => {
+                    const relativity: RelativityRow = {
+                        'class': point.category,
+                        'relativity': Math.round(point.relativity * 1000) / 1000
+                    };
+
+                    if (relativitiesMap2.has(point.category)) {
+                        relativity.compared_relativity = Math.round(relativitiesMap2.get(point.category) * 1000) / 1000;
+                    }
+
+                    return relativity;
+                });
             }
             console.log("comparison data");
             console.log(this.comparisonChartData);

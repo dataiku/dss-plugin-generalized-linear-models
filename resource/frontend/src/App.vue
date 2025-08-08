@@ -45,7 +45,6 @@
 
 <script lang="ts">
 import OneWayVariableTabDrawer from './components/OneWayVariableTabDrawer.vue';
-import VariableLevelStatsTabDrawer from './components/VariableLevelStatsTabDrawer.vue';
 import LiftChartTabDrawer from './components/LiftChartTabDrawer.vue';
 
 import OneWayTabContent from './components/OneWayTabContent.vue';
@@ -73,7 +72,6 @@ import { useLoader } from "./composables/use-loader";
 export default defineComponent({
     components: {
       OneWayVariableTabDrawer,
-      VariableLevelStatsTabDrawer,
       LiftChartTabDrawer,
       OneWayTabContent,
       VariableLevelStatsTabContent,
@@ -100,10 +98,8 @@ export default defineComponent({
                     name: "Model Training",
                     docTitle: "GLM Hub",
                     icon: trainingIcon,
-                    // drawerComponent: "ModelTrainingTabDrawer",
                     contentComponent: "ModelTrainingTabContent",
                     contentProps: {},
-                    // drawerProps: {},
                     showEmptyState: false,
                     emptyState: {
                         title: "Model Training",
@@ -122,8 +118,11 @@ export default defineComponent({
                         'chart-data2': this.oneWayStore.comparisonChartData,
                         'selected-variable': this.oneWayStore.chartOptions.selectedVariable,
                         relativities: this.oneWayStore.relativities,
-                        'relativities-columns': this.store.relativitiesColumns,
-                        'level-order': this.oneWayStore.chartOptions.levelOrder
+                        'level-order': this.oneWayStore.chartOptions.levelOrder,
+                        'selected-model': this.store.activeModelName,
+                        'metrics': this.store.modelMetrics1,
+                        'compared-model': this.store.comparedModelName,
+                        'compared-metrics': this.store.modelMetrics2,
                     },
                     drawerProps: {},
                     showEmptyState: !this.oneWayStore.primaryChartData,
@@ -135,19 +134,12 @@ export default defineComponent({
                 {
                     name: "Variable-Level Stats",
                     docTitle: "GLM Hub",
-                    icon: statsIcon, // Use a new or existing icon
-                    drawerComponent: "VariableLevelStatsTabDrawer", // New Drawer
-                    contentComponent: "VariableLevelStatsTabContent", // Existing Content
+                    icon: statsIcon,
+                    contentComponent: "VariableLevelStatsTabContent",
                     contentProps: {
                         'variable-level-stats-data': this.variableStatsStore.modelStats,
                         columns: this.variableStatsStore.columns
                     },
-                    drawerProps: {},
-                    showEmptyState: !this.store.activeModelName,
-                    emptyState: {
-                        title: "Variable-Level Statistics",
-                        subtitle: "Select a model in the left menu to view its stats",
-                    }
                 },
                 {
                     name: "Lift Chart",
@@ -240,7 +232,10 @@ header {
   }
 }
 
-.bs-primary-button {
-    background-color: black;
+.documentation-btn {
+    background-color: white;
+    color: black;
+    border: 1px solid #000000;
+
 }
 </style>

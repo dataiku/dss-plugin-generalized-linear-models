@@ -1,4 +1,31 @@
 <template>
+  <div>
+  <div class="top-row">
+    <div class="model-selector">
+      <BsLabel label="Select a model" info-text="Stats will be generated for this model" />
+      <BsSelect
+          :modelValue="store.activeModelName"
+          :all-options="store.modelOptions"
+          @update:modelValue="onModelChange"
+      />
+      </div>
+          <div class="export-buttons" v-if="variableLevelStatsData.length>0">
+            <BsButton 
+                  dense
+                  outline
+                  @click="deployModel">
+                  <q-icon name="rocket_launch" />
+                  <q-tooltip>Deploy Model</q-tooltip>
+              </BsButton>
+            <BsButton   
+                  dense
+                  outline
+                  @click="exportVariableLevelStats">
+                  <q-icon name="download" />
+                  <q-tooltip>Export Variable Stats</q-tooltip>
+              </BsButton>
+          </div>
+        </div>
       <EmptyState
             class="empty-state"
             title="Variable Level Stats"
@@ -13,7 +40,8 @@
               row-key="variable"
             />
         </div>
-    </template>
+      </div>
+  </template>
 
 <script lang="ts">
 import EmptyState from './EmptyState.vue';
@@ -26,6 +54,10 @@ import docLogo from "../assets/images/doc-logo-example.svg";
 import variableLevelIcon from "../assets/images/variable-level-stats.svg";
 import { useLoader } from "../composables/use-loader";
 import type { QTableColumn } from 'quasar';
+import { useModelStore } from "../stores/webapp";
+import { useOneWayChartStore } from "../stores/oneWayChartStore.ts"
+import { useLiftChartStore } from "../stores/liftChartStore.ts"
+import { useVariableLevelStatsStore } from "../stores/variableLevelStatsStore.ts"
 
 const columns: QTableColumn[] = [
         { name: 'variable', align: 'center', label: 'Variable', field: 'variable',sortable: true},
@@ -71,8 +103,41 @@ export default defineComponent({
             docLogo,
             variableLevelIcon,
             loading: false,
+            store: useModelStore(),
+            variableStatsStore: useVariableLevelStatsStore(),
+            oneWayStore: useOneWayChartStore(),
+            liftChartStore: useLiftChartStore()
         };
-    }
+    },
+    watch: {
+          isLoading(newVal: any) { this.$emit("update:loading", newVal); },
+          'store.activeModel': {
+              handler(newModel) {
+                  if (newModel?.id) {
+                      this.oneWayStore.fetchVariablesForModel(newModel.id);
+                      this.liftChartStore.fetchLiftData(newModel.id);
+                      this.variableStatsStore.fetchStatsForModel(newModel.id);
+                  }
+              },
+              deep: true
+            }
+        },
+        methods: {
+            async onModelChange(value: string) {
+                this.store.setActiveModel(value);
+            },
+            async deployModel() {
+              this.store.deployModel();
+            },
+            async exportVariableLevelStats() {
+              this.variableStatsStore.exportVariableLevelStats();
+            }
+        },
+        computed: {
+          isLoading() { 
+            return this.store.isLoading || this.variableStatsStore.isLoading;
+          }
+        }
 })
 </script>
 
@@ -126,16 +191,17 @@ header {
   }
 }
 
-.close-side-drawer-btn {
-    color: var(--interactions-bs-color-interaction-primary, #2b66ff);
-    position: absolute;
-    top: 7px;
-    right: 10px;
-    z-index: 1000;
+.top-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 52px;
+  width: 100%;
+  margin-top: 12px;
 }
-.open-side-drawer-btn {
-    color: var(--interactions-bs-color-interaction-primary, #2b66ff);
-    position: relative;
-    top: 4px;
+
+.export-buttons {
+  display: flex;
+  gap: 12px;
+  margin-left: auto;
 }
 </style>

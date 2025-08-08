@@ -10,6 +10,7 @@ export const useModelStore = defineStore("ModelStore", {
         activeModel: null as ModelPoint | null,
         comparedModel: null as ModelPoint | null,
         relativitiesData: [] as RelativityPoint[],
+        relativitiesData2: [] as RelativityPoint[],
 
         modelMetrics1: {} as ModelMetricsDataPoint,
         modelMetrics2: {} as ModelMetricsDataPoint,
@@ -104,6 +105,8 @@ export const useModelStore = defineStore("ModelStore", {
                 ]);
                 this.baseValues2 = baseResponse.data;
                 this.modelMetrics2 = metricsResponse.data;
+                const relativityResponse = await API.getRelativities(model);
+                this.relativitiesData2 = relativityResponse?.data;
             } catch (err) {
                 this.handleError(err);
             } finally {
@@ -123,6 +126,18 @@ export const useModelStore = defineStore("ModelStore", {
             try {
                 const response = await API.exportModel(this.activeModel);
                 this._triggerDownload(response.data, `${this.activeModelName}.csv`);
+            } catch (error) {
+                this.handleError(error);
+            }
+        },
+
+        async deployModel() {
+            if (!this.activeModel) {
+                this.notifyError("No active model selected to deploy.");
+                return;
+            }
+            try {
+                const response = await API.deployModel(this.activeModel);
             } catch (error) {
                 this.handleError(error);
             }

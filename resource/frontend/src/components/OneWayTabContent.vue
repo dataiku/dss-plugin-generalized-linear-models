@@ -5,6 +5,33 @@
           subtitle="Select variable in the left column to create chart"
           v-if="chartData.length==0"/>
       <div class="tab-content" v-else>
+      <div class="top-row">
+          <ModelMetrics
+            :title="selectedModel"
+            :items="metrics"
+          />
+          <ModelMetrics v-if="oneWayStore.chartOptions.comparisonModel.length > 0"
+            :title="comparedModel"
+            :items="comparedMetrics"
+          />
+          <div class="export-buttons">
+            <BsButton 
+                  dense
+                  outline
+                  @click="deployModel">
+                  <q-icon name="rocket_launch" />
+                  <q-tooltip>Deploy Model</q-tooltip>
+              </BsButton>
+            <BsButton   
+                  dense
+                  outline
+                  @click="exportOneWay">
+                  <q-icon name="download" />
+                  <q-tooltip>Export One-Way</q-tooltip>
+              </BsButton>
+          </div>
+        </div>
+        <div class="chart-row">
           <BarChart
             v-if="chartData.length>0"
             :xaxisLabels="chartXaxisLabels"
@@ -21,19 +48,23 @@
           <BsTable v-if="selectedVariable.isInModel"
             :title="selectedVariable.variable"
             :rows="relativities"
-            :columns="relativitiesColumns"
+            :columns="tableColumns"
             :globalSearch="false"
             row-key="name"
           />
       </div>
+    </div>
 </template>
 
 <script lang="ts">
 import BarChart from './BarChart.vue'
 import DocumentationContent from './DocumentationContent.vue'
 import EmptyState from './EmptyState.vue';
+import ModelMetrics from './ModelMetrics.vue'
+import { useModelStore } from "../stores/webapp";
+import { useOneWayChartStore } from "../stores/oneWayChartStore";
 import * as echarts from "echarts";
-import type { DataPoint, VariablePoint } from '../models';
+import type { DataPoint, VariablePoint, ModelMetricsDataPoint } from '../models';
 import { defineComponent } from "vue";
 import type {PropType} from "vue";
 import { BsButton, BsLayoutDefault, BsTable, BsCheckbox, BsSlider, BsToggle } from "quasar-ui-bs";
@@ -85,13 +116,25 @@ export default defineComponent({
         type: Array<Object>,
         default: rows
       },
-      relativitiesColumns: {
-        type: Array<QTableColumn>,
-        default: columns
-      },
       levelOrder: {
         type: String,
         required: true
+      },
+      selectedModel: {
+        type: String,
+        default: ""
+      },
+      metrics: {
+        type: Object as PropType<ModelMetricsDataPoint>,
+        default: {AIC: 0, BIC: 0, Deviance: 0}
+      },
+      comparedModel: {
+        type: String,
+        default: ""
+      },
+      comparedMetrics: {
+        type: Object as PropType<ModelMetricsDataPoint>,
+        default: {AIC: 0, BIC: 0, Deviance: 0}
       }
     },
     components: {
@@ -103,7 +146,8 @@ export default defineComponent({
         BsTable,
         BsCheckbox,
         BsSlider,
-        BsToggle
+        BsToggle,
+        ModelMetrics
     },
     computed: {
         isBinned(): boolean {
@@ -125,11 +169,37 @@ export default defineComponent({
                 return this.chartData.map(item => String(item.Category));
             }
             return this.chartData.map(item => Number(item.Category));
+        },
+
+        tableColumns(): QTableColumn[] {
+            const baseColumns = [...columns];
+
+            // If there is a compared model, add the extra column
+            if (this.oneWayStore.chartOptions.comparisonModel && this.oneWayStore.chartOptions.comparisonModel.length > 0) {
+                baseColumns.push({
+                    name: 'compared_relativity',
+                    align: 'center',
+                    label: 'Compared Relativity',
+                    field: 'compared_relativity',
+                    sortable: true
+                });
+            }
+
+            return baseColumns;
         }
+    },
+    methods: {
+      async deployModel() {
+        this.store.deployModel();
+      },
+      async exportOneWay() {
+        this.oneWayStore.exportOneWayChart();
+      }
     },
     data() {
         return {
-            
+          store: useModelStore(),
+          oneWayStore: useOneWayChartStore(),
         };
     },
 })
@@ -153,10 +223,13 @@ header {
   padding-left: 0px;
   padding-right: 0px;
   padding-top: 20px;
-  display: flex;
   align-items: flex-start;
   gap: var(--bs-spacing-13, 52px);
   min-height: 350px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
 }
 
 .logo {
@@ -200,5 +273,24 @@ header {
     color: var(--interactions-bs-color-interaction-primary, #2b66ff);
     position: relative;
     top: 4px;
+}
+
+.top-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 52px;
+  width: 100%;
+}
+
+.export-buttons {
+  display: flex;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.chart-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 52px;
 }
 </style>
