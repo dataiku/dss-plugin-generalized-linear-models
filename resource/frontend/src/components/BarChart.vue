@@ -105,6 +105,9 @@ export default {
   methods: {
     createChartData() {
       // 1. Combine all data points into a single array of objects to sort them together.
+      console.log("second model");
+      console.log(this.fittedAverageLine2);
+      console.log(this.baseLevelPredictionLine2);
       let combinedData = this.xaxisLabels.map((label, index) => ({
         label: label,
         weight: this.barData[index],

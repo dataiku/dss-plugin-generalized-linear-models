@@ -6,7 +6,7 @@
           v-if="chartData.length==0"/>
       <div class="tab-content" v-else>
           <BarChart
-            v-if="selectedVariable"
+            v-if="chartData.length>0"
             :xaxisLabels="chartXaxisLabels"
             :xaxisType="chartXaxisType"
             :barData="chartData.map(item => item.Value)"

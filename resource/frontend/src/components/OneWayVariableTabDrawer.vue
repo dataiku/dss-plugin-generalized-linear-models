@@ -1,5 +1,6 @@
 <template>
-    
+    <div class="drawer-container">
+    <div class="scrollable-content">
         <BsCollapsiblePanel title="Configure">
             <div class="variable-select-container">
         <BsLabel label="Select model *" info-text="Charts will be generated with respect to this model" />
@@ -8,19 +9,19 @@
             :all-options="store.modelOptions.filter(option => option !== store.comparedModelName)"
             @update:modelValue="onPrimaryModelChange"
         />
-        <div v-if="store.comparedModelName" class="button-container">
+        <!-- <div v-if="store.comparedModelName" class="button-container">
             <BsButton class="bs-primary-button" unelevated dense no-caps padding="4" @click="onClick">Export Full Model</BsButton>
-        </div>
+        </div> -->
         
         <BsLabel v-if="store.activeModelName" label="Select variable *" info-text="Charts will be generated with respect to this variable" />
         <BsSelect
               v-if="store.activeModelName"
-                  v-model="oneWayStore.selectedVariable"
+                  v-model="oneWayStore.formOptions.selectedVariable"
                   :all-options="oneWayStore.variableOptions"
                   @update:modelValue="onVariableChange">
                   <template v-slot:selected-item="scope">
                     <q-item v-if="scope.opt">
-                      {{ oneWayStore.selectedVariable?.variable }}
+                      {{ oneWayStore.formOptions.selectedVariable?.variable }}
                     </q-item>
                     </template>
                         <template #option="props">
@@ -36,49 +37,58 @@
                         </template>
               </BsSelect>
 
-        <BsLabel label="Level order" info-text="Levels on the X-axis will be ordered as defined" />
-        <BsSelect
-            :modelValue="oneWayStore.levelOrder"
+        <BsLabel v-if="store.activeModelName" label="Level order" info-text="Levels on the X-axis will be ordered as defined" />
+        <BsSelect v-if="store.activeModelName"
+            :modelValue="oneWayStore.formOptions.levelOrder"
             :all-options="levelOrderOptions"
             @update:model-value="onLevelOrderChange"
         />
         
-        <BsLabel label="Chart distribution" info-text="Display the raw values or bin them" />
-        <BsSelect
-            :modelValue="oneWayStore.chartDistribution"
+        <BsLabel v-if="store.activeModelName" label="Chart distribution" info-text="Display the raw values or bin them" />
+        <BsSelect v-if="store.activeModelName" 
+            :modelValue="oneWayStore.formOptions.chartDistribution"
             :all-options="chartDistributionOptions"
             @update:model-value="onChartDistributionChange"
         />
 
-        <BsLabel v-if="oneWayStore.chartDistribution == 'Binning'" label="Select the number of bins" />
-        <BsSlider v-if="oneWayStore.chartDistribution == 'Binning'" @update:modelValue="onNbBinsChange" v-model="oneWayStore.nbBins" :min="2" :max="30" />
+        <BsLabel v-if="store.activeModelName && oneWayStore.formOptions.chartDistribution == 'Binning'" label="Select the number of bins" />
+        <BsSlider v-if="store.activeModelName && oneWayStore.formOptions.chartDistribution == 'Binning'" @update:modelValue="onNbBinsChange" v-model="oneWayStore.nbBins" :min="2" :max="30" />
 
-        <BsLabel label="Chart rescaling" info-text="Rescale the chart on base level, or compute the ratio between predicted and observed" />
-        <BsSelect
-            :modelValue="oneWayStore.chartRescaling"
+        <BsLabel v-if="store.activeModelName" label="Chart rescaling" info-text="Rescale the chart on base level, or compute the ratio between predicted and observed" />
+        <BsSelect v-if="store.activeModelName" 
+            :modelValue="oneWayStore.formOptions.chartRescaling"
             :all-options="chartRescalingOptions"
             @update:model-value="onChartRescalingChange"
         />
-
-        <!-- <BsCheckbox v-if="store.activeModelName" v-model="oneWayStore.rescale" @update:model-value="onRescaleChange" label="Rescale?" /> -->
         
         <BsCheckbox v-if="store.activeModelName" v-model="oneWayStore.includeSuspectVariables" label="Include Suspect Variables" />
 
-        <BsLabel v-if="store.activeModelName" label="Run Analysis on" />
-        <BsToggle v-if="store.activeModelName" v-model="store.trainTest" @update:model-value="onTrainTestChange" labelRight="Test" labelLeft="Train" />
-        
-        <div v-if="store.activeModelName" class="button-container">
-            <BsButton class="bs-primary-button" unelevated dense no-caps padding="4" @click="onClickOneWay">Export One-Way Data</BsButton>
+        <div class="train-test-wrapper">
+            <BsLabel v-if="store.activeModelName" label="Run analysis on dataset " />
+            <GLMToggle v-if="store.activeModelName" v-model="trainTestValue" @update:model-value="onTrainTestChange" option1="Train" option2="Test" />
         </div>
+
+        <!-- <div v-if="store.activeModelName" class="button-container">
+            <BsButton class="bs-primary-button" unelevated dense no-caps padding="4" @click="onClickOneWay">Export One-Way Data</BsButton>
+        </div> -->
         </div>
     </BsCollapsiblePanel>
-        <BsLabel v-if="store.activeModelName" label="Compare with model" info-text="Second model to compare with the first one" />
+    <BsCollapsiblePanel title="Compare (optional)">
+            <div class="variable-select-container">
+        <BsLabel v-if="store.activeModelName" label="Select model" info-text="Second model to compare with the first one" />
         <BsSelect
             v-if="store.activeModelName"
             :modelValue="store.comparedModelName"
             :all-options="store.modelOptions.filter(option => option !== store.activeModelName)"
             @update:modelValue="onComparisonModelChange"
         />
+        </div>
+    </BsCollapsiblePanel>
+    </div>
+        <div class="button-container">
+            <BsButton class="bs-primary-button" unelevated dense no-caps padding="4" :disabled="isFormUnchanged" @click="onCreateChart">Create Chart</BsButton>
+        </div>
+    </div>
     </template>
     
     <script lang="ts">
@@ -88,9 +98,13 @@
     import { useLiftChartStore } from "../stores/liftChartStore.ts"
     import { useVariableLevelStatsStore } from "../stores/variableLevelStatsStore.ts"
     import { VariablePoint } from "src/models";
+    import GLMToggle from './GLMToggle.vue'
     
     export default defineComponent({
         emits: ["update:loading"],
+        components: {
+            GLMToggle
+        },
         data() {
             return {
                 store: useModelStore(),
@@ -118,14 +132,38 @@
         computed: {
           isLoading() { 
             return this.store.isLoading || this.oneWayStore.isLoading;
-          }
+          },
+          trainTestValue() {
+            return this.store.trainTest ? 'Train' : 'Test';
+          },
+          isFormUnchanged() {
+            const form = this.oneWayStore.formOptions;
+            const chart = this.oneWayStore.chartOptions;
+            console.log(form.selectedVariable);
+            console.log(chart.selectedVariable);
+            return (
+                form.selectedVariable?.variable === chart.selectedVariable?.variable &&
+                form.levelOrder === chart.levelOrder &&
+                form.chartDistribution === chart.chartDistribution &&
+                form.nbBins === chart.nbBins &&
+                form.chartRescaling === chart.chartRescaling &&
+                form.trainTest === chart.trainTest &&
+                form.comparisonModel === chart.comparisonModel
+            );
+        }
         },
         methods: {
             async onPrimaryModelChange(value: string) {
                 this.store.setActiveModel(value);
             },
             async onComparisonModelChange(value: string | null) {
+                console.log("comparison model change");
                 this.store.setComparedModel(value);
+                console.log("selected variable");
+                if (this.oneWayStore.formOptions.selectedVariable) {
+                    console.log("go");
+                    this.oneWayStore.selectVariable(this.oneWayStore.formOptions.selectedVariable);
+                }
             },
             async onVariableChange(value: VariablePoint) {
                 this.oneWayStore.selectVariable(value);
@@ -136,26 +174,33 @@
             async onClick() {
                 this.store.exportActiveModel();
             },
+            async onCreateChart() {
+                if (this.oneWayStore.chartOptions.trainTest != this.oneWayStore.formOptions.trainTest) {
+                    if (this.oneWayStore.formOptions.selectedVariable) {
+                        this.oneWayStore.selectVariable(this.oneWayStore.formOptions.selectedVariable);
+                    }
+                }
+                this.oneWayStore.applyForm();
+                this.oneWayStore.processAndFilterData();
+            },
             async onChartRescalingChange(value: string) {
                 this.oneWayStore.setRescale(value);
-                this.oneWayStore.processAndFilterData();
             },
             async onChartDistributionChange(value: string) {
                 this.oneWayStore.setChartDistribution(value);
-                this.oneWayStore.processAndFilterData();
             },
             async onNbBinsChange(value: number) {
                 this.oneWayStore.setNbBins(value);
-                this.oneWayStore.processAndFilterData();
             },
             async onLevelOrderChange(value: string) {
                 this.oneWayStore.setLevelOrder(value);
             },
-            async onTrainTestChange(value: boolean) {
-                if (this.oneWayStore.selectedVariable) {
-                    this.store.setTrainTest(value)
-                    this.oneWayStore.selectVariable(this.oneWayStore.selectedVariable)
-                }
+            async onTrainTestChange(value: string) {
+                // if (this.oneWayStore.formOptions.selectedVariable) {
+                this.oneWayStore.setTrainTest(value == 'Train' ? true : false);
+                this.store.setTrainTest(value == 'Train' ? true : false);
+                //     this.oneWayStore.selectVariable(this.oneWayStore.formOptions.selectedVariable)
+                // }
             }
         },
         mounted() {
@@ -165,7 +210,28 @@
     </script>
     
     <style lang="scss" scoped>
-        /* Copy styles from ModelVisualizationDrawer.vue */
         .variable-select-container { padding: 20px; }
-        .button-container { margin-top: 12px; }
+        .button-container { display: flex;
+                        justify-content: flex-end;
+                        width: 100%; 
+                        padding: 20px;
+                        margin-bottom: 30px;}
+        .train-test-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .bs-primary-button {
+            background-color:#2B66FF;
+            color: white;
+        }
+        .scrollable-content {
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+        .drawer-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%; 
+    }
     </style>

@@ -16,7 +16,7 @@ export const useModelStore = defineStore("ModelStore", {
         baseValues1: [] as BaseValue[],
         baseValues2: [] as BaseValue[],
 
-        trainTest: false,
+        trainTest: true,
 
         isLoading: false,
     }),

@@ -120,13 +120,13 @@ export default defineComponent({
                     contentProps: {
                         'chart-data': this.oneWayStore.primaryChartData,
                         'chart-data2': this.oneWayStore.comparisonChartData,
-                        'selected-variable': this.oneWayStore.selectedVariable,
+                        'selected-variable': this.oneWayStore.chartOptions.selectedVariable,
                         relativities: this.oneWayStore.relativities,
                         'relativities-columns': this.store.relativitiesColumns,
-                        'level-order': this.oneWayStore.levelOrder
+                        'level-order': this.oneWayStore.chartOptions.levelOrder
                     },
                     drawerProps: {},
-                    showEmptyState: !this.store.activeModelName,
+                    showEmptyState: !this.oneWayStore.primaryChartData,
                     emptyState: {
                         title: "One-Way Variable Analysis",
                         subtitle: "Select a model in the left menu to begin",
@@ -238,5 +238,9 @@ header {
     /* The var() here might be from a global stylesheet */
     padding-right: calc(var(--section-gap) / 2);
   }
+}
+
+.bs-primary-button {
+    background-color: black;
 }
 </style>

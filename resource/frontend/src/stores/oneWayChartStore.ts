@@ -16,7 +16,6 @@ const RELATIVITIES_COLUMNS: QTableColumn[] = [
 export const useOneWayChartStore = defineStore("oneWayChart", {
     state: () => ({
         availableVariables: [] as VariablePoint[],
-        selectedVariable: null as VariablePoint | null,
         
         primaryModelRawData: [] as DataPoint[],
         comparisonModelRawData: [] as DataPoint[],
@@ -29,10 +28,27 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
 
         includeSuspectVariables: true,
         isLoading: false,
-        levelOrder: "Natural order",
-        chartDistribution: "Raw data",
-        nbBins: 20,
-        chartRescaling: "None"
+
+        formOptions: {
+            selectedVariable: null as VariablePoint | null,
+            levelOrder: "Natural order",
+            chartDistribution: "Raw data",
+            nbBins: 20,
+            chartRescaling: "None",
+            trainTest: true,
+            comparisonModel: "",
+        },
+
+        chartOptions: {
+            selectedVariable: null as VariablePoint | null,
+            levelOrder: "Natural order",
+            chartDistribution: "Raw data",
+            nbBins: 20,
+            chartRescaling: "None",
+            trainTest: true,
+            comparisonModel: "",
+        }
+        
     }),
 
     getters: {
@@ -43,7 +59,7 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
             return this.primaryChartData.length > 0;
         },
         selectedVariableName: (state): string => {
-            return state.selectedVariable?.variable || "";
+            return state.formOptions.selectedVariable?.variable || "";
         }
     },
 
@@ -54,26 +70,44 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
             useNotification("negative", errorMessage);
         },
 
+        applyForm() {
+            this.chartOptions.selectedVariable = this.formOptions.selectedVariable;
+            this.chartOptions.levelOrder = this.formOptions.levelOrder;
+            this.chartOptions.chartDistribution = this.formOptions.chartDistribution;
+            this.chartOptions.nbBins = this.formOptions.nbBins;
+            this.chartOptions.chartRescaling = this.formOptions.chartRescaling;
+            this.chartOptions.trainTest = this.formOptions.trainTest;
+            this.chartOptions.comparisonModel = this.formOptions.comparisonModel;
+        },
+
         setRescale(rescaling: string) {
-            this.chartRescaling = rescaling;
+            this.formOptions.chartRescaling = rescaling;
+        },
+
+        setTrainTest(trainTest: boolean) {
+            this.formOptions.trainTest = trainTest;
         },
 
         setChartDistribution(chartDistribution: string) {
-            this.chartDistribution = chartDistribution;
+            this.formOptions.chartDistribution = chartDistribution;
         },
 
         setNbBins(nbBins: number) {
-            this.nbBins = nbBins;
+            this.formOptions.nbBins = nbBins;
         },
 
         setLevelOrder(levelOrder: string) {
-            this.levelOrder = levelOrder;
+            this.formOptions.levelOrder = levelOrder;
+        },
+
+        setComparisonModel(comparisonModel: string) {
+            this.formOptions.comparisonModel = comparisonModel;
         },
         
         async fetchVariablesForModel(modelId: string) {
             if (!modelId) {
                 this.availableVariables = [];
-                this.selectedVariable = null;
+                this.formOptions.selectedVariable = null;
                 return;
             }
             this.isLoading = true;
@@ -91,12 +125,13 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
         },
 
         async selectVariable(variableName: VariablePoint) {
+            console.log('select variable');
             const store = useModelStore();
             let foundVariable = this.availableVariables.find(v => v === variableName);
             if (foundVariable) {
-                this.selectedVariable = foundVariable
+                this.formOptions.selectedVariable = foundVariable
             }
-            if (!this.selectedVariable || !store.activeModel?.id) {
+            if (!this.formOptions.selectedVariable || !store.activeModel?.id) {
                 this.primaryChartData = [];
                 this.comparisonChartData = [];
                 return;
@@ -104,14 +139,15 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
 
             this.isLoading = true;
             try {
-                const modelTrainPoint = {id: store.activeModel.id, name: store.activeModel.name, trainTest: store.trainTest, variable: this.selectedVariable.variable, chartRescaling: this.chartRescaling};
+                const modelTrainPoint = {id: store.activeModel.id, name: store.activeModel.name, trainTest: store.trainTest, variable: this.formOptions.selectedVariable.variable, chartRescaling: this.chartOptions.chartRescaling};
                 // Fetch data for both primary and comparison models in parallel for efficiency.
                 const promises = [
                     API.getPredictedBase(modelTrainPoint)
                 ];
-
+                console.log("compared model");
+                console.log(store.comparedModel);
                 if (store.comparedModel?.id) {
-                    const comparedModelTrainPoint = {id: store.comparedModel.id, name: store.comparedModel.name, trainTest: store.trainTest, variable: this.selectedVariable.variable, chartRescaling: this.chartRescaling};
+                    const comparedModelTrainPoint = {id: store.comparedModel.id, name: store.comparedModel.name, trainTest: store.trainTest, variable: this.formOptions.selectedVariable.variable, chartRescaling: this.chartOptions.chartRescaling};
                     promises.push(API.getPredictedBase(comparedModelTrainPoint));
                 }
 
@@ -121,7 +157,7 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
                 this.comparisonModelRawData = comparisonResponse?.data || [];
                 
                 // After fetching, process the data for display.
-                this.processAndFilterData();
+                //this.processAndFilterData();
 
             } catch (err) {
                 this.handleError(err);
@@ -131,44 +167,48 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
         },
         
         processAndFilterData() {
+            console.log('process and filter data');
             const store = useModelStore();
             let filteredPrimary = this.primaryModelRawData;
-            if (this.chartRescaling == "Base level") {
+            console.log(this.comparisonModelRawData);
+            if (this.chartOptions.chartRescaling == "Base level") {
                 filteredPrimary = this._applyRescaling(this.primaryModelRawData, store.baseValues1);
-            } else if (this.chartRescaling == "Ratio") {
+            } else if (this.chartOptions.chartRescaling == "Ratio") {
                 filteredPrimary = this._applyRescalingRatio(this.primaryModelRawData);
             }
-            if (this.chartDistribution == "Binning") {
-                filteredPrimary = this._binData(filteredPrimary, this.nbBins);
+            if (this.chartOptions.chartDistribution == "Binning") {
+                filteredPrimary = this._binData(filteredPrimary, this.chartOptions.nbBins);
             }
             this.primaryChartData = filteredPrimary;
 
             if (this.comparisonModelRawData.length > 0) {
                 let filteredComparison = this.comparisonModelRawData;
-                if (this.chartRescaling == "Base level") {
+                if (this.chartOptions.chartRescaling == "Base level") {
                     filteredComparison = this._applyRescaling(filteredComparison, store.baseValues2);
-                } else if (this.chartRescaling == "Ratio") {
+                } else if (this.chartOptions.chartRescaling == "Ratio") {
                     filteredComparison = this._applyRescalingRatio(filteredComparison);
                 }
-                if (this.chartDistribution == "Binning") {
-                filteredComparison = this._binData(filteredComparison, this.nbBins);
+                if (this.chartOptions.chartDistribution == "Binning") {
+                filteredComparison = this._binData(filteredComparison, this.chartOptions.nbBins);
             }
                 this.comparisonChartData = filteredComparison;
             } else {
                 this.comparisonChartData = [];
             }
 
-            if (this.selectedVariable?.isInModel) {
-                const relativitiesTable = store.relativitiesData.filter(item => item.variable === this.selectedVariable?.variable);
+            if (this.chartOptions.selectedVariable?.isInModel) {
+                const relativitiesTable = store.relativitiesData.filter(item => item.variable === this.chartOptions.selectedVariable?.variable);
                 this.relativities = relativitiesTable.map( (point) => {
                         const relativity = {'class': point.category, 'relativity': Math.round(point.relativity*1000)/1000};
                         return relativity
                 })
             }
+            console.log("comparison data");
+            console.log(this.comparisonChartData);
         },
 
         async exportOneWayChart() {
-            if (!this.selectedVariable) {
+            if (!this.chartOptions.selectedVariable) {
                 this.notifyError("No variable selected to export.");
                 return;
             }
@@ -180,10 +220,10 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
             try {
                 const response = await API.exportOneWay({id: store.activeModel.id, 
                                             name: store.activeModel.name, 
-                                            variable: this.selectedVariable.variable, 
+                                            variable: this.chartOptions.selectedVariable.variable, 
                                             trainTest: store.trainTest,
-                                            chartRescaling: this.chartRescaling});
-                this._triggerDownload(response.data, store.activeModel.name + '_' + this.selectedVariable.variable + '_' + (this.trainTest ? "test" : "train") + (this.rescale ? "_rescaled" : "") + '.csv');
+                                            chartRescaling: this.chartOptions.chartRescaling});
+                this._triggerDownload(response.data, store.activeModel.name + '_' + this.chartOptions.selectedVariable.variable + '_' + (this.chartOptions.trainTest ? "test" : "train") + this.chartOptions.chartRescaling + '.csv');
             } catch (error) {
                 this.handleError(error);
             }
@@ -201,9 +241,9 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
         },
 
         _applyRescaling(dataPoints: DataPoint[], baseValues: any[]): DataPoint[] {
-            if (!this.selectedVariable) return dataPoints;
+            if (!this.chartOptions.selectedVariable) return dataPoints;
 
-            const baseCategory = baseValues.find(item => item.variable === this.selectedVariable!.variable);
+            const baseCategory = baseValues.find(item => item.variable === this.chartOptions.selectedVariable!.variable);
             if (!baseCategory) return dataPoints;
 
             const baseDataPoint = dataPoints.find(item => item.Category === baseCategory.base_level);
@@ -220,7 +260,7 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
         },
 
         _applyRescalingRatio(dataPoints: DataPoint[]): DataPoint[] {
-            if (!this.selectedVariable) return dataPoints;
+            if (!this.chartOptions.selectedVariable) return dataPoints;
 
             return dataPoints.map(item => ({
                 ...item,
