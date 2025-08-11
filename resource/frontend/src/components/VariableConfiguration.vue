@@ -18,12 +18,7 @@
             <template #body-cell-type="props">
                 
                 <q-td :props="props" class="type-cell">
-
-                    <BsToggle
-                    :model-value="getToggleValue(props.row)"
-                    @update:model-value="newValue => setToggleValue(props.row, newValue)"
-                    label-left="Numerical"
-                    label-right="Categorical"/>
+                    <GLMToggle :model-value="getToggleValue(props.row)" @update:model-value="newValue => setToggleValue(props.row, newValue)" option1="Numerical" option2="Categorical" />
                 </q-td>
             </template>
 
@@ -49,6 +44,7 @@
     import trainingIcon from "../assets/images/training.svg";
     import { QRadio, QTableColumn } from 'quasar';
     import { useTrainingStore } from "../stores/training";
+    import GLMToggle from "./GLMToggle.vue";
     
     const featureHandlingColumns: QTableColumn[] = [
     {
@@ -84,7 +80,8 @@
         QRadio,
         BsTable,
         BsToggle, 
-        BsCheckbox
+        BsCheckbox,
+        GLMToggle
     },
     props: [],
     data() {
@@ -102,10 +99,10 @@
     },
     methods: {
         getToggleValue(row: any) {
-            return row.type === 'categorical';
+            return (row.type === 'categorical' ? 'Categorical' : 'Numerical');
         },
-        setToggleValue(row: any, newValue: boolean) {
-            row.type = newValue ? 'categorical' : 'numerical';
+        setToggleValue(row: any, newValue: string) {
+            row.type = (newValue === 'Categorical' ? 'categorical' : 'numerical');
         },
     },
     watch: {

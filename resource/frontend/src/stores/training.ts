@@ -263,7 +263,7 @@ export const useTrainingStore = defineStore("TrainingStore", {
                                 name: columnName,
                                 isIncluded: isTargetColumn || isExposureColumn || param.role !== 'REJECT',
                                 role: isTargetColumn ? 'Target' : (isExposureColumn ? 'Exposure' : (param.role || 'REJECT')),
-                                type: param.type ? (param.type === 'NUMERIC' ? 'numerical' : 'categorical') : 'categorical',
+                                type: param.type ? (param.type === 'NUMERIC' ? 'numerical' : 'categorical') : column.type,
                                 preprocessing: param.handling ? (param.handling === 'DUMMIFY' ? 'Dummy Encode' : param.handling) : 'Dummy Encode',
                                 options: options,
                                 baseLevel: param.baseLevel ? param.baseLevel : column.baseLevel
@@ -285,7 +285,7 @@ export const useTrainingStore = defineStore("TrainingStore", {
                         name: column.column,
                         isIncluded: false,
                         role: 'Variable',
-                        type: 'categorical',
+                        type: column.type,
                         preprocessing: 'Dummy Encode',
                         options: column.options,
                         baseLevel: column.baseLevel

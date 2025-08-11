@@ -69,7 +69,8 @@ def calculate_base_levels(df, exposure_column=None):
         cols_json.append({
             'column': col,
             'options': options,
-            'baseLevel': base_level
+            'baseLevel': base_level,
+            'type': ('numerical' if is_numeric else 'categorical')
         })
     
     return cols_json

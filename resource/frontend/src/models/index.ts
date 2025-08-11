@@ -11,6 +11,7 @@ export type ColumnInput = {
     column: string;
     baseLevel: string;
     options: Array<string>;
+    type: string;
 }
 
 export type LiftDataPoint = { 
