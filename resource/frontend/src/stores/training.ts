@@ -72,6 +72,10 @@ export const useTrainingStore = defineStore("TrainingStore", {
         }
     },
     actions: {
+        resetState() {
+            this.$reset();
+        },
+        
         updateInteractions(newInteractions: Array<string>) {
             // Convert the formatted strings back to interaction objects
             this.previousInteractions = newInteractions.map(interaction => {

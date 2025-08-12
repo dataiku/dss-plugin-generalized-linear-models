@@ -70,6 +70,10 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
     },
 
     actions: {
+        resetState() {
+            this.$reset();
+        },
+
         handleError(error: any) {
             const errorMessage = error.message || "An unknown error occurred in the One-Way Chart feature.";
             console.error("OneWayChartStore Error:", error);
@@ -84,6 +88,18 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
             this.chartOptions.chartRescaling = this.formOptions.chartRescaling;
             this.chartOptions.trainTest = this.formOptions.trainTest;
             this.chartOptions.comparisonModel = this.formOptions.comparisonModel;
+        },
+
+        async createChart() {
+            this.isLoading = true;
+            if (this.chartOptions.trainTest != this.formOptions.trainTest) {
+                if (this.formOptions.selectedVariable) {
+                    await this.selectVariable(this.formOptions.selectedVariable);
+                }
+            }
+            this.applyForm();
+            this.processAndFilterData();
+            this.isLoading = false;
         },
 
         setRescale(rescaling: string) {
@@ -109,6 +125,8 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
         setComparisonModel(comparisonModel: string | null) {
             if (!comparisonModel) {
                 this.formOptions.comparisonModel = "";
+                // this.createChart();
+                this.processAndFilterData();
             } else {
                 this.formOptions.comparisonModel = comparisonModel;
             }
@@ -135,7 +153,6 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
         },
 
         async selectVariable(variableName: VariablePoint) {
-            console.log('select variable');
             const store = useModelStore();
             let foundVariable = this.availableVariables.find(v => v === variableName);
             if (foundVariable) {
@@ -147,40 +164,40 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
                 return;
             }
 
-            this.isLoading = true;
             try {
                 const modelTrainPoint = {id: store.activeModel.id, name: store.activeModel.name, trainTest: store.trainTest, variable: this.formOptions.selectedVariable.variable, chartRescaling: this.chartOptions.chartRescaling};
-                // Fetch data for both primary and comparison models in parallel for efficiency.
                 const promises = [
                     API.getPredictedBase(modelTrainPoint)
                 ];
-                console.log("compared model");
-                console.log(store.comparedModel);
                 if (store.comparedModel?.id) {
+                    console.log(store.comparedModel);
                     const comparedModelTrainPoint = {id: store.comparedModel.id, name: store.comparedModel.name, trainTest: store.trainTest, variable: this.formOptions.selectedVariable.variable, chartRescaling: this.chartOptions.chartRescaling};
                     promises.push(API.getPredictedBase(comparedModelTrainPoint));
+                } else {
+                    console.log("cancel");
+                    this.comparisonChartData = [];
                 }
 
-                const [primaryResponse, comparisonResponse] = await Promise.all(promises);
+                const responses = await Promise.all(promises);
                 
-                this.primaryModelRawData = primaryResponse.data;
-                this.comparisonModelRawData = comparisonResponse?.data || [];
-                
-                // After fetching, process the data for display.
-                //this.processAndFilterData();
+                this.primaryModelRawData = responses[0].data;
+
+                if (responses.length > 1) {
+                    this.comparisonModelRawData = responses[1].data;
+                } else {
+                    this.comparisonModelRawData = [];
+                }
 
             } catch (err) {
                 this.handleError(err);
             } finally {
-                this.isLoading = false;
             }
         },
         
         processAndFilterData() {
-            console.log('process and filter data');
+            console.log('process and filter data')
             const store = useModelStore();
             let filteredPrimary = this.primaryModelRawData;
-            console.log(this.comparisonModelRawData);
             if (this.chartOptions.chartRescaling == "Base level") {
                 filteredPrimary = this._applyRescaling(this.primaryModelRawData, store.baseValues1);
             } else if (this.chartOptions.chartRescaling == "Ratio") {
@@ -229,8 +246,7 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
                     return relativity;
                 });
             }
-            console.log("comparison data");
-            console.log(this.comparisonChartData);
+            console.log('process and filter data done')
         },
 
         async exportOneWayChart() {

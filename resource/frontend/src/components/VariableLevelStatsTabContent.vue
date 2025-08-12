@@ -131,7 +131,7 @@ export default defineComponent({
               handler(newModel) {
                   if (newModel?.id) {
                       this.oneWayStore.fetchVariablesForModel(newModel.id);
-                      this.liftChartStore.fetchLiftData(newModel.id);
+                      this.liftChartStore.fetchLiftData();
                       this.variableStatsStore.fetchStatsForModel(newModel.id);
                   }
               },

@@ -38,6 +38,9 @@ export const useModelStore = defineStore("ModelStore", {
     },
 
     actions: {
+        resetState() {
+            //this.$reset();
+        },
 
         async sendWebappId() {
             const iframes = window.parent.document.getElementsByTagName('iframe');

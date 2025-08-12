@@ -49,7 +49,7 @@
         />
 
         <BsLabel v-if="store.activeModelName && oneWayStore.formOptions.chartDistribution == 'Binning'" label="Select the number of bins" />
-        <BsSlider v-if="store.activeModelName && oneWayStore.formOptions.chartDistribution == 'Binning'" @update:modelValue="onNbBinsChange" v-model="oneWayStore.nbBins" :min="2" :max="30" />
+        <BsSlider v-if="store.activeModelName && oneWayStore.formOptions.chartDistribution == 'Binning'" @update:modelValue="onNbBinsChange" v-model="oneWayStore.formOptions.nbBins" :min="2" :max="30" />
 
         <BsLabel v-if="store.activeModelName" label="Chart rescaling" info-text="Rescale the chart on base level, or compute the ratio between predicted and observed" />
         <BsSelect v-if="store.activeModelName" 
@@ -154,16 +154,22 @@
         },
         methods: {
             async onPrimaryModelChange(value: string) {
+                this.store.resetState();
+                this.oneWayStore.resetState();
+                // this.liftChartStore.resetState();
+                // this.variableStatsStore.resetState();
                 this.store.setActiveModel(value);
             },
             async onComparisonModelChange(value: string | null) {
-                console.log("comparison model change");
                 this.store.setComparedModel(value);
                 this.oneWayStore.setComparisonModel(value);
-                console.log("selected variable");
+                console.log("on comparison")
                 if (this.oneWayStore.formOptions.selectedVariable) {
-                    console.log("go");
-                    this.oneWayStore.selectVariable(this.oneWayStore.formOptions.selectedVariable);
+                    console.log("selected variable")
+                    await this.oneWayStore.selectVariable(this.oneWayStore.formOptions.selectedVariable);
+                    if (this.oneWayStore.comparisonChartData.length == 0) {
+                        await this.oneWayStore.processAndFilterData();
+                    }
                 }
             },
             async onVariableChange(value: VariablePoint) {
@@ -176,13 +182,7 @@
                 this.store.exportActiveModel();
             },
             async onCreateChart() {
-                if (this.oneWayStore.chartOptions.trainTest != this.oneWayStore.formOptions.trainTest) {
-                    if (this.oneWayStore.formOptions.selectedVariable) {
-                        this.oneWayStore.selectVariable(this.oneWayStore.formOptions.selectedVariable);
-                    }
-                }
-                this.oneWayStore.applyForm();
-                this.oneWayStore.processAndFilterData();
+                await this.oneWayStore.createChart();
             },
             async onChartRescalingChange(value: string) {
                 this.oneWayStore.setRescale(value);

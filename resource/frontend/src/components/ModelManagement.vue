@@ -57,7 +57,6 @@ import EmptyState from './EmptyState.vue';
 import type { ModelPoint } from '../models';
 import { defineComponent } from "vue";
 import { BsButton, BsLayoutDefault, BsTable } from "quasar-ui-bs";
-import { useLoader } from "../composables/use-loader";
 import type { QTableColumn } from 'quasar';
 import { QIcon, QTooltip, QTd } from 'quasar';
 import { useModelStore } from '../stores/webapp';
@@ -88,12 +87,18 @@ export default defineComponent({
       QTooltip,
       QTd
   },
+  emits: ['update:loading'],
   data() {
       return {
           store: useModelStore(),
           layoutRef: undefined as undefined | InstanceType<typeof BsLayoutDefault>,
           loading: false,
       };
+  },
+  watch: {
+    loading(newValue) {
+      this.$emit('update:loading', newValue);
+    }
   },
   methods: {
     getModelUrl(model: ModelPoint): string {
@@ -102,19 +107,19 @@ export default defineComponent({
     async deployModel(model: ModelPoint) {
       console.log('Deploying model:', model.name, 'with ID:', model.id);
       this.loading = true;
-      const status = API.deployModel(model);
+      const status = await API.deployModel(model);
       this.loading = false;
     },
     async deleteModel(model: ModelPoint) {
       console.log('Deleting model:', model.name, 'with ID:', model.id);
       this.loading = true;
-      const status = API.deleteModel(model);
+      const status = await API.deleteModel(model);
       this.loading = false;
     },
     async exportModel(model: ModelPoint) {
       console.log('Exporting model:', model.name, 'with ID:', model.id);
       this.loading = true;
-      this.store.exportModel(model);
+      await this.store.exportModel(model);
       this.loading = false;
     }
   },

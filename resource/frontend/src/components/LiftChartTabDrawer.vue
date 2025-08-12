@@ -55,11 +55,16 @@
             isFormUnchanged() {
                 const form = this.liftChartStore.formOptions;
                 const chart = this.liftChartStore.chartOptions;
+                console.log(form);
+                console.log(chart);
                 return (
                     form.model === chart.model &&
                     form.nbBins === chart.nbBins &&
                     form.trainTest === chart.trainTest
                 );
+            },
+            isLoading() { 
+                return this.liftChartStore.isLoading;
             },
         },
         watch: {
@@ -76,7 +81,6 @@
             },
             'store.trainTest': {
               handler(trainTest) {
-                  this.oneWayStore.processAndFilterData();
                   this.liftChartStore.setTrainTest(trainTest);
               },
               deep: true
@@ -84,8 +88,10 @@
         },
         methods: {
             async onModelChange(value: string) {
+                console.log("on model change")
                 this.liftChartStore.formOptions.model = value;
                 this.store.setActiveModel(value);
+                console.log(this.liftChartStore.formOptions);
             },
             async onNbBinsChange(value: number) {
                 this.liftChartStore.setNbBins(value);
@@ -95,8 +101,8 @@
                 this.liftChartStore.setTrainTest(value == 'Train' ? true : false);
             },
             async onCreateChart() {
-                this.liftChartStore.applyForm();
-                this.liftChartStore.fetchLiftData();
+                await this.liftChartStore.applyForm();
+                await this.liftChartStore.fetchLiftData();
             },
         },
         mounted() {}

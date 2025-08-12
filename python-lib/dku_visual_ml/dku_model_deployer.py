@@ -14,7 +14,11 @@ class VisualMLModelDeployer(DataikuClientProject):
         logger.info("Initializing a Visual ML deployer")
         self.saved_model_id = saved_model_id
         if saved_model_id:
-            self.saved_model = self.project.get_saved_model(saved_model_id)
+            if saved_model_id in [k['id'] for k in self.project.list_saved_models()]:
+                self.saved_model = self.project.get_saved_model(saved_model_id)
+            else:
+                self.saved_model_id = None
+                self.saved_model = None
         else:
             self.saved_model = None
         self.mltask = mltask
@@ -58,7 +62,7 @@ class VisualMLModelDeployer(DataikuClientProject):
     def get_deployed_models(self):
         
         version_mapping = {}
-        
+
         if (self.saved_model == None) or self.saved_model == "None" :
             logger.debug("Saved Model Not initalised, deployed models not retrieved")
             return version_mapping
