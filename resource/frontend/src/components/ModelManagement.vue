@@ -102,7 +102,7 @@ export default defineComponent({
     },
     async deleteModel(model: ModelPoint) {
       await this.store.deleteModel(model);
-      this.trainingStore.updateModels;
+      this.trainingStore.updateModels = true;
     },
     async exportModel(model: ModelPoint) {
       await this.store.exportModel(model);
