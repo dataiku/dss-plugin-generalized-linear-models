@@ -95,7 +95,7 @@ export default defineComponent({
     tabs() {
             return [
                 {
-                    name: "Model Training",
+                    name: "Model Configuration",
                     docTitle: "GLM Hub",
                     icon: trainingIcon,
                     contentComponent: "ModelTrainingTabContent",
@@ -108,7 +108,7 @@ export default defineComponent({
                     }
                 },
                 {
-                    name: "One-Way Variable",
+                    name: "Observed vs Predicted Chart",
                     docTitle: "GLM Hub",
                     icon: oneWayIcon,
                     drawerComponent: "OneWayVariableTabDrawer",
@@ -132,7 +132,7 @@ export default defineComponent({
                     }
                 },
                 {
-                    name: "Variable-Level Stats",
+                    name: "Variable-Level Statistics",
                     docTitle: "GLM Hub",
                     icon: statsIcon,
                     contentComponent: "VariableLevelStatsTabContent",

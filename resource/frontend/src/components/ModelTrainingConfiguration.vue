@@ -145,100 +145,41 @@
     props: [],
     data() {
         return {
-            updateModels: false,
             store: useTrainingStore(),
             layoutRef: undefined as undefined | InstanceType<typeof BsLayoutDefault>,
             trainingIcon,
             docLogo,
             errorMessage: "" as string,
-            loading: false as boolean
         };
     },
     emits: ['update:modelValue', 'update-models', "update:loading"],
     watch: {
-        loading() {
-            this.$emit("update:loading", this.loading);
+        isLoading(newValue) {
+            console.log('watch is loading')
+            this.$emit("update:loading", newValue);
+        },
+        updateModels(newValue) {
+            this.$emit("update-models", newValue);
         }
     },
     methods: {
         async submitVariables() {
-            this.loading = true;
-        if (!this.store.validateSubmission()) {
-      // If validation fails, stop execution
-        return;
-        }
-        // Define modelParameters outside of the reduce call to ensure it's accessible later
-        const modelParameters = {
-            model_name: this.store.modelName,
-            distribution_function: this.store.selectedDistributionFunctionString,
-            link_function: this.store.selectedLinkFunctionString,
-            elastic_net_penalty: this.store.selectedElasticNetPenalty,
-            l1_ratio: this.store.selectedL1Ratio
-        };
-
-        // Reduce function to construct Variables object    
-        const variableParameters = this.store.datasetColumns.reduce<AccType>((acc, { name, role, type, preprocessing, isIncluded, baseLevel }) => {
-        acc[name] = {
-            role: role,
-            type: type.toLowerCase(),
-            processing: preprocessing == 'Dummy Encode' ? 'CUSTOM' : 'REGULAR',
-            included: isIncluded,
-            base_level: baseLevel
-        };
-        return acc;
-        }, {});
-        // Now modelParameters is available to be included in payload
-        const payload = {
-        model_parameters: modelParameters,
-        variables: variableParameters,
-        interaction_variables: this.store.previousInteractions.map(interaction => ({
-            first: interaction.first,
-            second: interaction.second
-        }))
-};
-        try {
-            console.log("Payload:", payload);
-            const modelUID = await API.trainModel(payload);
-            // Handle successful submission here
-        } catch (error) {
-        if (isAxiosError(error)) {
-            const axiosError = error as AxiosError<ErrorPoint>;
-            
-            if (axiosError.response) {
-                console.log('Error response:', axiosError.response);
-                console.log('Error response data:', axiosError.response.data);
-                console.log('Error response status:', axiosError.response.status);
-                console.log('Error response headers:', axiosError.response.headers);
-
-                if (axiosError.response.data && 'error' in axiosError.response.data) {
-                    this.errorMessage = axiosError.response.data.error;
-                } else {
-                    this.errorMessage = `Server error: ${axiosError.response.status}`;
-                }
-            } else if (axiosError.request) {
-                console.log('Error request:', axiosError.request);
-                this.errorMessage = 'No response received from the server. Please try again later.';
-            } else {
-                console.log('Error message:', axiosError.message);
-                this.errorMessage = 'An unexpected error occurred while training the model.';
-            }
-        } else {
-            this.errorMessage = 'An unexpected error occurred.';
-        }
-
-        this.store.notifyError(this.errorMessage);
-    } finally {
-        this.updateModels = !this.updateModels;
-        this.$emit("update-models", this.updateModels);
-        this.loading = false;
-    }
+            this.store.trainModel();
+        },
     },
+    computed: {
+        isLoading() { 
+            console.log('computed is loading')
+            return this.store.isLoading;
+        },
+        updateModels() {
+            return this.store.updateModels;
+        }
     },
     async mounted() {
         API.getModels().then((data: any) => {
             this.store.models = data.data;
             this.store.modelsString = this.store.models.map(item => item.name);
-            console.log("Models load are", this.store.models)
           });
         this.layoutRef = this.$refs.layout as InstanceType<typeof BsLayoutDefault>;
         const savedDistributionFunction = localStorage.getItem('DistributionFunction');

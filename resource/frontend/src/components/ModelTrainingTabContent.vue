@@ -49,13 +49,7 @@
     props: [],
     data() {
         return {
-            updateModels: false,
             store: useTrainingStore(),
-            layoutRef: undefined as undefined | InstanceType<typeof BsLayoutDefault>,
-            trainingIcon,
-            docLogo,
-            errorMessage: "" as string,
-            loading: false as boolean
         };
     },
     computed:{
