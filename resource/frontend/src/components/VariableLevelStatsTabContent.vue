@@ -3,9 +3,8 @@
   <div class="top-row">
     <div class="model-selector">
       <BsLabel label="Select a model" info-text="Stats will be generated for this model" />
-      <!-- :modelValue="store.activeModelName" -->
       <BsSelect
-          :modelValue="store.activeModelName"
+          :model-value="store.activeModelName"
           :all-options="store.modelOptions"
           @update:modelValue="onModelChange"
       />
@@ -117,30 +116,18 @@ export default defineComponent({
             standard_error_pct_threshold: 100 
         };
     },
-    watch: {
-          // 'store.activeModel': {
-          //     handler(newModel) {
-          //         if (newModel?.id) {
-          //             this.oneWayStore.fetchVariablesForModel(newModel.id);
-          //             this.liftChartStore.fetchLiftData();
-          //             this.variableStatsStore.fetchStatsForModel(newModel.id);
-          //         }
-          //     },
-          //     deep: true
-          //   }
+    methods: {
+        async onModelChange(value: string) {
+            this.variableStatsStore.fetchStatsForModel(value);
+            this.store.setActiveModel(value);
         },
-        methods: {
-            async onModelChange(value: string) {
-                this.variableStatsStore.fetchStatsForModel(value);
-                this.store.setActiveModel(value);
-            },
-            async deployModel() {
-              this.store.deployActiveModel();
-            },
-            async exportVariableLevelStats() {
-              this.variableStatsStore.exportVariableLevelStats();
-            }
+        async deployModel() {
+          this.store.deployActiveModel();
         },
+        async exportVariableLevelStats() {
+          this.variableStatsStore.exportVariableLevelStats();
+        }
+    },
 })
 </script>
 

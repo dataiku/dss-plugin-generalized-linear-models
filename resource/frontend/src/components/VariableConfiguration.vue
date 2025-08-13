@@ -40,8 +40,6 @@
 <script lang="ts">
     import { defineComponent } from "vue";
     import { BsTable, BsToggle, BsCheckbox } from "quasar-ui-bs";
-    import docLogo from "../assets/images/doc-logo-example.svg";
-    import trainingIcon from "../assets/images/training.svg";
     import { QRadio, QTableColumn } from 'quasar';
     import { useTrainingStore } from "../stores/training";
     import GLMToggle from "./GLMToggle.vue";

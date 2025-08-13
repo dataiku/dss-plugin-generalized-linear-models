@@ -5,7 +5,7 @@
             <div class="variable-select-container">
         <BsLabel label="Select a model" info-text="Lift chart will be generated for this model" />
         <BsSelect
-            v-model="store.activeModelName"
+            :model-value="store.activeModelName"
             :all-options="store.modelOptions"
             @update:modelValue="onModelChange"
         />

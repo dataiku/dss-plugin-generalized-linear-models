@@ -67,13 +67,15 @@
                     :isSubLabel="true"
                     info-text="The overall level of regularization"
             ></BsLabel>
-            <BsSlider
+            <input v-model.number="trainingStore.selectedElasticNetPenalty"/>
+
+            <!-- <BsSlider
                 v-model="trainingStore.selectedElasticNetPenalty"
                 :min="0"
                 :step="0.01"
                 :max="1000"
                 style="min-width: 150px">
-            </BsSlider>
+            </BsSlider> -->
             <BsLabel
                     label="Set the L1 Ratio"
                     :isSubLabel="true"
