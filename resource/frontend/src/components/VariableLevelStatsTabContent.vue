@@ -113,10 +113,6 @@ export default defineComponent({
             selectedModel: {} as ModelPoint,
             modelsString: [] as string[],
             selectedModelString: "",
-            layoutRef: undefined as undefined | InstanceType<typeof BsLayoutDefault>,
-            docLogo,
-            variableLevelIcon,
-            loading: false,
             store: useModelStore(),
             variableStatsStore: useVariableLevelStatsStore(),
             oneWayStore: useOneWayChartStore(),
@@ -126,7 +122,6 @@ export default defineComponent({
         };
     },
     watch: {
-          isLoading(newVal: any) { this.$emit("update:loading", newVal); },
           'store.activeModel': {
               handler(newModel) {
                   if (newModel?.id) {
@@ -149,11 +144,6 @@ export default defineComponent({
               this.variableStatsStore.exportVariableLevelStats();
             }
         },
-        computed: {
-          isLoading() { 
-            return this.store.isLoading || this.variableStatsStore.isLoading;
-          }
-        }
 })
 </script>
 

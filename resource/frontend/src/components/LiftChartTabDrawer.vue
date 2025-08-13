@@ -36,7 +36,6 @@
     import GLMToggle from "./GLMToggle.vue";
     
     export default defineComponent({
-        emits: ["update:loading"],
         components: {
             GLMToggle
         },
@@ -63,12 +62,8 @@
                     form.trainTest === chart.trainTest
                 );
             },
-            isLoading() { 
-                return this.liftChartStore.isLoading;
-            },
         },
         watch: {
-          isLoading(newVal: any) { this.$emit("update:loading", newVal); },
           'store.activeModel': {
               handler(newModel) {
                   if (newModel?.id) {

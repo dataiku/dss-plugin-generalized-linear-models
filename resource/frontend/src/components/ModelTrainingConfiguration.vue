@@ -152,14 +152,10 @@
             errorMessage: "" as string,
         };
     },
-    emits: ['update:modelValue', 'update-models', "update:loading"],
+    emits: ['update:modelValue', 'update:models'],
     watch: {
-        isLoading(newValue) {
-            console.log('watch is loading')
-            this.$emit("update:loading", newValue);
-        },
         updateModels(newValue) {
-            this.$emit("update-models", newValue);
+            this.$emit("update:models", newValue);
         }
     },
     methods: {
@@ -168,10 +164,6 @@
         },
     },
     computed: {
-        isLoading() { 
-            console.log('computed is loading')
-            return this.store.isLoading;
-        },
         updateModels() {
             return this.store.updateModels;
         }

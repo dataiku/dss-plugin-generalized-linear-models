@@ -96,7 +96,6 @@
     import GLMToggle from './GLMToggle.vue'
     
     export default defineComponent({
-        emits: ["update:loading"],
         components: {
             GLMToggle
         },
@@ -112,7 +111,6 @@
             };
         },
         watch: {
-          isLoading(newVal: any) { this.$emit("update:loading", newVal); },
           'store.activeModel': {
               handler(newModel) {
                   if (newModel?.id) {
@@ -125,9 +123,6 @@
             }
         },
         computed: {
-          isLoading() { 
-            return this.store.isLoading || this.oneWayStore.isLoading;
-          },
           trainTestValue() {
             return this.store.trainTest ? 'Train' : 'Test';
           },

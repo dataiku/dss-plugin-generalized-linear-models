@@ -14,7 +14,7 @@
                     <component
                         :is="tabInfo.drawerComponent"
                         v-bind="tabInfo.drawerProps"
-                        @update:loading="updateLoading"
+                        @update:models="updateModels"
                         @navigate-tab="goToTab"
                     />
                 </BsDrawer>
@@ -27,7 +27,7 @@
                         <component
                             :is="tabInfo.contentComponent"
                             v-bind="tabInfo.contentProps"
-                            @update:loading="updateLoading"
+                            @update:models="updateModels"
                             @navigate-tab="goToTab"
                         />
                     </template>
@@ -68,6 +68,7 @@ import { useLiftChartStore } from "./stores/liftChartStore.ts"
 import { useVariableLevelStatsStore } from "./stores/variableLevelStatsStore.ts"
 
 import { useLoader } from "./composables/use-loader";
+import { useTrainingStore } from './stores/training';
 
 export default defineComponent({
     components: {
@@ -85,10 +86,11 @@ export default defineComponent({
     return {
         reloadModels: false as boolean,
         store: useModelStore(),
+        trainingStore: useTrainingStore(),
         oneWayStore: useOneWayChartStore(),
         liftChartStore: useLiftChartStore(),
         variableStatsStore: useVariableLevelStatsStore(),
-        loading: false as boolean
+        // loading: false as boolean
       }
     },
     computed: {
@@ -171,7 +173,10 @@ export default defineComponent({
                     }
                 }
               ]
-            }
+            },
+        loading() {
+            return this.store.isLoading || this.trainingStore.isLoading || this.oneWayStore.isLoading || this.liftChartStore.isLoading || this.variableStatsStore.isLoading;
+        }
     },
     watch: {
         loading(newVal) {
@@ -188,9 +193,6 @@ export default defineComponent({
         console.log("App: update models");
         this.reloadModels = !this.reloadModels;
       },
-      updateLoading(newVal: boolean) {
-            this.loading = newVal;
-        },
         goToTab(index: number) {
             const layout = this.$refs.layout as InstanceType<
                 typeof BsLayoutDefault
