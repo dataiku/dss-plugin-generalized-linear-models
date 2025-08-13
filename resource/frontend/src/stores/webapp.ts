@@ -58,7 +58,6 @@ export const useModelStore = defineStore("ModelStore", {
             try {
                 const response = await API.getModels();
                 this.models = response.data;
-                console.log(this.models[0]);
                 this.projectKey = this.models[0].project_key;
                 this.mlTaskId = this.models[0].ml_task_id;
                 this.analysisId = this.models[0].analysis_id;

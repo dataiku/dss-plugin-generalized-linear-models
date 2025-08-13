@@ -14,7 +14,6 @@
                     <component
                         :is="tabInfo.drawerComponent"
                         v-bind="tabInfo.drawerProps"
-                        @update:models="updateModels"
                         @navigate-tab="goToTab"
                     />
                 </BsDrawer>
@@ -27,7 +26,6 @@
                         <component
                             :is="tabInfo.contentComponent"
                             v-bind="tabInfo.contentProps"
-                            @update:models="updateModels"
                             @navigate-tab="goToTab"
                         />
                     </template>
@@ -84,13 +82,11 @@ export default defineComponent({
     },
     data() {
     return {
-        reloadModels: false as boolean,
         store: useModelStore(),
         trainingStore: useTrainingStore(),
         oneWayStore: useOneWayChartStore(),
         liftChartStore: useLiftChartStore(),
         variableStatsStore: useVariableLevelStatsStore(),
-        // loading: false as boolean
       }
     },
     computed: {
@@ -176,6 +172,9 @@ export default defineComponent({
             },
         loading() {
             return this.store.isLoading || this.trainingStore.isLoading || this.oneWayStore.isLoading || this.liftChartStore.isLoading || this.variableStatsStore.isLoading;
+        },
+        updateModels() {
+            return this.trainingStore.updateModels;
         }
     },
     watch: {
@@ -187,12 +186,15 @@ export default defineComponent({
                 useLoader().hide();
             }
         },
+        updateModels(newVal) {
+            if (newVal) {
+                console.log("App: Reload models")
+                this.store.loadModels();
+                this.trainingStore.updateModels = false;
+            }
+        }
     },
     methods: {
-      updateModels(){
-        console.log("App: update models");
-        this.reloadModels = !this.reloadModels;
-      },
         goToTab(index: number) {
             const layout = this.$refs.layout as InstanceType<
                 typeof BsLayoutDefault

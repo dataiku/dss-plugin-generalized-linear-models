@@ -3,15 +3,8 @@ import { API } from "../Api";
 import { useNotification } from "../composables/use-notification";
 import { useModelStore } from "./webapp";
 import type { DataPoint, VariablePoint, ModelPoint } from '../models';
-import { QTableColumn } from "quasar";
 
-// const RELATIVITIES_COLUMNS: QTableColumn[] = [
-//     { name: 'class', align: 'center', label: 'Class', field: 'class',sortable: true},
-//     { name: 'relativity', align: 'center', label: 'Relativity', field: 'relativity', sortable: true},
-//     { name: 'compared_relativity', align: 'center', label: 'Compared Relativity', field: 'compared_relativity', sortable: true, required: false},
-//   ]
-
-  interface RelativityRow {
+interface RelativityRow {
   class: string;
   relativity: number;
   compared_relativity?: number;

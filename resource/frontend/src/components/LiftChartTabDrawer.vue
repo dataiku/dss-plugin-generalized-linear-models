@@ -83,10 +83,8 @@
         },
         methods: {
             async onModelChange(value: string) {
-                console.log("on model change")
                 this.liftChartStore.formOptions.model = value;
                 this.store.setActiveModel(value);
-                console.log(this.liftChartStore.formOptions);
             },
             async onNbBinsChange(value: number) {
                 this.liftChartStore.setNbBins(value);

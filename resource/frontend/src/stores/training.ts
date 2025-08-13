@@ -8,6 +8,7 @@ import type {
 } from '../models';
 import type { ColumnInput, Interaction, Column, APIResponse } from "../models";
 import { AxiosError, isAxiosError } from "axios";
+import { useModelStore } from "./webapp";
 
 type UpdatableProperties = 'selectedDatasetString' | 'selectedDistributionFunctionString' | 'selectedLinkFunctionString';
 
@@ -15,9 +16,9 @@ export const useTrainingStore = defineStore("TrainingStore", {
     state: () => ({
         modelName: "",   
         errorMessage: "", 
-        selectedModelString: "",
-        models: [] as ModelPoint[],
-        modelsString: [] as string[],
+        // selectedModelString: "",
+        // models: [] as ModelPoint[],
+        // modelsString: [] as string[],
         interactions: [] as Interaction[],
         selectedDatasetString: "",
         selectedTargetVariable: "",
@@ -61,14 +62,16 @@ export const useTrainingStore = defineStore("TrainingStore", {
     }),
     getters: {
         isModelNameValid(state) {
+            const store = useModelStore();
+
             const trimmedName = state.modelName.trim();
             
             if (trimmedName === '') {
                 return { valid: false, reason: 'Model name cannot be empty.' };
             }
             
-            if (this.models.length>0) { 
-                if (this.modelsString.includes(trimmedName)) {
+            if (store.models.length>0) { 
+                if (store.modelOptions.includes(trimmedName)) {
                     return { valid: false, reason: 'This model name already exists.' };
                 }
             }
@@ -111,18 +114,13 @@ export const useTrainingStore = defineStore("TrainingStore", {
             console.error('Error fetching excluded columns:', error);
         }
     },
-
-    async updateModelString(value: string) {
-          this.selectedModelString = value;
-          //const model = this.models.filter( (v: ModelPoint) => v.name==value)[0];
-        },
-        notifyError(msg: string) {
-            useNotification("negative", msg);
-        },
-        handleError(msg: any) {
-            console.error(msg);
-            this.notifyError(msg);
-        },
+    notifyError(msg: string) {
+        useNotification("negative", msg);
+    },
+    handleError(msg: any) {
+        console.error(msg);
+        this.notifyError(msg);
+    },
     validateSubmission() {
         this.errorMessage = ''; // Reset error message before validation
         if (!this.modelName) {
@@ -194,11 +192,12 @@ export const useTrainingStore = defineStore("TrainingStore", {
         if (model_value) {
             console.log("model_id parameter provided:", model_value);
             this.datasetColumns = []
+            const store = useModelStore();
             try {
                     const response = await API.getDatasetColumns();
-                    this.selectedModelString = model_value;
+                    // const selectedModelString = model_value;
 
-                    const model = this.models.filter((v: ModelPoint) => v.name == model_value)[0];
+                    const model = store.models.filter((v: ModelPoint) => v.name == model_value)[0];
                     console.log("Filtered model:", model);
                     console.log("Making request with model Id :", model);
 
