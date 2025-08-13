@@ -5,7 +5,7 @@
             <div class="variable-select-container">
         <BsLabel label="Select a model" info-text="Lift chart will be generated for this model" />
         <BsSelect
-            :modelValue="store.activeModelName"
+            v-model="store.activeModelName"
             :all-options="store.modelOptions"
             @update:modelValue="onModelChange"
         />
@@ -30,9 +30,9 @@
 <script lang="ts">
     import { defineComponent } from "vue";
     import { useModelStore } from "../stores/webapp";
-    import { useOneWayChartStore } from "../stores/oneWayChartStore.ts"
-    import { useLiftChartStore } from "../stores/liftChartStore.ts"
-    import { useVariableLevelStatsStore } from "../stores/variableLevelStatsStore.ts"
+    import { useOneWayChartStore } from "../stores/oneWayChartStore"
+    import { useLiftChartStore } from "../stores/liftChartStore"
+    import { useVariableLevelStatsStore } from "../stores/variableLevelStatsStore"
     import GLMToggle from "./GLMToggle.vue";
     
     export default defineComponent({
@@ -54,8 +54,6 @@
             isFormUnchanged() {
                 const form = this.liftChartStore.formOptions;
                 const chart = this.liftChartStore.chartOptions;
-                console.log(form);
-                console.log(chart);
                 return (
                     form.model === chart.model &&
                     form.nbBins === chart.nbBins &&
@@ -63,28 +61,9 @@
                 );
             },
         },
-        watch: {
-          'store.activeModel': {
-              handler(newModel) {
-                  if (newModel?.id) {
-                      this.oneWayStore.fetchVariablesForModel(newModel.id);
-                      this.liftChartStore.fetchLiftData();
-                      this.variableStatsStore.fetchStatsForModel(newModel.id);
-                  }
-              },
-              deep: true
-            },
-            'store.trainTest': {
-              handler(trainTest) {
-                  this.liftChartStore.setTrainTest(trainTest);
-              },
-              deep: true
-            }
-        },
         methods: {
             async onModelChange(value: string) {
                 this.liftChartStore.formOptions.model = value;
-                this.store.setActiveModel(value);
             },
             async onNbBinsChange(value: number) {
                 this.liftChartStore.setNbBins(value);

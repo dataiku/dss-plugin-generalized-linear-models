@@ -35,8 +35,8 @@ export const useVariableLevelStatsStore = defineStore("variableLevelStats", {
             useNotification("negative", errorMessage);
         },
 
-        async fetchStatsForModel(modelId: string) {
-            if (!modelId) {
+        async fetchStatsForModel(modelName: string) {
+            if (!modelName) {
                 this.modelStats = [];
                 return;
             }
@@ -44,7 +44,7 @@ export const useVariableLevelStatsStore = defineStore("variableLevelStats", {
             this.isLoading = true;
             try {
                 const store = useModelStore();
-                const model = store.models.filter( (v: ModelPoint) => v.id==modelId)[0];
+                const model = store.models.filter( (v: ModelPoint) => v.name==modelName)[0];
                 store.activeModel = model;
                 const response = await API.getVariableLevelStats(model);
 

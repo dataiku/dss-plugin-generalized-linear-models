@@ -89,10 +89,10 @@
     <script lang="ts">
     import { defineComponent } from "vue";
     import { useModelStore } from "../stores/webapp";
-    import { useOneWayChartStore } from "../stores/oneWayChartStore.ts"
-    import { useLiftChartStore } from "../stores/liftChartStore.ts"
-    import { useVariableLevelStatsStore } from "../stores/variableLevelStatsStore.ts"
-    import { VariablePoint } from "src/models";
+    import { useOneWayChartStore } from "../stores/oneWayChartStore"
+    import { useLiftChartStore } from "../stores/liftChartStore"
+    import { useVariableLevelStatsStore } from "../stores/variableLevelStatsStore"
+    import { VariablePoint } from "../models";
     import GLMToggle from './GLMToggle.vue'
     
     export default defineComponent({
@@ -109,18 +109,6 @@
                 chartDistributionOptions: ["Raw data", "Binning"],
                 chartRescalingOptions: ["None", "Base level", "Ratio"]
             };
-        },
-        watch: {
-          'store.activeModel': {
-              handler(newModel) {
-                  if (newModel?.id) {
-                      this.oneWayStore.fetchVariablesForModel(newModel.id);
-                      this.liftChartStore.fetchLiftData();
-                      this.variableStatsStore.fetchStatsForModel(newModel.id);
-                  }
-              },
-              deep: true
-            }
         },
         computed: {
           trainTestValue() {
@@ -151,16 +139,13 @@
             async onPrimaryModelChange(value: string) {
                 this.store.resetState();
                 this.oneWayStore.resetState();
-                // this.liftChartStore.resetState();
-                // this.variableStatsStore.resetState();
                 this.store.setActiveModel(value);
+                this.oneWayStore.fetchVariablesForModel(value);
             },
             async onComparisonModelChange(value: string | null) {
                 this.store.setComparedModel(value);
                 this.oneWayStore.setComparisonModel(value);
-                console.log("on comparison")
                 if (this.oneWayStore.formOptions.selectedVariable) {
-                    console.log("selected variable")
                     await this.oneWayStore.selectVariable(this.oneWayStore.formOptions.selectedVariable);
                     if (this.oneWayStore.comparisonChartData.length == 0) {
                         await this.oneWayStore.processAndFilterData();

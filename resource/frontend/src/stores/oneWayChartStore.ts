@@ -125,8 +125,8 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
             }
         },
         
-        async fetchVariablesForModel(modelId: string) {
-            if (!modelId) {
+        async fetchVariablesForModel(modelName: string) {
+            if (!modelName) {
                 this.availableVariables = [];
                 this.formOptions.selectedVariable = null;
                 return;
@@ -134,7 +134,7 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
             this.isLoading = true;
             try {
                 const store = useModelStore();
-                const model = store.models.filter( (v: ModelPoint) => v.id==modelId)[0];
+                const model = store.models.filter( (v: ModelPoint) => v.name==modelName)[0];
                 const response = await API.getVariables(model);
                 this.availableVariables = response.data;
             } catch (err) {

@@ -21,8 +21,6 @@
     import ModelTrainingConfiguration from './ModelTrainingConfiguration.vue';
     import VariableConfiguration from './VariableConfiguration.vue';
     import { BsTab, BsLabel, BsTabIcon, BsLayoutDefault, BsHeader, BsButton, BsDrawer, BsContent, BsTooltip, BsSlider, BsCard } from "quasar-ui-bs";
-    import docLogo from "../assets/images/doc-logo-example.svg";
-    import trainingIcon from "../assets/images/training.svg";
     import { QRadio } from 'quasar';
     import VariableInteractions from './VariableInteractions.vue'
     import { useTrainingStore } from "../stores/training";

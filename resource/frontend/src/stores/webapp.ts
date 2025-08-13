@@ -141,24 +141,33 @@ export const useModelStore = defineStore("ModelStore", {
                 this.notifyError("No active model selected to export.");
                 return;
             }
+            const response = await this.exportModel(this.activeModel);
+        },
+
+        async deployModel(model: ModelPoint) {
             try {
-                const response = await API.exportModel(this.activeModel);
-                this._triggerDownload(response.data, `${this.activeModelName}.csv`);
+                const response = await API.deployModel(model);
             } catch (error) {
                 this.handleError(error);
             }
         },
 
-        async deployModel() {
+        async deployActiveModel() {
             if (!this.activeModel) {
                 this.notifyError("No active model selected to deploy.");
                 return;
             }
+            const response = await this.deployModel(this.activeModel);
+        },
+
+        async deleteModel(model: ModelPoint) {
+            this.isLoading = true;
             try {
-                const response = await API.deployModel(this.activeModel);
+                const response = await API.deleteModel(model);
             } catch (error) {
                 this.handleError(error);
             }
+            this.isLoading = false;
         },
 
         _triggerDownload(data: any, filename: string) {

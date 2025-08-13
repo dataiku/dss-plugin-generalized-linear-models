@@ -10,10 +10,10 @@
             <q-card-section>
                 <BsLabel
                     label="Name"
-                    isSubLabel="true">
+                    :isSubLabel="true">
                 </BsLabel>
                 <input
-                        v-model="store.modelName"
+                        v-model="trainingStore.modelName"
                         type="text"
                         id="modelNameInput"
                         placeholder="Enter model name"
@@ -27,34 +27,33 @@
 
                 <BsLabel
                     label="Load a previous model"
-                    isSubLabel="true">
+                    :isSubLabel="true">
                 </BsLabel>
                 <BsSelect
-                    :modelValue="store.selectedModelString"
-                    :all-options="store.modelsString"
-                    @update:modelValue="value => store.getDatasetColumns(value)"
+                    :all-options="store.modelOptions"
+                    @update:modelValue="value => trainingStore.getDatasetColumns(value)"
                     style="min-width: 250px">
                 </BsSelect>
                 <BsLabel
                         label="Select a Distribution Function"
-                        isSubLabel="true"
+                        :isSubLabel="true"
                         info-text="Distribution function for GLM"
                 ></BsLabel>
                 <BsSelect
-                    :modelValue="store.selectedDistributionFunctionString"
-                    :all-options="store.distributionOptions"
-                    @update:modelValue="value => store.updateModelProperty('selectedDistributionFunctionString', value)"
+                    :modelValue="trainingStore.selectedDistributionFunctionString"
+                    :all-options="trainingStore.distributionOptions"
+                    @update:modelValue="value => trainingStore.updateModelProperty('selectedDistributionFunctionString', value)"
                     style="min-width: 150px">
                 </BsSelect>
                 <BsLabel
                         label="Select a Link Function"
-                        isSubLabel="true"
+                        :isSubLabel="true"
                         info-text="Link function for GLM"
                 ></BsLabel>
                 <BsSelect
-                    :modelValue="store.selectedLinkFunctionString"
-                    :all-options="store.linkOptions"
-                    @update:modelValue="value => store.updateModelProperty('selectedLinkFunctionString', value)"
+                    :modelValue="trainingStore.selectedLinkFunctionString"
+                    :all-options="trainingStore.linkOptions"
+                    @update:modelValue="value => trainingStore.updateModelProperty('selectedLinkFunctionString', value)"
                     style="min-width: 150px">
                 </BsSelect>
         </q-card-section>
@@ -65,11 +64,11 @@
             <div class="variable-select-container">
             <BsLabel
                     label="Set the Elastic Net Penalty"
-                    isSubLabel="true"
+                    :isSubLabel="true"
                     info-text="The overall level of regularization"
             ></BsLabel>
             <BsSlider
-                v-model="store.selectedElasticNetPenalty"
+                v-model="trainingStore.selectedElasticNetPenalty"
                 :min="0"
                 :step="0.01"
                 :max="1000"
@@ -77,11 +76,11 @@
             </BsSlider>
             <BsLabel
                     label="Set the L1 Ratio"
-                    isSubLabel="true"
+                    :isSubLabel="true"
                     info-text="l1_ratio = 0 means Ridge (only L2), l1_ratio = 1 means LASSO (only L1)"
             ></BsLabel>
             <BsSlider
-                v-model="store.selectedL1Ratio"
+                v-model="trainingStore.selectedL1Ratio"
                 :min="0"
                 :max="1"
                 :step="0.01"
@@ -102,7 +101,7 @@
                 color="primary"
                 label="Train Model" 
                 @click="submitVariables"
-                :disable="!store.isModelNameValid.valid"
+                :disable="!trainingStore.isModelNameValid.valid"
                 />
             </div>
             </q-footer>
@@ -111,17 +110,12 @@
 
 <script lang="ts">
     import { defineComponent } from "vue";
-    import type { ErrorPoint, AccType } from '../models';
     import EmptyState from './EmptyState.vue';
-    import { BsTab, BsTabIcon, BsLayoutDefault, BsHeader, BsButton, BsDrawer, BsContent, BsTooltip, BsSlider, BsCard } from "quasar-ui-bs";
-    import docLogo from "../assets/images/doc-logo-example.svg";
-    import trainingIcon from "../assets/images/training.svg";
-    import { API } from '../Api';
+    import { BsTab, BsTabIcon, BsHeader, BsButton, BsDrawer, BsContent, BsTooltip, BsSlider, BsCard } from "quasar-ui-bs";
     import { QRadio, QCard, QSeparator, QCardSection } from 'quasar';
-    import type { AxiosError } from 'axios';
-    import { isAxiosError } from 'axios';
     import VariableInteractions from './VariableInteractions.vue'
     import { useTrainingStore } from "../stores/training";
+    import { useModelStore } from "../stores/webapp";
     
     export default defineComponent({
     components: {
@@ -145,14 +139,10 @@
     props: [],
     data() {
         return {
-            store: useTrainingStore(),
-            layoutRef: undefined as undefined | InstanceType<typeof BsLayoutDefault>,
-            trainingIcon,
-            docLogo,
-            errorMessage: "" as string,
+            trainingStore: useTrainingStore(),
+            store: useModelStore(),
         };
     },
-    emits: ['update:modelValue', 'update:models'],
     watch: {
         updateModels(newValue) {
             this.$emit("update:models", newValue);
@@ -160,25 +150,17 @@
     },
     methods: {
         async submitVariables() {
-            this.store.trainModel();
+            this.trainingStore.trainModel();
         },
     },
     computed: {
         updateModels() {
-            return this.store.updateModels;
+            return this.trainingStore.updateModels;
         }
     },
     async mounted() {
-        API.getModels().then((data: any) => {
-            this.store.models = data.data;
-            this.store.modelsString = this.store.models.map(item => item.name);
-          });
-        this.layoutRef = this.$refs.layout as InstanceType<typeof BsLayoutDefault>;
-        const savedDistributionFunction = localStorage.getItem('DistributionFunction');
-        const savedLinkFunction = localStorage.getItem('linkFunction');
-        await this.store.getDatasetColumns();
-    
-        
+        await this.store.loadModels();
+        await this.trainingStore.getDatasetColumns();
     }
     })
     </script>   

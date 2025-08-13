@@ -60,7 +60,7 @@ import { BsButton, BsLayoutDefault, BsTable } from "quasar-ui-bs";
 import type { QTableColumn } from 'quasar';
 import { QIcon, QTooltip, QTd } from 'quasar';
 import { useModelStore } from '../stores/webapp';
-import { API } from "../Api";
+import { useTrainingStore } from '../stores/training';
 
 const columns: QTableColumn[] = [
       { name: 'model_name', align: 'center', label: 'Model Name', field: 'name', sortable: true},
@@ -87,40 +87,26 @@ export default defineComponent({
       QTooltip,
       QTd
   },
-  emits: ['update:loading'],
   data() {
       return {
           store: useModelStore(),
-          layoutRef: undefined as undefined | InstanceType<typeof BsLayoutDefault>,
-          loading: false,
+          trainingStore: useTrainingStore(),
       };
-  },
-  watch: {
-    loading(newValue) {
-      this.$emit('update:loading', newValue);
-    }
   },
   methods: {
     getModelUrl(model: ModelPoint): string {
         return `/projects/${this.store.projectKey}/analysis/${this.store.analysisId}/ml/p/${this.store.mlTaskId}/${model.id}/report/tabular-summary`;
     },
     async deployModel(model: ModelPoint) {
-      console.log('Deploying model:', model.name, 'with ID:', model.id);
-      this.loading = true;
-      const status = await API.deployModel(model);
-      this.loading = false;
+      await this.store.deployModel(model);
     },
     async deleteModel(model: ModelPoint) {
-      console.log('Deleting model:', model.name, 'with ID:', model.id);
-      this.loading = true;
-      const status = await API.deleteModel(model);
-      this.loading = false;
+      await this.store.deleteModel(model);
+      this.trainingStore.updateModels;
     },
     async exportModel(model: ModelPoint) {
-      console.log('Exporting model:', model.name, 'with ID:', model.id);
-      this.loading = true;
       await this.store.exportModel(model);
-      this.loading = false;
+
     }
   },
   mounted() {

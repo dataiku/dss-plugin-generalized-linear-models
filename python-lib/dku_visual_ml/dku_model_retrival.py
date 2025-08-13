@@ -270,6 +270,9 @@ class VisualMLModelRetriver(DataikuClientProject):
         logger.info(f"Setup params are {setup_params}")
         return setup_params
 
+    def delete_model(self, model_id):
+        
+        self.task.delete_trained_model(model_id=model_id)        
 
         
     

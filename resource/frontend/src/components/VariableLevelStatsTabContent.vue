@@ -3,6 +3,7 @@
   <div class="top-row">
     <div class="model-selector">
       <BsLabel label="Select a model" info-text="Stats will be generated for this model" />
+      <!-- :modelValue="store.activeModelName" -->
       <BsSelect
           :modelValue="store.activeModelName"
           :all-options="store.modelOptions"
@@ -59,19 +60,14 @@
 
 <script lang="ts">
 import EmptyState from './EmptyState.vue';
-import * as echarts from "echarts";
 import type { ModelPoint, VariableLevelStatsPoint } from '../models';
 import { defineComponent } from "vue";
-import { API } from '../Api';
 import { BsButton, BsLayoutDefault, BsTable } from "quasar-ui-bs";
-import docLogo from "../assets/images/doc-logo-example.svg";
-import variableLevelIcon from "../assets/images/variable-level-stats.svg";
-import { useLoader } from "../composables/use-loader";
 import type { QTableColumn } from 'quasar';
 import { useModelStore } from "../stores/webapp";
-import { useOneWayChartStore } from "../stores/oneWayChartStore.ts"
-import { useLiftChartStore } from "../stores/liftChartStore.ts"
-import { useVariableLevelStatsStore } from "../stores/variableLevelStatsStore.ts"
+import { useOneWayChartStore } from "../stores/oneWayChartStore"
+import { useLiftChartStore } from "../stores/liftChartStore"
+import { useVariableLevelStatsStore } from "../stores/variableLevelStatsStore"
 
 const columns: QTableColumn[] = [
         { name: 'variable', align: 'center', label: 'Variable', field: 'variable',sortable: true},
@@ -122,23 +118,24 @@ export default defineComponent({
         };
     },
     watch: {
-          'store.activeModel': {
-              handler(newModel) {
-                  if (newModel?.id) {
-                      this.oneWayStore.fetchVariablesForModel(newModel.id);
-                      this.liftChartStore.fetchLiftData();
-                      this.variableStatsStore.fetchStatsForModel(newModel.id);
-                  }
-              },
-              deep: true
-            }
+          // 'store.activeModel': {
+          //     handler(newModel) {
+          //         if (newModel?.id) {
+          //             this.oneWayStore.fetchVariablesForModel(newModel.id);
+          //             this.liftChartStore.fetchLiftData();
+          //             this.variableStatsStore.fetchStatsForModel(newModel.id);
+          //         }
+          //     },
+          //     deep: true
+          //   }
         },
         methods: {
             async onModelChange(value: string) {
+                this.variableStatsStore.fetchStatsForModel(value);
                 this.store.setActiveModel(value);
             },
             async deployModel() {
-              this.store.deployModel();
+              this.store.deployActiveModel();
             },
             async exportVariableLevelStats() {
               this.variableStatsStore.exportVariableLevelStats();
