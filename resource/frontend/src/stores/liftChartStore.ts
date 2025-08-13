@@ -7,19 +7,47 @@ import type { LiftDataPoint, ModelPoint } from '../models';
 export const useLiftChartStore = defineStore("liftChart", {
     state: () => ({
         liftChartData: [] as LiftDataPoint[],
-        nbBins: 8,
         isLoading: false,
+
+        formOptions: {
+            model: "",
+            nbBins: 8,
+            trainTest: true
+        },
+        
+        chartOptions: {
+            model: "",
+            nbBins: 8,
+            trainTest: true
+        }
     }),
 
     actions: {
+        // resetState() {
+        //     this.$reset();
+        // },
+
         handleError(error: any) {
             const errorMessage = error.message || "An unknown error occurred in the Lift Chart feature.";
             console.error("LiftChartStore Error:", error);
             useNotification("negative", errorMessage);
         },
 
-        async fetchLiftData(modelId: string) {
-            if (!modelId) {
+        setModel(model: string) {
+            this.formOptions.model = model;
+        },
+        
+        setNbBins(nbBins: number) {
+            this.formOptions.nbBins = nbBins;
+        },
+
+        setTrainTest(trainTest: boolean) {
+            this.formOptions.trainTest = trainTest;
+        },
+
+        async fetchLiftData() {
+            const modelName = this.chartOptions.model;
+            if (!modelName) {
                 this.liftChartData = [];
                 return;
             }
@@ -27,9 +55,9 @@ export const useLiftChartStore = defineStore("liftChart", {
             this.isLoading = true;
             try {
                 const store = useModelStore();
-                const model = store.models.filter( (v: ModelPoint) => v.id==modelId)[0];
+                const model = store.models.filter( (v: ModelPoint) => v.name==modelName)[0];
                 store.activeModel = model;
-                const modelNbBins = { nbBins: this.nbBins, id: model.id, name: model.name, trainTest: store.trainTest};
+                const modelNbBins = { nbBins: this.chartOptions.nbBins, id: model.id, name: model.name, trainTest: this.chartOptions.trainTest};
                 const response = await API.getLiftData(modelNbBins);
                 this.liftChartData = response.data;
             } catch (err) {
@@ -40,22 +68,41 @@ export const useLiftChartStore = defineStore("liftChart", {
             }
         },
 
-        async updateNbBins(newBinValue: number) {
-            this.nbBins = newBinValue;
-            
+        async applyForm() {
+            this.chartOptions.model = this.formOptions.model;
+            this.chartOptions.nbBins = this.formOptions.nbBins;
+            this.chartOptions.trainTest = this.formOptions.trainTest;
+        },
+
+        async exportLiftChart() {
             const store = useModelStore();
-            if (store.activeModel?.id) {
-                // Re-fetch data with the new bin value.
-                await this.fetchLiftData(store.activeModel.id);
+            if (!store.activeModel) {
+                this.notifyError("No variable selected to export.");
+                return;
+            }
+            try {
+                const model = store.activeModel;
+                const modelNbBins = { nbBins: this.chartOptions.nbBins, id: model.id, name: model.name, trainTest: this.chartOptions.trainTest};
+                const response = await API.exportLiftChart(modelNbBins);
+                this._triggerDownload(response.data, `lift_chart_${store.activeModel.name}.csv`);
+            } catch (error) {
+                this.handleError(error);
             }
         },
 
-        async updateTrainTest(trainTest: boolean) {
-            const store = useModelStore();
-            store.setTrainTest(trainTest);
-            if (store.activeModel?.id) {
-                await this.fetchLiftData(store.activeModel.id);
-            }
-        }
+        _triggerDownload(data: any, filename: string) {
+            const url = window.URL.createObjectURL(new Blob([data], { type: 'text/csv' }));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        },
+
+        notifyError(message: string) {
+            useNotification("negative", message);
+        },
     }
 });

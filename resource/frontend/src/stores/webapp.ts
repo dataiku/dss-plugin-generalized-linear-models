@@ -6,17 +6,21 @@ import type { ModelPoint, ModelMetricsDataPoint, BaseValue, RelativityPoint } fr
 export const useModelStore = defineStore("ModelStore", {
     state: () => ({
         models: [] as ModelPoint[],
-      
+
         activeModel: null as ModelPoint | null,
         comparedModel: null as ModelPoint | null,
         relativitiesData: [] as RelativityPoint[],
+        relativitiesData2: [] as RelativityPoint[],
 
         modelMetrics1: {} as ModelMetricsDataPoint,
         modelMetrics2: {} as ModelMetricsDataPoint,
         baseValues1: [] as BaseValue[],
         baseValues2: [] as BaseValue[],
 
-        trainTest: false,
+        projectKey: "",
+        mlTaskId: "",
+        analysisId: "",
+        trainTest: true,
 
         isLoading: false,
     }),
@@ -34,6 +38,9 @@ export const useModelStore = defineStore("ModelStore", {
     },
 
     actions: {
+        resetState() {
+            //this.$reset();
+        },
 
         async sendWebappId() {
             const iframes = window.parent.document.getElementsByTagName('iframe');
@@ -51,6 +58,9 @@ export const useModelStore = defineStore("ModelStore", {
             try {
                 const response = await API.getModels();
                 this.models = response.data;
+                this.projectKey = this.models[0].project_key;
+                this.mlTaskId = this.models[0].ml_task_id;
+                this.analysisId = this.models[0].analysis_id;
             } catch (error) {
                 this.handleError(error);
             } finally {
@@ -104,6 +114,8 @@ export const useModelStore = defineStore("ModelStore", {
                 ]);
                 this.baseValues2 = baseResponse.data;
                 this.modelMetrics2 = metricsResponse.data;
+                const relativityResponse = await API.getRelativities(model);
+                this.relativitiesData2 = relativityResponse?.data;
             } catch (err) {
                 this.handleError(err);
             } finally {
@@ -114,18 +126,48 @@ export const useModelStore = defineStore("ModelStore", {
         setTrainTest(isTest: boolean) {
             this.trainTest = isTest;
         },
+
+        async exportModel(model: ModelPoint) {
+            try {
+                const response = await API.exportModel(model);
+                this._triggerDownload(response.data, `${model.name}.csv`);
+            } catch (error) {
+                this.handleError(error);
+            }
+        },
         
         async exportActiveModel() {
             if (!this.activeModel) {
                 this.notifyError("No active model selected to export.");
                 return;
             }
+            const response = await this.exportModel(this.activeModel);
+        },
+
+        async deployModel(model: ModelPoint) {
             try {
-                const response = await API.exportModel(this.activeModel);
-                this._triggerDownload(response.data, `${this.activeModelName}.csv`);
+                const response = await API.deployModel(model);
             } catch (error) {
                 this.handleError(error);
             }
+        },
+
+        async deployActiveModel() {
+            if (!this.activeModel) {
+                this.notifyError("No active model selected to deploy.");
+                return;
+            }
+            const response = await this.deployModel(this.activeModel);
+        },
+
+        async deleteModel(model: ModelPoint) {
+            this.isLoading = true;
+            try {
+                const response = await API.deleteModel(model);
+            } catch (error) {
+                this.handleError(error);
+            }
+            this.isLoading = false;
         },
 
         _triggerDownload(data: any, filename: string) {

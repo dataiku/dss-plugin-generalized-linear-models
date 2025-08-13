@@ -53,6 +53,10 @@ interface BaseValue {
 interface ModelPoint {
     id: string;
     name: string;
+    date: string;
+    project_key: string;
+    ml_task_id: string;
+    analysis_id: string;
 }
 
 interface ModelVariablePoint {
@@ -60,7 +64,7 @@ interface ModelVariablePoint {
     name: string;
     variable: string;
     trainTest: boolean;
-    rescale: boolean;
+    chartRescaling: string;
 }
 
 interface ModelNbBins {
@@ -95,6 +99,7 @@ interface VariableLevelStatsPoint {
     variable: string;
     value: string;
     coefficient: number;
+    p_value: number;
     standard_error: number;
     standard_error_pct: number;
     weight: number;
@@ -146,9 +151,11 @@ export let API = {
             throw error;
         }),
     deployModel: (model: ModelPoint) => axios.post<number>("/api/deploy_model", model),
+    deleteModel: (model: ModelPoint) => axios.post<number>("/api/delete_model", model),
     getModelMetrics: (data: any) => axios.post<ModelMetricsDataPoint>("/api/get_model_metrics", data),
     exportModel: (model: ModelPoint) => axios.post<Blob>("/api/export_model", model),
     exportVariableLevelStats: (model: ModelPoint) => axios.post<Blob>("/api/export_variable_level_stats", model),
+    exportLiftChart: (model: ModelNbBins) => axios.post<Blob>("/api/export_lift_chart", model),
     exportOneWay: (model: ModelVariablePoint) => axios.post<Blob>("/api/export_one_way", model),
     getVariableLevelStats: (data: ModelPoint) => axios.post<VariableLevelStatsPoint[]>("/api/get_variable_level_stats", data),
 }

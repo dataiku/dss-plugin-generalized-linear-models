@@ -14,7 +14,6 @@
                     <component
                         :is="tabInfo.drawerComponent"
                         v-bind="tabInfo.drawerProps"
-                        @update:loading="updateLoading"
                         @navigate-tab="goToTab"
                     />
                 </BsDrawer>
@@ -27,7 +26,6 @@
                         <component
                             :is="tabInfo.contentComponent"
                             v-bind="tabInfo.contentProps"
-                            @update:loading="updateLoading"
                             @navigate-tab="goToTab"
                         />
                     </template>
@@ -45,7 +43,6 @@
 
 <script lang="ts">
 import OneWayVariableTabDrawer from './components/OneWayVariableTabDrawer.vue';
-import VariableLevelStatsTabDrawer from './components/VariableLevelStatsTabDrawer.vue';
 import LiftChartTabDrawer from './components/LiftChartTabDrawer.vue';
 
 import OneWayTabContent from './components/OneWayTabContent.vue';
@@ -53,7 +50,6 @@ import VariableLevelStatsTabContent from './components/VariableLevelStatsTabCont
 import LiftChartTabContent from './components/LiftChartTabContent.vue';
 import ModelManagement from './components/ModelManagement.vue'
 
-import ModelTrainingTabDrawer from './components/ModelTrainingTabDrawer.vue'
 import ModelTrainingTabContent from './components/ModelTrainingTabContent.vue'
 import EmptyState from './components/EmptyState.vue';
 import CustomDocumentation from './components/CustomDocumentation.vue';
@@ -62,6 +58,7 @@ import { defineComponent } from "vue";
 import { useModelStore } from "./stores/webapp";
 import oneWayIcon from "./assets/images/one-way.svg";
 import trainingIcon from "./assets/images/training.svg";
+import globeIcon from "./assets/images/globe.svg";
 import statsIcon from "./assets/images/variable-level-stats.svg";
 import liftIcon from "./assets/images/lift-chart.svg"; 
 import { useOneWayChartStore } from "./stores/oneWayChartStore.ts"
@@ -69,42 +66,38 @@ import { useLiftChartStore } from "./stores/liftChartStore.ts"
 import { useVariableLevelStatsStore } from "./stores/variableLevelStatsStore.ts"
 
 import { useLoader } from "./composables/use-loader";
+import { useTrainingStore } from './stores/training';
 
 export default defineComponent({
     components: {
       OneWayVariableTabDrawer,
-      VariableLevelStatsTabDrawer,
       LiftChartTabDrawer,
       OneWayTabContent,
       VariableLevelStatsTabContent,
       LiftChartTabContent,
       ModelManagement,
       EmptyState,
-      ModelTrainingTabDrawer,
       ModelTrainingTabContent,
       CustomDocumentation
     },
     data() {
     return {
-        reloadModels: false as boolean,
         store: useModelStore(),
+        trainingStore: useTrainingStore(),
         oneWayStore: useOneWayChartStore(),
         liftChartStore: useLiftChartStore(),
         variableStatsStore: useVariableLevelStatsStore(),
-        loading: false as boolean
       }
     },
     computed: {
     tabs() {
             return [
                 {
-                    name: "Model Training",
+                    name: "Model Configuration",
                     docTitle: "GLM Hub",
                     icon: trainingIcon,
-                    drawerComponent: "ModelTrainingTabDrawer",
                     contentComponent: "ModelTrainingTabContent",
                     contentProps: {},
-                    drawerProps: {},
                     showEmptyState: false,
                     emptyState: {
                         title: "Model Training",
@@ -113,7 +106,7 @@ export default defineComponent({
                     }
                 },
                 {
-                    name: "One-Way Variable",
+                    name: "Observed vs Predicted Chart",
                     docTitle: "GLM Hub",
                     icon: oneWayIcon,
                     drawerComponent: "OneWayVariableTabDrawer",
@@ -121,33 +114,30 @@ export default defineComponent({
                     contentProps: {
                         'chart-data': this.oneWayStore.primaryChartData,
                         'chart-data2': this.oneWayStore.comparisonChartData,
-                        'selected-variable': this.oneWayStore.selectedVariable,
+                        'selected-variable': this.oneWayStore.chartOptions.selectedVariable,
                         relativities: this.oneWayStore.relativities,
-                        'relativities-columns': this.store.relativitiesColumns
+                        'level-order': this.oneWayStore.chartOptions.levelOrder,
+                        'selected-model': this.store.activeModelName,
+                        'metrics': this.store.modelMetrics1,
+                        'compared-model': this.store.comparedModelName,
+                        'compared-metrics': this.store.modelMetrics2,
                     },
                     drawerProps: {},
-                    showEmptyState: !this.store.activeModelName,
+                    showEmptyState: !this.oneWayStore.primaryChartData,
                     emptyState: {
                         title: "One-Way Variable Analysis",
                         subtitle: "Select a model in the left menu to begin",
                     }
                 },
                 {
-                    name: "Variable-Level Stats",
+                    name: "Variable-Level Statistics",
                     docTitle: "GLM Hub",
-                    icon: statsIcon, // Use a new or existing icon
-                    drawerComponent: "VariableLevelStatsTabDrawer", // New Drawer
-                    contentComponent: "VariableLevelStatsTabContent", // Existing Content
+                    icon: statsIcon,
+                    contentComponent: "VariableLevelStatsTabContent",
                     contentProps: {
                         'variable-level-stats-data': this.variableStatsStore.modelStats,
                         columns: this.variableStatsStore.columns
                     },
-                    drawerProps: {},
-                    showEmptyState: !this.store.activeModelName,
-                    emptyState: {
-                        title: "Variable-Level Statistics",
-                        subtitle: "Select a model in the left menu to view its stats",
-                    }
                 },
                 {
                     name: "Lift Chart",
@@ -168,7 +158,7 @@ export default defineComponent({
                 {
                     name: "Model Management",
                     docTitle: "GLM Hub",
-                    icon: liftIcon,
+                    icon: globeIcon,
                     contentComponent: "ModelManagement",
                     contentProps: {
                     },
@@ -179,7 +169,13 @@ export default defineComponent({
                     }
                 }
               ]
-            }
+            },
+        loading() {
+            return this.store.isLoading || this.trainingStore.isLoading || this.oneWayStore.isLoading || this.liftChartStore.isLoading || this.variableStatsStore.isLoading;
+        },
+        updateModels() {
+            return this.trainingStore.updateModels;
+        }
     },
     watch: {
         loading(newVal) {
@@ -190,15 +186,15 @@ export default defineComponent({
                 useLoader().hide();
             }
         },
+        updateModels(newVal) {
+            if (newVal) {
+                console.log("App: Reload models")
+                this.store.loadModels();
+                this.trainingStore.updateModels = false;
+            }
+        }
     },
     methods: {
-      updateModels(){
-        console.log("App: update models");
-        this.reloadModels = !this.reloadModels;
-      },
-      updateLoading(newVal: boolean) {
-            this.loading = newVal;
-        },
         goToTab(index: number) {
             const layout = this.$refs.layout as InstanceType<
                 typeof BsLayoutDefault
@@ -238,5 +234,12 @@ header {
     /* The var() here might be from a global stylesheet */
     padding-right: calc(var(--section-gap) / 2);
   }
+}
+
+.documentation-btn {
+    background-color: white;
+    color: black;
+    border: 1px solid #000000;
+
 }
 </style>

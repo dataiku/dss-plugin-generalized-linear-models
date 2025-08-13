@@ -6,7 +6,14 @@
     :globalSearch="false"
     row-key="id"
     >
-    <template #body-cell-actions="props">
+    <template #body-cell-model_name="props">
+        <q-td :props="props">
+            <a :href="getModelUrl(props.row)" class="table-link">
+                {{ props.value }}
+            </a>
+        </q-td>
+    </template>
+    <template #body-cell-deploy="props">
             <q-td :props="props" style="text-align: center;">
                 <BsButton 
                     flat 
@@ -18,6 +25,30 @@
                 </BsButton>
             </q-td>
         </template>
+        <template #body-cell-export="props">
+            <q-td :props="props" style="text-align: center;">
+                <BsButton 
+                    flat 
+                    round 
+                    dense
+                    @click="exportModel(props.row)">
+                    <q-icon name="download" />
+                    <q-tooltip>Export Model</q-tooltip>
+                </BsButton>
+            </q-td>
+        </template>
+        <template #body-cell-delete="props">
+            <q-td :props="props" style="text-align: center;">
+                <BsButton 
+                    flat 
+                    round 
+                    dense
+                    @click="deleteModel(props.row)">
+                    <q-icon name="delete" />
+                    <q-tooltip>Delete Model</q-tooltip>
+                </BsButton>
+            </q-td>
+        </template>
     </BsTable>
   </template>
 
@@ -26,16 +57,18 @@ import EmptyState from './EmptyState.vue';
 import type { ModelPoint } from '../models';
 import { defineComponent } from "vue";
 import { BsButton, BsLayoutDefault, BsTable } from "quasar-ui-bs";
-import { useLoader } from "../composables/use-loader";
 import type { QTableColumn } from 'quasar';
 import { QIcon, QTooltip, QTd } from 'quasar';
 import { useModelStore } from '../stores/webapp';
-import { API } from "../Api";
+import { useTrainingStore } from '../stores/training';
 
 const columns: QTableColumn[] = [
       { name: 'model_name', align: 'center', label: 'Model Name', field: 'name', sortable: true},
       { name: 'model_id', align: 'center', label: 'Model Id', field: 'id', sortable: true},
-      { name: 'actions', align: 'center', label: 'Actions', field: '' }
+      { name: 'model_date', align: 'center', label: 'Creation Date', field: 'date', sortable: true},
+      { name: 'deploy', align: 'center', label: 'Deploy', field: '' },
+      { name: 'export', align: 'center', label: 'Export', field: '' },
+      { name: 'delete', align: 'center', label: 'Delete', field: '' }
     ]
 
 export default defineComponent({
@@ -57,17 +90,23 @@ export default defineComponent({
   data() {
       return {
           store: useModelStore(),
-          layoutRef: undefined as undefined | InstanceType<typeof BsLayoutDefault>,
-          loading: false,
+          trainingStore: useTrainingStore(),
       };
   },
   methods: {
+    getModelUrl(model: ModelPoint): string {
+        return `/projects/${this.store.projectKey}/analysis/${this.store.analysisId}/ml/p/${this.store.mlTaskId}/${model.id}/report/tabular-summary`;
+    },
     async deployModel(model: ModelPoint) {
-      console.log('Deploying model:', model.name, 'with ID:', model.id);
-      this.store.loading = true;
-      const status = API.deployModel(model);
-      console.log(status);
-      this.store.loading = false;
+      await this.store.deployModel(model);
+    },
+    async deleteModel(model: ModelPoint) {
+      await this.store.deleteModel(model);
+      this.trainingStore.updateModels;
+    },
+    async exportModel(model: ModelPoint) {
+      await this.store.exportModel(model);
+
     }
   },
   mounted() {
@@ -87,5 +126,14 @@ align-items: center;
 gap: var(--bs-spacing-13, 52px);
 min-height: 350px;
 }
+
+.table-link {
+    text-decoration: none;
+    color: black;
+  }
+
+  .table-link:hover {
+    text-decoration: underline;
+  }
 
 </style>

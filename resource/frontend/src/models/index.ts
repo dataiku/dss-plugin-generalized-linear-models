@@ -1,6 +1,6 @@
 export type DataPoint = { 
     definingVariable: string;
-    Category: string;
+    Category: string | number;
     Value: number;
     observedAverage: number;
     fittedAverage: number;
@@ -11,6 +11,7 @@ export type ColumnInput = {
     column: string;
     baseLevel: string;
     options: Array<string>;
+    type: string;
 }
 
 export type LiftDataPoint = { 
@@ -30,6 +31,7 @@ export type VariableLevelStatsPoint = {
     variable: string;
     value: string;
     coefficient: number;
+    p_value: number;
     standard_error: number;
     standard_error_pct: number;
     weight: number;
@@ -40,6 +42,10 @@ export type VariableLevelStatsPoint = {
 export type ModelPoint = { 
     id: string;
     name: string;
+    date: string;
+    project_key: string;
+    ml_task_id: string;
+    analysis_id: string;
 }
 
 export type Interaction = { 

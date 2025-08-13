@@ -12,28 +12,28 @@
   
   <script lang="ts">
   import { defineComponent, computed, PropType } from "vue";
-  import VChart from "vue-echarts";
-  import { use } from "echarts/core";
-  import { CanvasRenderer } from "echarts/renderers";
-  import { BarChart, LineChart } from "echarts/charts";
-  import {
-    TitleComponent,
-    TooltipComponent,
-    LegendComponent,
-    GridComponent,
-  } from "echarts/components";
-  
-  use([
-    CanvasRenderer,
-    BarChart,
-    LineChart,
-    TitleComponent,
-    TooltipComponent,
-    LegendComponent,
-    GridComponent,
-  ]);
-  
-  export default {
+import VChart from "vue-echarts";
+import { use } from "echarts/core";
+import { CanvasRenderer } from "echarts/renderers";
+import { BarChart, LineChart } from "echarts/charts";
+import {
+  TitleComponent,
+  TooltipComponent,
+  LegendComponent,
+  GridComponent,
+} from "echarts/components";
+
+use([
+  CanvasRenderer,
+  BarChart,
+  LineChart,
+  TitleComponent,
+  TooltipComponent,
+  LegendComponent,
+  GridComponent,
+]);
+
+export default {
   name: 'BarChart',
   components: { VChart },
   props: {
@@ -75,6 +75,26 @@
         type: String,
         required: true,
         default: ''
+      },
+    levelOrder:{
+        type: String,
+        required: true,
+        default: 'Natural order'
+      },
+    chartDistribution:{
+        type: String,
+        required: true,
+        default: 'Raw data'
+      },
+    nbBins:{
+        type: Number,
+        required: false,
+        default: 20
+      },
+    chartRescaling:{
+        type: String,
+        required: true,
+        default: 'None'
       }
   },
   data() {
@@ -84,51 +104,83 @@
   },
   methods: {
     createChartData() {
+      // 1. Combine all data points into a single array of objects to sort them together.
+      console.log("second model");
+      console.log(this.fittedAverageLine2);
+      console.log(this.baseLevelPredictionLine2);
+      let combinedData = this.xaxisLabels.map((label, index) => ({
+        label: label,
+        weight: this.barData[index],
+        observed: this.observedAverageLine[index],
+        predicted: this.fittedAverageLine[index], // 'predicted' will be our sorting key for fitted average
+        base: this.baseLevelPredictionLine[index],
+        // Handle optional data series
+        fitted2: this.fittedAverageLine2 ? this.fittedAverageLine2[index] : null,
+        base2: this.baseLevelPredictionLine2 ? this.baseLevelPredictionLine2[index] : null,
+      }));
 
+      // 2. Sort the combined data array based on the levelOrder prop.
+      const order = this.levelOrder;
+      if (order !== 'Natural order') {
+        combinedData.sort((a, b) => {
+          switch (order) {
+            case 'Ascending observed':
+              return a.observed - b.observed;
+            case 'Descending observed':
+              return b.observed - a.observed;
+            case 'Ascending predicted':
+              return a.predicted - b.predicted;
+            case 'Descending predicted':
+              return b.predicted - a.predicted;
+            default:
+              return 0; // No sorting for 'Natural order' or unknown values
+          }
+        });
+      }
+
+      // 3. "Unzip" the sorted data back into individual arrays for ECharts.
+      const sortedXaxisLabels = combinedData.map(d => d.label);
+      const sortedBarData = combinedData.map(d => d.weight);
+      const sortedObservedAverageLine = combinedData.map(d => d.observed);
+      const sortedFittedAverageLine = combinedData.map(d => d.predicted);
+      const sortedBaseLevelPredictionLine = combinedData.map(d => d.base);
+      const sortedFittedAverageLine2 = this.fittedAverageLine2 ? combinedData.map(d => d.fitted2) : null;
+      const sortedBaseLevelPredictionLine2 = this.baseLevelPredictionLine2 ? combinedData.map(d => d.base2) : null;
+
+
+      // 4. Build the chart series using the new sorted data arrays.
       const series: any[] = [
         {
           name: "Weights",
           type: "bar",
-          yAxisIndex: 1, // Assign to the right Y-axis
-          itemStyle: {
-            color: "#D9D8D6",
-            opacity: 0.7, // Semi-transparent or different color
-          },
-          z: 1, // Lower z-index for background
-          data: this.barData
+          yAxisIndex: 1,
+          itemStyle: { color: "#D9D8D6", opacity: 0.7 },
+          z: 1,
+          data: sortedBarData // Use sorted data
         },
         {
           name: "Observed Average",
           type: "line",
-          yAxisIndex: 0, // Assign to the left Y-axis
-          itemStyle: {
-            color: "#A77BCA",
-            opacity: 0.7,
-          },
-          z: 3, // Higher z-index for main bars
-          data: this.observedAverageLine,
+          yAxisIndex: 0,
+          itemStyle: { color: "#A77BCA", opacity: 0.7 },
+          z: 3,
+          data: sortedObservedAverageLine, // Use sorted data
         },
         {
             name: "Fitted Average",
             type: "line",
-            yAxisIndex: 0, // Assign to the left Y-axis
-            itemStyle: {
-                color: "#008675",
-                opacity: 0.7,
-            },
-            z: 3, // Higher z-index for main bars
-            data: this.fittedAverageLine,
+            yAxisIndex: 0,
+            itemStyle: { color: "#008675", opacity: 0.7 },
+            z: 3,
+            data: sortedFittedAverageLine, // Use sorted data
         },
         {
             name: "Base Level Prediction",
             type: "line",
-            yAxisIndex: 0, // Assign to the left Y-axis
-            itemStyle: {
-                color: "#26d07c",
-                opacity: 0.7,
-            },
-            z: 3, // Higher z-index for main bars
-            data: this.baseLevelPredictionLine,
+            yAxisIndex: 0,
+            itemStyle: { color: "#26d07c", opacity: 0.7 },
+            z: 3,
+            data: sortedBaseLevelPredictionLine, // Use sorted data
         },
       ];
 
@@ -136,16 +188,11 @@
         series.push({
           name: "Fitted Average 2",
           type: "line",
-          yAxisIndex: 0, // Assign to the left Y-axis
-          itemStyle: {
-            color: "#008675",
-            opacity: 0.7
-          },
-          lineStyle: {
-            type: 'dashed' // Make the line dashed
-          },
-          z: 3, // Higher z-index for main bars
-          data: this.fittedAverageLine2,
+          yAxisIndex: 0,
+          itemStyle: { color: "#008675", opacity: 0.7 },
+          lineStyle: { type: 'dashed' },
+          z: 3,
+          data: sortedFittedAverageLine2, // Use sorted data
         });
       }
 
@@ -153,87 +200,72 @@
         series.push({
           name: "Base Level Prediction 2",
           type: "line",
-          yAxisIndex: 0, // Assign to the left Y-axis
-          itemStyle: {
-            color: "#26d07c",
-            opacity: 0.7,
-          },
-          lineStyle: {
-            type: 'dashed' // Make the line dashed
-          },
-          z: 3, // Higher z-index for main bars
-          data: this.baseLevelPredictionLine2,
+          yAxisIndex: 0,
+          itemStyle: { color: "#26d07c", opacity: 0.7 },
+          lineStyle: { type: 'dashed' },
+          z: 3,
+          data: sortedBaseLevelPredictionLine2, // Use sorted data
         });
       }
 
+      // 5. Define the final chart option object.
       this.chartOption = {
           xAxis: [{
               type: this.xaxisType==="categorical" ? "category" : null,
-              data: this.xaxisLabels,
-              axisLabel: {'interval': 0,
-                          'rotate': 45,
-                          },
+              data: sortedXaxisLabels, // Use sorted labels
+              axisLabel: {'interval': 0, 'rotate': 45 },
               axisLine: { onZero: false},
           }],
           yAxis: [
-                    {
-                        type: "value",
-                        position: "left",
-                        name: "value",
-                        axisLine: { onZero: false, show: true },
-                        //axisLine: { onZero: false, show:false},
-                        //min: 'dataMin',
-                        max: function(value: any) {
-                          return Math.round((value.max + (value.max-value.min)*0.1) * 100) / 100; // Adjust 'someMargin' as needed
-                        },
-                        min: function(value: any) {
-                          return Math.round((value.min - (value.max-value.min)*0.1) * 100) / 100; // Adjust 'someMargin' as needed
-                        },
-                    },
-                    {
-                        type: "value",
-                        position: "right",
-                        name: "weights",
-                        max: function(value: any) {
-                          return Math.round((value.max + (value.max-value.min)*0.1) * 100) / 100; // Adjust 'someMargin' as needed
-                        },
-                        splitLine: {show: false} ,
-                    },
-                ],
-                grid: {
-                    top: 40,
-                    left: 0,
-                    right: 0,
-                    containLabel: true,
-                },
-                series: series,
-                legend: {
-                  // Try 'horizontal'
-                  // orient: 'vertical',
-                  // right: '0%',
-                  // top: 'center'
-                  orient: 'horizontal',
-                  bottom: 0
-                },
-                title: {
-                  text: this.chartTitle,
-                  left: 'center'
-                },
-                tooltip: {
-                    trigger: 'axis', // Show tooltip for each data point
-                    axisPointer: {
-                        type: 'cross' // Show crosshair pointer
-                    },
-                    formatter: function(params: any) {
-                        // Custom tooltip formatter
-                        var tooltip = params[0].axisValueLabel + '<br/>'; // X-axis label
-                        params.forEach(function(item: any) {
-                            tooltip += item.seriesName + ': ' + (Math.round(item.data*1000.0)/1000.0) + '<br/>'; // Series name and value
-                        });
-                        return tooltip;
-                    }
-                }
-            };
+              {
+                  type: "value",
+                  position: "left",
+                  name: "value",
+                  axisLine: { onZero: false, show: true },
+                  max: function(value: any) {
+                    return Math.round((value.max + (value.max-value.min)*0.1) * 100) / 100;
+                  },
+                  min: function(value: any) {
+                    return Math.round((value.min - (value.max-value.min)*0.1) * 100) / 100;
+                  },
+              },
+              {
+                  type: "value",
+                  position: "right",
+                  name: "weights",
+                  max: function(value: any) {
+                    return Math.round((value.max + (value.max-value.min)*0.1) * 100) / 100;
+                  },
+                  splitLine: {show: false} ,
+              },
+          ],
+          grid: {
+              top: 40,
+              left: 0,
+              right: 0,
+              containLabel: true,
+          },
+          series: series,
+          legend: {
+            orient: 'horizontal',
+            bottom: 0
+          },
+          title: {
+            text: this.chartTitle,
+            left: 'center'
+          },
+          tooltip: {
+              trigger: 'axis',
+              axisPointer: { type: 'cross' },
+              formatter: function(params: any) {
+                  var tooltip = params[0].axisValueLabel + '<br/>';
+                  params.forEach(function(item: any) {
+                      tooltip += item.seriesName + ': ' + (Math.round(item.data*1000.0)/1000.0) + '<br/>';
+                  });
+                  return tooltip;
+              }
+          }
+      };
     },
   },
   mounted() {
@@ -241,11 +273,18 @@
   },
   watch: {
     xaxisLabels: {
-            deep: true,
-            handler() {
-                this.createChartData();
-            },
+        deep: true,
+        handler() {
+            this.createChartData();
         },
+    },
+    levelOrder: {
+        handler() {
+            console.log("change level order");
+            this.createChartData();
+        }
+    }
   },
 }
+
 </script>

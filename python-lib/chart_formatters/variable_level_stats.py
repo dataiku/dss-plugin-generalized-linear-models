@@ -62,7 +62,7 @@ class VariableLevelStatsFormatter:
         coef_table_intercept['exposure'] = 0
         coef_table_intercept['exposure_pct'] = 0
         coef_table_intercept['relativity'] = relativities[relativities['feature'] == 'base']['relativity'].iloc[0]
-        variable_stats = coef_table_intercept[['feature', 'value', 'relativity', 'coef', 'se', 'se_pct', 'exposure', 'exposure_pct']]
+        variable_stats = coef_table_intercept[['feature', 'value', 'relativity', 'coef', 'p_value','se', 'se_pct', 'exposure', 'exposure_pct']]
         return variable_stats
 
     def _get_categorical_features(self, features):
@@ -112,7 +112,7 @@ class VariableLevelStatsFormatter:
 
         coef_table_cat[['dummy', 'variable', 'value']] = coef_table_cat['index'].str.split(':', expand=True)
         variable_stats_cat = relativities_cat.merge(
-            coef_table_cat[['variable', 'value', 'coef', 'se', 'se_pct']],
+            coef_table_cat[['variable', 'value', 'coef', 'p_value', 'se', 'se_pct']],
             how='left',
             left_on=['feature', 'value'],
             right_on=['variable', 'value']
@@ -143,7 +143,7 @@ class VariableLevelStatsFormatter:
         coef_table_num['exposure_pct'] = 100
         coef_table_num['relativity'] = 1
         
-        variable_stats_num = coef_table_num[['feature', 'value', 'relativity', 'coef', 'se', 'se_pct', 'exposure', 'exposure_pct']]
+        variable_stats_num = coef_table_num[['feature', 'value', 'relativity', 'coef', 'p_value', 'se', 'se_pct', 'exposure', 'exposure_pct']]
         return variable_stats.append(variable_stats_num)
 
     def _get_interaction_features(self):
@@ -175,7 +175,7 @@ class VariableLevelStatsFormatter:
         coef_table_interactions = coef_table_interactions[coef_table_interactions['interaction'].isin(interaction_features)]
         
         variable_stats_interaction = relativities_interaction.merge(
-            coef_table_interactions[['variable_1', 'variable_2', 'value_1', 'value_2', 'coef', 'se', 'se_pct']],
+            coef_table_interactions[['variable_1', 'variable_2', 'value_1', 'value_2', 'coef', 'p_value', 'se', 'se_pct']],
             how='left',
             left_on=['feature_1', 'feature_2', 'value_1', 'value_2'],
             right_on=['variable_1', 'variable_2', 'value_1', 'value_2']
@@ -240,7 +240,7 @@ class VariableLevelStatsFormatter:
         coef_table_interactions = coef_table_interactions[coef_table_interactions['interaction'].isin(interactions_cat_num)]
         
         variable_stats_interaction = relativities_interaction.merge(
-            coef_table_interactions[['variable_1', 'variable_2', 'value_1', 'value_2', 'coef', 'se', 'se_pct']],
+            coef_table_interactions[['variable_1', 'variable_2', 'value_1', 'value_2', 'coef', 'p_value', 'se', 'se_pct']],
             how='left',
             left_on=['feature_1', 'feature_2', 'value_1', 'value_2'],
             right_on=['variable_1', 'variable_2', 'value_1', 'value_2']
@@ -307,7 +307,7 @@ class VariableLevelStatsFormatter:
         coef_table_interactions = coef_table_interactions[coef_table_interactions['interaction'].isin(interactions_num_num)]
         
         variable_stats_interaction = relativities_interaction.merge(
-            coef_table_interactions[['variable_1', 'variable_2', 'value_1', 'value_2', 'coef', 'se', 'se_pct']],
+            coef_table_interactions[['variable_1', 'variable_2', 'value_1', 'value_2', 'coef', 'p_value', 'se', 'se_pct']],
             how='left',
             left_on=['feature_1', 'feature_2', 'value_1', 'value_2'],
             right_on=['variable_1', 'variable_2', 'value_1', 'value_2']
@@ -328,7 +328,7 @@ class VariableLevelStatsFormatter:
 
     def _finalize_stats(self, variable_stats):
         logger.debug("Finalizing stats.")
-        variable_stats.columns = ['variable', 'value', 'relativity', 'coefficient', 'standard_error', 'standard_error_pct', 'weight', 'weight_pct']
+        variable_stats.columns = ['variable', 'value', 'relativity', 'coefficient', 'p_value', 'standard_error', 'standard_error_pct', 'weight', 'weight_pct']
         variable_stats.fillna(0, inplace=True)
         variable_stats.replace([np.inf, -np.inf], 0, inplace=True)
         return variable_stats

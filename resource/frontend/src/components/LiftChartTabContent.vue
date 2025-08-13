@@ -5,6 +5,22 @@
           subtitle="Select model in the left column to create chart"
           v-if="chartData.length == 0"/>
       <div class="tab-content" v-else>
+        <div class="export-buttons">
+            <BsButton 
+                  dense
+                  outline
+                  @click="deployModel">
+                  <q-icon name="rocket_launch" />
+                  <q-tooltip>Deploy Model</q-tooltip>
+              </BsButton>
+            <BsButton   
+                  dense
+                  outline
+                  @click="exportLiftChart">
+                  <q-icon name="download" />
+                  <q-tooltip>Export Lift Chart</q-tooltip>
+              </BsButton>
+          </div>
           <LiftChart
               v-if="chartData.length"
               :xaxisLabels="chartData.map(item => item.Category)"
@@ -23,6 +39,8 @@ import EmptyState from './EmptyState.vue';
 import type { LiftDataPoint } from '../models';
 import { defineComponent } from "vue";
 import { BsButton, BsLayoutDefault, BsTable, BsCheckbox, BsSlider, BsToggle } from "quasar-ui-bs";
+import { useModelStore } from '../stores/webapp';
+import { useLiftChartStore } from '../stores/liftChartStore';
 
 
 export default defineComponent({
@@ -49,10 +67,17 @@ export default defineComponent({
     },
     data() {
         return {
-            layoutRef: undefined as undefined | InstanceType<typeof BsLayoutDefault>,
-
-            loading: false,
+            store: useModelStore(),
+            liftChartStore: useLiftChartStore(),
         };
+    },
+    methods: {
+      async deployModel() {
+          this.store.deployModel();
+        },
+      async exportLiftChart() {
+        this.liftChartStore.exportLiftChart();
+      }
     }
 })
 </script>
@@ -68,8 +93,15 @@ export default defineComponent({
   padding-right: 0px;
   padding-top: 20px;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: normal;
   gap: var(--bs-spacing-13, 52px);
   min-height: 350px;
+}
+
+.export-buttons {
+  display: flex;
+  gap: 12px;
+  align-self: flex-end;
 }
 </style>

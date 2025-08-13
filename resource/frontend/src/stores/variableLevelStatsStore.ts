@@ -8,10 +8,13 @@ import { useModelStore } from "./webapp";
 const VARIABLE_STATS_COLUMNS: QTableColumn[] = [
     { name: 'variable', align: 'left', label: 'Variable', field: 'variable', sortable: true },
     { name: 'value', align: 'left', label: 'Value', field: 'value', sortable: true },
-    { name: 'coefficient', align: 'right', label: 'Coefficient', field: 'coefficient', sortable: true },
-    { name: 'standard_error', align: 'right', label: 'Standard Error', field: 'standard_error', sortable: true },
-    { name: 'weight', align: 'right', label: 'Weight', field: 'weight', sortable: true },
     { name: 'relativity', align: 'right', label: 'Relativity', field: 'relativity', sortable: true },
+    { name: 'coefficient', align: 'right', label: 'Coefficient', field: 'coefficient', sortable: true },
+    { name: 'p_value', align: 'right', label: 'P-value', field: 'p_value', sortable: true },
+    { name: 'standard_error', align: 'right', label: 'Standard Error', field: 'standard_error', sortable: true },
+    { name: 'standard_error_pct', align: 'right', label: 'Standard Error %', field: 'standard_error_pct', sortable: true, format: (val) => `${val}%`},
+    { name: 'weight', align: 'right', label: 'Weight', field: 'weight', sortable: true },
+    { name: 'weight_pct', align: 'right', label: 'Weight %', field: 'weight_pct', sortable: true, format: (val) => `${val}%`},
 ];
 
 export const useVariableLevelStatsStore = defineStore("variableLevelStats", {
@@ -22,14 +25,18 @@ export const useVariableLevelStatsStore = defineStore("variableLevelStats", {
     }),
 
     actions: {
+        resetState() {
+            this.$reset();
+        },
+        
         handleError(error: any) {
             const errorMessage = error.message || "An unknown error occurred in the Variable Stats feature.";
             console.error("VariableLevelStatsStore Error:", error);
             useNotification("negative", errorMessage);
         },
 
-        async fetchStatsForModel(modelId: string) {
-            if (!modelId) {
+        async fetchStatsForModel(modelName: string) {
+            if (!modelName) {
                 this.modelStats = [];
                 return;
             }
@@ -37,15 +44,18 @@ export const useVariableLevelStatsStore = defineStore("variableLevelStats", {
             this.isLoading = true;
             try {
                 const store = useModelStore();
-                const model = store.models.filter( (v: ModelPoint) => v.id==modelId)[0];
+                const model = store.models.filter( (v: ModelPoint) => v.name==modelName)[0];
                 store.activeModel = model;
                 const response = await API.getVariableLevelStats(model);
 
                 this.modelStats = response.data.map((point: any) => ({
                     ...point,
                     coefficient: this._round(point.coefficient),
+                    p_value: this._round(point.p_value),
                     standard_error: this._round(point.standard_error),
+                    standard_error_pct: this._round(point.standard_error_pct),
                     weight: this._round(point.weight),
+                    weight_pct: this._round(point.weight_pct),
                     relativity: this._round(point.relativity),
                 }));
 

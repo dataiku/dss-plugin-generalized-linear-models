@@ -20,6 +20,12 @@ def deploy_model():
     data_service = current_app.data_service
     result = data_service.deploy_model(request.get_json())
     return jsonify(result)
+
+@fetch_api.route("/delete_model", methods=["POST"])
+def delete_model():
+    data_service = current_app.data_service
+    result = data_service.delete_model(request.get_json())
+    return jsonify(result)
     
 @fetch_api.route("/get_latest_mltask_params", methods=["POST"])
 def get_latest_mltask_params():
@@ -78,7 +84,7 @@ def get_model_metrics():
 @fetch_api.route('/export_model', methods=['POST'])
 def export_model():
     data_service = current_app.data_service
-    csv_data = data_service.get_model_metrics(request.get_json())
+    csv_data = data_service.export_model(request.get_json())
     csv_io = BytesIO(csv_data)
     # Serve the CSV file for download
     return send_file(
@@ -99,6 +105,19 @@ def export_variable_level_stats():
         mimetype='text/csv',
         as_attachment=True,
         download_name='variable_level_stats.csv'
+    )
+
+@fetch_api.route('/export_lift_chart', methods=['POST'])
+def export_lift_chart():
+    data_service = current_app.data_service
+    csv_data = data_service.export_lift_chart(request.get_json())
+    csv_io = BytesIO(csv_data)
+    # Serve the CSV file for download
+    return send_file(
+        csv_io,
+        mimetype='text/csv',
+        as_attachment=True,
+        download_name='lift_chart.csv'
     )
 
 @fetch_api.route('/export_one_way', methods=['POST'])

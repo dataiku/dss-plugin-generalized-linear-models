@@ -2,6 +2,7 @@ import re
 from flask import current_app
 from logging_assist.logging import logger
 from model_cache.model_conformity_checker import ModelConformityChecker
+from .dataiku_api import dataiku_api
 import pandas as pd
 from dku_visual_ml.dku_model_retrival import VisualMLModelRetriver
 from glm_handler.dku_relativites_calculator import RelativitiesCalculator
@@ -14,6 +15,9 @@ mcc = ModelConformityChecker()
 def format_models(global_dku_mltask):
     logger.info("Formatting Models")
     list_ml_id = global_dku_mltask.get_trained_models_ids()
+    project_key = dataiku_api.default_project_key
+    ml_task_id = global_dku_mltask.mltask_id
+    analysis_id = global_dku_mltask.analysis_id
     models = []
     for ml_id in list_ml_id:
         model_details = global_dku_mltask.get_trained_model_details(ml_id)
@@ -21,7 +25,8 @@ def format_models(global_dku_mltask):
         if is_conform:
             model_name = model_details.get_user_meta()['name']
             matches = re.findall(pattern, model_name)
-            models.append({"id": ml_id, "name": matches[0]})
+            date = [v['value'] for v in model_details.get_user_meta()['labels'] if v['key'] == 'model:date'][0]
+            models.append({"id": ml_id, "name": matches[0], "date": date, "project_key": project_key, "ml_task_id": ml_task_id, "analysis_id": analysis_id})
         else:
             current_app.logger.info(f"model {ml_id} is not conform")
     return models
@@ -64,7 +69,8 @@ def calculate_base_levels(df, exposure_column=None):
         cols_json.append({
             'column': col,
             'options': options,
-            'baseLevel': base_level
+            'baseLevel': base_level,
+            'type': ('numerical' if is_numeric else 'categorical')
         })
     
     return cols_json

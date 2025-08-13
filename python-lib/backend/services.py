@@ -31,6 +31,11 @@ class MockDataService:
         current_app.logger.info("Local set up: No model deployment completed")
         time.sleep(2)
         return {'message': 'Model deployed successfully.'}
+    
+    def delete_model(self, request_json: dict):
+        current_app.logger.info("Local set up: No model deletion completed")
+        time.sleep(1)
+        return {'message': 'Model deleted successfully.'}
 
     def get_latest_mltask_params(self, request_json: dict):
         current_app.logger.info("Getting Latest ML task set up parameters")
@@ -83,6 +88,12 @@ class MockDataService:
         return csv_data
     
     def export_variable_level_stats(self, request_json: dict):
+        # Convert DataFrame to CSV format
+        csv_data = dummy_variable_level_stats.to_csv(index=False).encode('utf-8')
+
+        return csv_data
+    
+    def export_lift_chart(self, request_json: dict):
         # Convert DataFrame to CSV format
         csv_data = dummy_variable_level_stats.to_csv(index=False).encode('utf-8')
 
@@ -167,6 +178,16 @@ class DataikuDataService:
 
         return {'message': 'Model deployed successfully.'}
     
+    def delete_model(self, request_json: dict):
+        current_app.logger.info(f"Deleting Model with request {request_json}")
+    
+        model_id = request_json['id']
+        self.visual_ml_deployer.delete_model(model_id)
+        model_retriver = VisualMLModelRetriver(model_id)
+        model_retriver.delete_model(model_id)
+
+        return {'message': 'Model deleted successfully.'}
+    
     def get_latest_mltask_params(self, request_json: dict):
         current_app.logger.info("Getting Latest ML task set up parameters")
         full_model_id = request_json["id"]
@@ -211,7 +232,7 @@ class DataikuDataService:
         current_app.logger.info(request_json)
         full_model_id = request_json["id"]
         train_test = request_json['trainTest']
-        dataset = 'test' if train_test else 'train'
+        dataset = 'train' if train_test else 'test'
         variable = request_json['variable']
 
         current_app.logger.info(f"Model ID received: {full_model_id}")
@@ -249,7 +270,7 @@ class DataikuDataService:
         full_model_id = request_json["id"]
         nb_bins = request_json["nbBins"]
         train_test = request_json["trainTest"]
-        dataset = 'test' if train_test else 'train'
+        dataset = 'train' if train_test else 'test'
         
         current_app.logger.info(f"Model ID received: {full_model_id}")
         
@@ -296,6 +317,8 @@ class DataikuDataService:
                             "full_model_id": full_model_id}
         variable_stats = self.model_cache.get_or_create_cached_item(full_model_id, 'variable_level_stats', get_model_variable_level_stats, **creation_args)
         
+        current_app.logger.info(variable_stats)
+        current_app.logger.info(variable_stats.columns)
         return variable_stats.to_dict('records')
     
     def get_model_metrics(self, request_json: dict):
@@ -318,7 +341,6 @@ class DataikuDataService:
             if not model:
                 current_app.logger.error("error: Model ID not provided")
 
-            relativities_dict = self.model_cache.get_model(model).get('relativities_dict')
             creation_args = {"data_handler": self.data_handler,
                             "model_cache": self.model_cache,
                             "full_model_id": model}
@@ -381,7 +403,8 @@ class DataikuDataService:
                             "model_cache": self.model_cache,
                             "full_model_id": full_model_id}
             df = self.model_cache.get_or_create_cached_item(full_model_id, 'variable_level_stats', get_model_variable_level_stats, **creation_args)
-            df.columns = ['variable', 'value', 'relativity', 'coefficient', 'standard_error', 'standard_error_pct', 'weight', 'weight_pct']
+            current_app.logger.info(df.columns)
+            df.columns = ['variable', 'value', 'relativity', 'coefficient', 'p_value', 'standard_error', 'standard_error_pct', 'weight', 'weight_pct']
 
             csv_data = df.to_csv(index=False).encode('utf-8')
 
@@ -391,6 +414,41 @@ class DataikuDataService:
 
         return csv_data
     
+    def export_lift_chart(self, request_json: dict):
+        try:
+            full_model_id = request_json["id"]
+            nb_bins = request_json["nbBins"]
+            train_test = request_json["trainTest"]
+            dataset = 'train' if train_test else 'test'
+
+            current_app.logger.info(f"Model ID received: {full_model_id}")
+            creation_args = {"data_handler": self.data_handler,
+                            "model_cache": self.model_cache,
+                            "full_model_id": full_model_id}
+            
+            model_retriever = VisualMLModelRetriver(full_model_id)
+        
+            lift_chart = LiftChartFormatter(
+                        model_retriever,
+                        self.data_handler
+            )
+            creation_args = {"data_handler": self.data_handler,
+                                "model_cache": self.model_cache,
+                                "full_model_id": full_model_id}
+            train_set = self.model_cache.get_or_create_cached_item(full_model_id, 'train_set', get_model_train_set, **creation_args)
+            test_set = self.model_cache.get_or_create_cached_item(full_model_id, 'test_set', get_model_test_set, **creation_args)
+
+            lift_chart_data = lift_chart.get_lift_chart(nb_bins, train_set, test_set)
+            
+            lift_chart_data = lift_chart_data[lift_chart_data['dataset'] == dataset]
+            csv_data = lift_chart_data.to_csv(index=False).encode('utf-8')
+
+        except KeyError as e:
+            current_app.logger.error(f"An error occurred: {str(e)}")
+            raise KeyError(f"An error occurred: {str(e)}")
+
+        return csv_data
+
     def export_one_way(self, request_json: dict):
         current_app.logger.info("Exporting one way graphs")
         try:
