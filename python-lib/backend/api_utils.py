@@ -8,14 +8,13 @@ from dku_visual_ml.dku_model_retrival import VisualMLModelRetriver
 from glm_handler.dku_relativites_calculator import RelativitiesCalculator
 from chart_formatters.variable_level_stats import VariableLevelStatsFormatter
 
-pattern = r'\((.*?)\)'
-
-mcc = ModelConformityChecker()
-
 def format_models(global_dku_mltask):
     logger.info("Formatting Models")
+    model_id_pattern = r'\((.*?)\)'
+    mcc = ModelConformityChecker()
+
     list_ml_id = global_dku_mltask.get_trained_models_ids()
-    project_key = dataiku_api.default_project_key
+    project_key = dataiku_api.default_project.project_key
     ml_task_id = global_dku_mltask.mltask_id
     analysis_id = global_dku_mltask.analysis_id
     models = []
@@ -24,7 +23,7 @@ def format_models(global_dku_mltask):
         is_conform = mcc.check_model_conformity(ml_id)
         if is_conform:
             model_name = model_details.get_user_meta()['name']
-            matches = re.findall(pattern, model_name)
+            matches = re.findall(model_id_pattern, model_name)
             date = [v['value'] for v in model_details.get_user_meta()['labels'] if v['key'] == 'model:date'][0]
             models.append({"id": ml_id, "name": matches[0], "date": date, "project_key": project_key, "ml_task_id": ml_task_id, "analysis_id": analysis_id})
         else:
