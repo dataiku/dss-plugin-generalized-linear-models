@@ -1,69 +1,7 @@
-<!-- <template>
-    <div class="interactions-container">
-      <div v-if="interactions.length === 0" class="add-initial">
-        <BsButton 
-        unelevated
-          no-caps
-          color="primary" 
-          class="q-mt-md"
-          label="Add an interaction?" 
-          @click="addInteraction"
-        />
-      </div>
-      
-      <div v-else class="interactions-list">
-        <div class="interaction-header-row">
-          <BsLabel class="interaction-label" label="Interaction"></BsLabel>
-          <BsLabel class="variable-header" label="Variable 1"></BsLabel>
-          <BsLabel class="variable-header" label="Variable 2"></BsLabel>
-          <div class="action-header"></div>
-        </div>
-  
-        <div v-for="(interaction, index) in interactions" :key="index" class="interaction-row">
-          <BsLabel class="interaction-label" :label="'Interaction ' + (index + 1)"></BsLabel>
-          <BsSelect
-                :modelValue="interaction.first"
-                class="interaction-select"
-                :all-options="(filteredColumns as Column[]).map(col => col.name).filter(name => name !== interaction.second)"
-                @update:modelValue="value => updateInteraction(index, 'first', value)"
-                placeholder="Select first variable"
-            />
-
-            <BsSelect
-                :modelValue="interaction.second"
-                class="interaction-select"
-                :all-options="(filteredColumns as Column[]).map(col => col.name).filter(name => name !== interaction.first)"
-                @update:modelValue="value => updateInteraction(index, 'second', value)"
-                placeholder="Select second variable"
-            />
-  
-          <q-btn 
-            color="negative" 
-            flat
-            icon="mdi-delete"
-            class="remove-btn"
-            @click="removeInteraction(index)"
-          >
-            <BsTooltip>Remove interaction</BsTooltip>
-          </q-btn>
-        </div>
-  
-        <BsButton 
-        unelevated
-          no-caps
-          color="primary" 
-          class="q-mt-md"
-          label="Add another interaction" 
-          @click="addInteraction"
-        />
-      </div>
-    </div>
-  </template> -->
-  
-  <template>
+    <template>
     <q-card flat bordered>
-      <q-card-section>
-        <div class="text-h6">Variable Interactions</div>
+      <q-card-section class="title-section">
+        <BsLabel class="section-title" label="Variable Interactions"/>
       </q-card-section>
 
       <q-separator />
@@ -116,7 +54,6 @@
     
               <div class="action-col">
                 <q-btn 
-                  color="negative" 
                   flat
                   round
                   dense
@@ -144,9 +81,9 @@
   </template>
   
   <script lang="ts">
-  // Remove PropType import - we'll use type casting instead
+  import { BsLabel } from 'quasar-ui-bs';
   import { defineComponent } from 'vue';
-  
+
   interface Column {
     name: string;
   }
@@ -158,7 +95,9 @@
   
   export default defineComponent({
     name: 'VariableInteractions',
-    
+    components: {
+      BsLabel
+    },
     props: {
     filteredColumns: {
       type: Array,
@@ -266,51 +205,13 @@
     padding: 1rem;
   }
   
-  .interaction-header-row {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 1rem;
-    align-items: center;
-    font-weight: 600;
-    color: #666;
-    padding: 0 0.5rem;
-  }
-  
   .interaction-row {
     display: flex;
-    gap: 1rem;
     margin-bottom: 1rem;
-    align-items: center;
-  }
-  
-  .interaction-label {
-    width: 100px;
-    font-weight: 500;
-    color: #666;
-  }
-  
-  .variable-header {
-    width: 200px;
-    padding: 0 0.5rem;
-  }
-  
-  .action-header {
-    width: 40px;
-  }
-  
-  .interaction-select {
-    width: 200px;
-    flex-shrink: 0;
-  }
-  
-  .remove-btn {
-    width: 40px;
-    flex-shrink: 0;
-  }
-  
-  .add-initial {
-    text-align: center;
-    padding: 2rem;
+    /* align-items: center; */
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 24px;
   }
   
   :deep(.q-btn) {
@@ -320,14 +221,7 @@
   .interactions-list {
   display: flex;
   flex-direction: column;
-  gap: 24px; /* More spacing between each interaction row */
-}
-
-.interaction-row {
-  display: flex;
-  flex-direction: row;
-  align-items: flex-end; /* Align to bottom for better label alignment */
-  gap: 24px; /* Spacing between elements in a row */
+  gap: 12px;
 }
 
 .interaction-name-col {
@@ -343,7 +237,7 @@
 .action-col {
   flex: 0 0 40px;
   text-align: right;
-  padding-bottom: 8px; /* Align button with inputs */
+  padding-bottom: 8px;
 }
 
 .field-label {
@@ -353,26 +247,21 @@
   display: block;
 }
 
-.editable-name-display {
-  border-bottom: 1px solid transparent; /* Reserve space for border */
-  padding: 6px 0;
-  cursor: text;
-  &:hover {
-    background-color: #f5f5f5;
-  }
-}
-
-.editable-name {
-  font-weight: 500;
-}
-
-.name-input {
-  /* Style to match the look of the other inputs */
-  border-bottom: 1px solid var(--q-primary);
-}
-
 .add-initial {
   text-align: center;
   padding: 20px;
+}
+
+.section-title {
+    font-weight: 600;
+    font-size: 16px;
+    color: #333E48;
+    margin-bottom: 6px;
+
+}
+
+.title-section {
+  display: flex;
+  justify-content: center;
 }
   </style>
