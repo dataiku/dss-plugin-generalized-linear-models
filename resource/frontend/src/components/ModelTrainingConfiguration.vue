@@ -3,13 +3,19 @@
         <q-card flat bordered>
             <q-card-section>
                 <BsLabel
-                    label="Model Configuration">
+                    label="Model Configuration"
+                    className="section-title">
+                </BsLabel>
+                <BsLabel
+                    className="explanation"
+                    label="* Fields marked with an asterisk are mandatory"
+                    :isSubLabel="true">
                 </BsLabel>
             </q-card-section>
             <q-separator />
             <q-card-section>
                 <BsLabel
-                    label="Name"
+                    label="Name *"
                     :isSubLabel="true">
                 </BsLabel>
                 <input
@@ -22,7 +28,8 @@
             </q-card-section>
             <q-card-section>
                 <BsLabel
-                    label="Parameters">
+                    label="Parameters"
+                    className="section-title">
                 </BsLabel>
 
                 <BsLabel
@@ -35,7 +42,7 @@
                     style="min-width: 250px">
                 </BsSelect>
                 <BsLabel
-                        label="Select a Distribution Function"
+                        label="Select a Distribution Function *"
                         :isSubLabel="true"
                         info-text="Distribution function for GLM"
                 ></BsLabel>
@@ -46,7 +53,7 @@
                     style="min-width: 150px">
                 </BsSelect>
                 <BsLabel
-                        label="Select a Link Function"
+                        label="Select a Link Function *"
                         :isSubLabel="true"
                         info-text="Link function for GLM"
                 ></BsLabel>
@@ -60,22 +67,14 @@
         <q-card-section>
             <BsLabel
                 label="Regularization"
+                className="section-title"
             ></BsLabel>
-            <div class="variable-select-container">
             <BsLabel
                     label="Set the Elastic Net Penalty"
                     :isSubLabel="true"
                     info-text="The overall level of regularization"
             ></BsLabel>
-            <input v-model.number="trainingStore.selectedElasticNetPenalty"/>
-
-            <!-- <BsSlider
-                v-model="trainingStore.selectedElasticNetPenalty"
-                :min="0"
-                :step="0.01"
-                :max="1000"
-                style="min-width: 150px">
-            </BsSlider> -->
+            <input className="model-name-input" type="number" v-model.number="trainingStore.selectedElasticNetPenalty"/>
             <BsLabel
                     label="Set the L1 Ratio"
                     :isSubLabel="true"
@@ -86,10 +85,8 @@
                 :min="0"
                 :max="1"
                 :step="0.01"
-                style="min-width: 150px">
+                class="slider-input">
             </BsSlider>
-    
-            </div>
         </q-card-section>
         </q-card>
         <q-footer 
@@ -211,18 +208,16 @@
     margin-bottom: 10px;
     margin-top: 5px;
     }
-    .variable-select-container {
-        padding: 20px;
-    }
     .model-name-input-container {
       padding: 20px
     }
     
     .model-name-input {
-      width: 87%;
+      width: 100%;
       padding: 15px;
       border: 1px solid #ccc;
       border-radius: 4px;
+      height: 40px;
     }
     .error-message {
       color: red;
@@ -245,10 +240,27 @@
         display: flex;
         align-items: left;
     }
+
     .column-name-container {
         margin-left: auto; /* Pushes the container to the right */
         display: flex;
         align-items: left;
         min-width: 150px;
+    }
+
+    .section-title {
+        font-weight: 600;
+        font-size: 16px;
+        color: #333E48;
+        margin-bottom: 6px;
+    }
+
+    .explanation {
+        font-size: 12px;
+    }
+
+    .slider-input :deep(.q-slider) {
+        width: 100% !important;
+        max-width: 100% !important;
     }
     </style>
