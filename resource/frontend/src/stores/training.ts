@@ -16,9 +16,6 @@ export const useTrainingStore = defineStore("TrainingStore", {
     state: () => ({
         modelName: "",   
         errorMessage: "", 
-        // selectedModelString: "",
-        // models: [] as ModelPoint[],
-        // modelsString: [] as string[],
         interactions: [] as Interaction[],
         selectedDatasetString: "",
         selectedTargetVariable: "",
@@ -191,6 +188,7 @@ export const useTrainingStore = defineStore("TrainingStore", {
     async getDatasetColumns(model_value = null) {
         if (model_value) {
             console.log("model_id parameter provided:", model_value);
+            this.isLoading = true;
             this.datasetColumns = []
             const store = useModelStore();
             try {
@@ -280,6 +278,8 @@ export const useTrainingStore = defineStore("TrainingStore", {
 
                 } catch (error) {
                     console.error("Error fetching data:", error);
+                } finally {
+                    this.isLoading = false;
                 }
                 
 
@@ -287,6 +287,7 @@ export const useTrainingStore = defineStore("TrainingStore", {
         else {
             console.log("No model id provided:");
             try {
+                this.isLoading = true;
                 const response = await API.getDatasetColumns();
 
                 this.datasetColumns = response.data.map((column: ColumnInput) => ({
@@ -304,6 +305,8 @@ export const useTrainingStore = defineStore("TrainingStore", {
             } catch (error) {
                 console.error('Error fetching datasets:', error);
                 this.datasetColumns = [];
+            } finally {
+                this.isLoading = false;
             }
         }
     },
