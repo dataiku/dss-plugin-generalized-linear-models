@@ -7,6 +7,7 @@
                 </BsTabIcon>
                 <BsHeader>
                     <template #documentation>
+                        <BsLabel v-if="tabInfo.displayTitleInHeader" :label="tabInfo.name" className="tab-title"></BsLabel>
                         <CustomDocumentation></CustomDocumentation>
                     </template>
                 </BsHeader>
@@ -93,7 +94,7 @@ export default defineComponent({
     tabs() {
             return [
                 {
-                    name: "Model Configuration",
+                    name: "Model/Variable Configuration",
                     docTitle: "GLM Hub",
                     icon: trainingIcon,
                     contentComponent: "ModelTrainingTabContent",
@@ -104,7 +105,8 @@ export default defineComponent({
                         subtitle:
                             "Configure a model and start training",
                     },
-                    showSeperator: false
+                    showSeperator: false,
+                    displayTitleInHeader: true
                 },
                 {
                     name: "Observed vs Predicted Chart",
@@ -129,8 +131,8 @@ export default defineComponent({
                         title: "One-Way Variable Analysis",
                         subtitle: "Select a model in the left menu to begin",
                     },
-                    showSeperator: false
-
+                    showSeperator: false,
+                    displayTitleInHeader: false
                 },
                 {
                     name: "Variable-Level Statistics",
@@ -141,6 +143,8 @@ export default defineComponent({
                         'variable-level-stats-data': this.variableStatsStore.modelStats,
                         columns: this.variableStatsStore.columns
                     },
+                    showSeperator: false,
+                    displayTitleInHeader: true
                 },
                 {
                     name: "Lift Chart",
@@ -157,7 +161,8 @@ export default defineComponent({
                         title: "Lift Chart Analysis",
                         subtitle: "Select a model in the left menu to generate a lift chart",
                     },
-                    showSeperator: true
+                    showSeperator: true,
+                    displayTitleInHeader: false
                 },
                 {
                     name: "Model Management",
@@ -171,7 +176,8 @@ export default defineComponent({
                         title: "Model Management",
                         subtitle: "Train a first GLM in the Training screen",
                     },
-                    showSeperator: false
+                    showSeperator: false,
+                    displayTitleInHeader: false
                 }
               ]
             },
@@ -246,5 +252,15 @@ header {
     color: black;
     border: 1px solid #000000;
 
+}
+
+.tab-title {
+    color: #2B66FF;
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: 22px;
+    position: fixed;
+    left: 90px;
 }
 </style>
