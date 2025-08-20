@@ -74,6 +74,7 @@ class Execution(object):
                 )
         elif self.context == ExecutionContext.DATAIKU_DSS:
             paths = os.environ.get(self.dss_python_path_env_var)
+            logger.info(f"PYTHONPATH -> {paths}")
             root_relative_path = self.relative_path.split("/")[0]
             if paths:
                 target_directory = "project-python-libs"
