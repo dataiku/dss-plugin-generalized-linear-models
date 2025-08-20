@@ -1,7 +1,7 @@
 <template>
     <BsLayoutDefault ref="layout" :left-panel-width="350">
       <template v-for="tabInfo in tabs" :key="tabInfo.name">
-      <BsTab :name="tabInfo.name" :docTitle="tabInfo.docTitle">
+      <BsTab :name="tabInfo.name" :docTitle="tabInfo.docTitle" :show-seperator="tabInfo.showSeperator">
                 <BsTabIcon>
                     <img :src="tabInfo.icon" :alt="`${tabInfo.name} Icon`" />
                 </BsTabIcon>
@@ -103,7 +103,8 @@ export default defineComponent({
                         title: "Model Training",
                         subtitle:
                             "Configure a model and start training",
-                    }
+                    },
+                    showSeperator: false
                 },
                 {
                     name: "Observed vs Predicted Chart",
@@ -127,7 +128,9 @@ export default defineComponent({
                     emptyState: {
                         title: "One-Way Variable Analysis",
                         subtitle: "Select a model in the left menu to begin",
-                    }
+                    },
+                    showSeperator: false
+
                 },
                 {
                     name: "Variable-Level Statistics",
@@ -153,7 +156,8 @@ export default defineComponent({
                     emptyState: {
                         title: "Lift Chart Analysis",
                         subtitle: "Select a model in the left menu to generate a lift chart",
-                    }
+                    },
+                    showSeperator: true
                 },
                 {
                     name: "Model Management",
@@ -166,7 +170,8 @@ export default defineComponent({
                     emptyState: {
                         title: "Model Management",
                         subtitle: "Train a first GLM in the Training screen",
-                    }
+                    },
+                    showSeperator: false
                 }
               ]
             },
