@@ -19,7 +19,7 @@ CONFIG = {
 }
 
 
-os.environ["DKU_CURRENT_PROJECT_KEY"] = CONFIG.get("default_project_key")
+# os.environ["DKU_CURRENT_PROJECT_KEY"] = CONFIG.get("default_project_key")
 
 
 def get_setup_for_dataiku_client():
