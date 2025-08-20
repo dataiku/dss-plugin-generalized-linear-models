@@ -123,6 +123,7 @@ class Execution(object):
             root_relative_path = self.relative_path.split("/")[0]
             root_paths = self.__get_root_paths()
             # Iterate over root paths to find the one that contains the relative path
+            logger.info(f"Root paths -> {root_paths}")
             for root_path in root_paths:
                 if root_relative_path in os.listdir(root_path):
                     return os.path.join(root_path, self.relative_path)
