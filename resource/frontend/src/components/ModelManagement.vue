@@ -1,4 +1,5 @@
 <template>
+  <div class="tab-content">
     <BsTable
     class="model-table"
     title="GLM model management"
@@ -51,6 +52,7 @@
             </q-td>
         </template>
     </BsTable>
+    </div>
   </template>
 
 <script lang="ts">
@@ -131,7 +133,8 @@ export default defineComponent({
     width: 100%;
   }
 
-  .bs-tab-content {
-    width: 100%;
-  }
+  .tab-content {
+    width: 101%;
+    margin-left: -8px;
+}
 </style>

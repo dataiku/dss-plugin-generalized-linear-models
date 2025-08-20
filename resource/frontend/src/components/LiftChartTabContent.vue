@@ -97,6 +97,8 @@ export default defineComponent({
   align-items: normal;
   gap: var(--bs-spacing-13, 52px);
   min-height: 350px;
+  margin: 0 auto;
+  padding: 2rem;
 }
 
 .export-buttons {
