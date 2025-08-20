@@ -1,7 +1,7 @@
 <template>
     <BsLayoutDefault ref="layout" :left-panel-width="350">
-      <template v-for="tabInfo in tabs" :key="tabInfo.name">
-      <BsTab :name="tabInfo.name" :docTitle="tabInfo.docTitle" :show-seperator="tabInfo.showSeperator">
+        <template v-for="tabInfo in tabs" :key="tabInfo.name">
+            <BsTab :name="tabInfo.name" :docTitle="tabInfo.docTitle" :show-seperator="tabInfo.showSeperator">
                 <BsTabIcon>
                     <img :src="tabInfo.icon" :alt="`${tabInfo.name} Icon`" />
                 </BsTabIcon>
@@ -19,17 +19,13 @@
                     />
                 </BsDrawer>
                 <BsContent>
-                    <template
-                        v-if="
-                            tabInfo.contentComponent && !tabInfo.showEmptyState
-                        "
-                    >
+                    <template v-if="tabInfo.contentComponent && !tabInfo.showEmptyState">
                         <component
                             :is="tabInfo.contentComponent"
                             v-bind="tabInfo.contentProps"
                             @navigate-tab="goToTab"
                         />
-                    </template>
+                    </template>       
                     <template v-else>
                         <EmptyState
                             :title="tabInfo.emptyState.title"
@@ -165,7 +161,7 @@ export default defineComponent({
                     displayTitleInHeader: false
                 },
                 {
-                    name: "Model Management",
+                    name: "GLM Model Management",
                     docTitle: "GLM Hub",
                     icon: globeIcon,
                     contentComponent: "ModelManagement",
@@ -177,7 +173,7 @@ export default defineComponent({
                         subtitle: "Train a first GLM in the Training screen",
                     },
                     showSeperator: false,
-                    displayTitleInHeader: false
+                    displayTitleInHeader: true
                 }
               ]
             },
