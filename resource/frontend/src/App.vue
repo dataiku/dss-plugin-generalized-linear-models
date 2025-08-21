@@ -1,5 +1,5 @@
 <template>
-    <BsLayoutDefault ref="layout" :left-panel-width="350">
+    <BsLayoutDefault ref="layout" :left-panel-width="370">
         <template v-for="tabInfo in tabs" :key="tabInfo.name">
             <BsTab :name="tabInfo.name" :docTitle="tabInfo.docTitle" :show-seperator="tabInfo.showSeperator">
                 <BsTabIcon>
@@ -216,6 +216,13 @@ export default defineComponent({
     }
 })
 </script>
+<style>
+
+.q-drawer--with-menu~.bs-drawer-container .bs-tab-title {
+    padding-top: 26px;
+    padding-bottom: 18px;
+}
+</style>
 
 <style lang="scss" scoped>
 /* General text color for the component */
