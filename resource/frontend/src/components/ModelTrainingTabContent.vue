@@ -7,11 +7,11 @@
 
         <div class="right-column">
             <VariableConfiguration/>
-                <VariableInteractions
-                    :filtered-columns="selectedColumns"
-                    :initial-interactions="store.previousInteractions"
-                    @update:interactions="store.updateInteractions"
-                />
+            <VariableInteractions
+                :filtered-columns="selectedColumns"
+                :initial-interactions="store.previousInteractions"
+                @update:interactions="store.updateInteractions"
+            />
             </div>
         </div>
     </div>
@@ -73,8 +73,8 @@
     }
 })
 </script>   
-    <style scoped>
-    .row-spacing {
+<style scoped>
+.row-spacing {
     margin-bottom: 20px; /* Adjust this value as needed */
 }
 .column-management {
@@ -112,7 +112,7 @@
     padding-top: 20px;
     display: flex;
     flex-direction: row;
-    gap: 100px; /* Adjust spacing between columns */
+    gap: 40px; /* Adjust spacing between columns */
     align-items: flex-start; /* Aligns items to the top */
 }
 
@@ -124,7 +124,7 @@
     flex: 1; /* Takes up the remaining available space */
     display: flex;
     flex-direction: column;
-    gap: 16px; /* Spacing between the cards in the right column */
+    gap: 30px; /* Spacing between the cards in the right column */
 }
 
 .layout {
