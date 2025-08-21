@@ -196,6 +196,8 @@ header {
 
 .stats-container {
   width: 100%;
+  margin: 0 auto;
+  padding: 2rem;
 }
 
 .empty-state {

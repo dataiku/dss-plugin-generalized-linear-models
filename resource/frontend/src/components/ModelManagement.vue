@@ -1,6 +1,8 @@
 <template>
+  <div class="tab-content">
     <BsTable
-    title="Models"
+    class="model-table"
+    title="GLM model management"
     :rows="store.models"
     :columns="columns"
     :globalSearch="false"
@@ -50,6 +52,7 @@
             </q-td>
         </template>
     </BsTable>
+    </div>
   </template>
 
 <script lang="ts">
@@ -117,16 +120,6 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 
-.tab-content {
-padding-left: 0px;
-padding-right: 0px;
-padding-top: 20px;
-display: flex;
-align-items: center;
-gap: var(--bs-spacing-13, 52px);
-min-height: 350px;
-}
-
 .table-link {
     text-decoration: none;
     color: black;
@@ -136,4 +129,12 @@ min-height: 350px;
     text-decoration: underline;
   }
 
+  .model-table {
+    width: 100%;
+  }
+
+  .tab-content {
+    width: 101%;
+    margin-left: -8px;
+}
 </style>

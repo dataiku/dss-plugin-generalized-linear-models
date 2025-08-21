@@ -1,16 +1,18 @@
 <template>
-    <div class="tab-content-wrapper">
-        <div class="left-column">
-        <ModelTrainingConfiguration/>
-    </div>
+    <div class="layout">
+        <div class="tab-content-wrapper">
+            <div class="left-column">
+            <ModelTrainingConfiguration/>
+        </div>
 
-    <div class="right-column">
-        <VariableConfiguration/>
-            <VariableInteractions
-                :filtered-columns="selectedColumns"
-                :initial-interactions="store.previousInteractions"
-                 @update:interactions="store.updateInteractions"
-            />
+        <div class="right-column">
+            <VariableConfiguration/>
+                <VariableInteractions
+                    :filtered-columns="selectedColumns"
+                    :initial-interactions="store.previousInteractions"
+                    @update:interactions="store.updateInteractions"
+                />
+            </div>
         </div>
     </div>
 </template>
@@ -123,5 +125,10 @@
     display: flex;
     flex-direction: column;
     gap: 16px; /* Spacing between the cards in the right column */
+}
+
+.layout {
+    margin: 0 auto;
+    padding: 2rem;
 }
 </style>

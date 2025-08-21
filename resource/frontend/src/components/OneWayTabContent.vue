@@ -1,4 +1,5 @@
 <template>
+
     <EmptyState
           class="empty-state"
           title="One-Way Variable"
@@ -230,6 +231,8 @@ header {
   flex-direction: column;
   gap: 24px;
   width: 100%;
+  margin: 0 auto;
+  padding: 2rem;
 }
 
 .logo {
