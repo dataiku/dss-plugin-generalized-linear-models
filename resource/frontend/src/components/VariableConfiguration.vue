@@ -1,40 +1,37 @@
 <template>
-        <BsTable
-            flat
-            title="Variable Configuration"
-            :rows="filteredColumns"
-            :columns="columns"
-            row-key="name"
-            :pagination="{ rowsPerPage: 0 }"
-            hide-bottom
-            class="feature-table">
+    <BsTable
+        flat
+        title="Variable Configuration"
+        :rows="filteredColumns"
+        :columns="columns"
+        row-key="name"
+        :pagination="{ rowsPerPage: 0 }"
+    >
+        <template #body-cell-include="props">
+            <q-td :props="props">
+                <BsCheckbox v-model="props.row.isIncluded" />
+            </q-td>
+        </template>
 
-            <template #body-cell-include="props">
-                <q-td :props="props">
-                    <BsCheckbox v-model="props.row.isIncluded" />
-                </q-td>
-            </template>
+        <template #body-cell-type="props">
+            <q-td :props="props" class="type-cell">
+                <GLMToggle :model-value="getToggleValue(props.row)" @update:model-value="newValue => setToggleValue(props.row, newValue)" option1="Numerical" option2="Categorical" />
+            </q-td>
+        </template>
 
-            <template #body-cell-type="props">
-                
-                <q-td :props="props" class="type-cell">
-                    <GLMToggle :model-value="getToggleValue(props.row)" @update:model-value="newValue => setToggleValue(props.row, newValue)" option1="Numerical" option2="Categorical" />
-                </q-td>
-            </template>
-
-            <template #body-cell-baseLevel="props">
-                <q-td :props="props">
-                    <BsSelect
-                        dense
-                        borderless
-                        :modelValue="props.row.baseLevel"
-                        :all-options="props.row.options"
-                        @update:modelValue="value => props.row.baseLevel = value"
-                        style="min-width: 150px;"
-                    />
-                </q-td>
-            </template>
-        </BsTable>
+        <template #body-cell-baseLevel="props">
+            <q-td :props="props">
+                <BsSelect
+                    dense
+                    borderless
+                    :modelValue="props.row.baseLevel"
+                    :all-options="props.row.options"
+                    @update:modelValue="value => props.row.baseLevel = value"
+                    style="min-width: 150px;"
+                />
+            </q-td>
+        </template>
+    </BsTable>
 </template>
 
 <script lang="ts">
@@ -112,7 +109,8 @@
         }
     }
 })
-</script>   
+</script>
+
 <style scoped>
 .row-spacing {
 margin-bottom: 20px; /* Adjust this value as needed */
