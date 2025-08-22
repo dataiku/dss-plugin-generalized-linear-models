@@ -76,9 +76,10 @@
                     />
                     </div>
             </BsCollapsiblePanel>
-            <div class="button-container">
-                <BsButton class="bs-primary-button" unelevated dense no-caps :disabled="isFormUnchanged" @click="onCreateChart">Create Chart</BsButton>
-            </div>
+            
+        </div>
+        <div class="button-container">
+            <BsButton class="bs-primary-button" unelevated dense no-caps :disabled="isFormUnchanged" @click="onCreateChart">Create Chart</BsButton>
         </div>
     </div>
 </template>
@@ -185,36 +186,42 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-    .variable-select-container {
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
-    .button-container {
-        display: flex;
-        justify-content: flex-end;
-        width: 100%; 
-        padding: 20px;
-        margin-bottom: 30px;
-    }
-    .train-test-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-    .bs-primary-button {
-        background-color:#2B66FF;
-        color: white;
-    }
-    .scrollable-content {
-        flex-grow: 1;
-        overflow-y: auto;
-    }
-    .drawer-container {
-        display: flex;
-        flex-direction: column;
-        height: 100%; 
-        margin: 0 auto;
+.variable-select-container {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.drawer-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.scrollable-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.button-container {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  background: #fff;
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 20px;
+}
+
+.train-test-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.bs-primary-button {
+    background-color:#2B66FF;
+    color: white;
 }
 </style>
