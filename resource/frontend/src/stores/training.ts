@@ -20,7 +20,7 @@ export const useTrainingStore = defineStore("TrainingStore", {
         selectedDatasetString: "",
         selectedTargetVariable: "",
         selectedExposureVariable: "",
-        selectedDistributionFunctionString: 'Gaussian' as string,
+        selectedDistributionFunctionString: 'Poisson' as string,
         selectedLinkFunctionString: 'Log' as string,
         datasetsString: [] as string[],
         chartData: [],  
