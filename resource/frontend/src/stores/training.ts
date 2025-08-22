@@ -27,7 +27,7 @@ export const useTrainingStore = defineStore("TrainingStore", {
         selectedElasticNetPenalty: 0 as number,
         selectedL1Ratio: 0 as number,
         previousInteractions: [] as Array<{first: string, second: string}>, 
-        distributionOptions: ['Binomial',
+        distributionOptions: [
             'Gamma',
             'Gaussian',
             'Inverse Gaussian',
@@ -74,6 +74,23 @@ export const useTrainingStore = defineStore("TrainingStore", {
             }
             
             return { valid: true, reason: '' };
+        },
+        allowedLinks(state) {
+            switch (state.selectedDistributionFunctionString) {
+                case "Gamma":
+                    return ["Log", "Identity", "Inverse Power"];
+                case "Gaussian":
+                    return ["Log", "Identity", "Inverse Power"];
+                case "Inverse Gaussian":
+                    return ["Log", "Identity", "Inverse Squared", "Inverse Power"];
+                case "Poisson":
+                    return ["Log", "Identity"];
+                case "Negative Binomial":
+                    return ["Log", "CLogLog", "Identity", "Power"];
+                case "Tweedie":
+                    return ["Log", "Power"];
+            }
+            return [];
         }
     },
     actions: {
@@ -110,7 +127,25 @@ export const useTrainingStore = defineStore("TrainingStore", {
         } catch (error) {
             console.error('Error fetching excluded columns:', error);
         }
-    },
+        },
+
+        // allowedLinks(distribution: string) {
+        //     switch (distribution) {
+        //         case "Gamma":
+        //             return ["Log", "Identity", "Inverse Power"];
+        //         case "Gaussian":
+        //             return ["Log", "Identity", "Inverse Power"];
+        //         case "Inverse Gaussian":
+        //             return ["Log", "Identity", "Inverse Squared", "Inverse Power"];
+        //         case "Poisson":
+        //             return ["Log", "Identity"];
+        //         case "Negative Binomial":
+        //             return ["Log", "CLogLog", "Identity", "Power"];
+        //         case "Tweedie":
+        //             return ["Log", "Power"]; 
+        //     }
+        // },
+    
     notifyError(msg: string) {
         useNotification("negative", msg);
     },

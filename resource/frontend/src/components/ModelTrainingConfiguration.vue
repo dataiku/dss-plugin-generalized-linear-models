@@ -59,7 +59,7 @@
                 ></BsLabel>
                 <BsSelect
                     :modelValue="trainingStore.selectedLinkFunctionString"
-                    :all-options="trainingStore.linkOptions"
+                    :all-options="trainingStore.allowedLinks"
                     @update:modelValue="value => trainingStore.updateModelProperty('selectedLinkFunctionString', value)"
                     style="min-width: 150px">
                 </BsSelect>
