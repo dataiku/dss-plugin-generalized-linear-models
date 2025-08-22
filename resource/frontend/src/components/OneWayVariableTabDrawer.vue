@@ -202,6 +202,7 @@ export default defineComponent({
 .scrollable-content {
   flex: 1;
   overflow-y: auto;
+  padding-bottom: 72px;
 }
 
 .button-container {
