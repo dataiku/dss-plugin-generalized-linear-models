@@ -34,14 +34,16 @@ export const useModelStore = defineStore("ModelStore", {
         },
         comparedModelName: (state): string => {
             return state.comparedModel?.name || "";
-        }
+        },
     },
 
     actions: {
         resetState() {
             //this.$reset();
         },
-
+        getModelByName(name: string) : ModelPoint | undefined {
+            return this.models.find((obj: ModelPoint) => obj.name === name);
+        },
         async sendWebappId() {
             const iframes = window.parent.document.getElementsByTagName('iframe');
             const url = iframes[0].src;
@@ -149,6 +151,13 @@ export const useModelStore = defineStore("ModelStore", {
         async deployModel(model: ModelPoint) {
             try {
                 const response = await API.deployModel(model);
+                if (response.status == 200) {
+                    this.notifyInfo("Model deployed.");
+                } else {
+                    this.handleError("Error deploying model.");
+                }
+                return response;
+                
             } catch (error) {
                 this.handleError(error);
             }
@@ -191,6 +200,10 @@ export const useModelStore = defineStore("ModelStore", {
 
         notifyError(message: string) {
             useNotification("negative", message);
+        },
+
+        notifyInfo(message: string) {
+            useNotification("positive", message);
         },
     },
 });
