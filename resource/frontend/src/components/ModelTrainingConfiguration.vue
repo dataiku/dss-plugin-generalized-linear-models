@@ -49,9 +49,24 @@
                 <BsSelect
                     :modelValue="trainingStore.selectedDistributionFunctionString"
                     :all-options="trainingStore.distributionOptions"
-                    @update:modelValue="value => trainingStore.updateModelProperty('selectedDistributionFunctionString', value)"
+                    @update:modelValue="value => trainingStore.setDistribution(value)"
                     style="min-width: 150px">
                 </BsSelect>
+                <BsLabel v-if="trainingStore.selectedDistributionFunctionString=='Tweedie'"
+                        label="Select Tweedie Variance Power *"
+                        :isSubLabel="true"
+                        info-text="The power of the variance function of the tweedie distribution"
+                ></BsLabel>
+                    <input v-if="trainingStore.selectedDistributionFunctionString=='Tweedie'" className="model-name-input" type="number" 
+                    v-model.number="trainingStore.selectedVariancePower"/>
+                <BsLabel v-if="trainingStore.selectedDistributionFunctionString=='Negative Binomial'"
+                        label="Select Theta *"
+                        :isSubLabel="true"
+                        info-text="The ancillary parameter for the negative binomial distribution, strictly positive"
+                ></BsLabel>
+                    <input v-if="trainingStore.selectedDistributionFunctionString=='Negative Binomial'" className="model-name-input" type="number" 
+                    :value="trainingStore.selectedTheta"
+                    @input="event => trainingStore.setTheta(parseFloat((event.target as HTMLInputElement).value))"/>
                 <BsLabel
                         label="Select a Link Function *"
                         :isSubLabel="true"
@@ -60,9 +75,17 @@
                 <BsSelect
                     :modelValue="trainingStore.selectedLinkFunctionString"
                     :all-options="trainingStore.allowedLinks"
-                    @update:modelValue="value => trainingStore.updateModelProperty('selectedLinkFunctionString', value)"
+                    @update:modelValue="value => trainingStore.setLinkFunction(value)"
                     style="min-width: 150px">
                 </BsSelect>
+                <BsLabel v-if="trainingStore.selectedLinkFunctionString=='Power'"
+                        label="Select Power *"
+                        :isSubLabel="true"
+                        info-text="The power used for the power link function"
+                ></BsLabel>
+                    <input v-if="trainingStore.selectedLinkFunctionString=='Power'" className="model-name-input" type="number" 
+                    v-model.number="trainingStore.selectedPower"/>
+                
         </q-card-section>
         <q-card-section>
             <BsLabel
@@ -74,7 +97,12 @@
                     :isSubLabel="true"
                     info-text="The overall level of regularization"
             ></BsLabel>
-            <input className="model-name-input" type="number" v-model.number="trainingStore.selectedElasticNetPenalty"/>
+            <input 
+                className="model-name-input" 
+                type="number"
+                :value="trainingStore.selectedElasticNetPenalty"
+                @input="event => trainingStore.setElasticNetPenalty(parseFloat((event.target as HTMLInputElement).value))"
+            />
             <BsLabel
                     label="Set the L1 Ratio"
                     :isSubLabel="true"

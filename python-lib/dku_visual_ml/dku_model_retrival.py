@@ -232,6 +232,18 @@ class VisualMLModelRetriver(DataikuClientProject):
         logger.debug("Getting the L1 Ratio")
         return self.algo_settings.get('params').get('l1_ratio')[0]
     
+    def get_theta(self):
+        logger.debug("Getting the Theta")
+        return self.algo_settings.get('params').get('theta')
+    
+    def get_power(self):
+        logger.debug("Getting the Power")
+        return self.algo_settings.get('params').get('power')
+    
+    def get_var_power(self):
+        logger.debug("Getting the Variance Power")
+        return self.algo_settings.get('params').get('var_power')
+    
     def get_distribution_function(self):
         logger.debug("Getting the distribution Function")
         distribution_function = self.algo_settings.get('params').get('family_name')
@@ -259,6 +271,9 @@ class VisualMLModelRetriver(DataikuClientProject):
             "link_function":self.get_link_function(),
             "elastic_net_penalty": self.get_elastic_net_penalty(),
             "l1_ratio": self.get_l1_ratio(),
+            "theta": self.get_alpha(),
+            "power": self.get_power(),
+            "var_power": self.get_var_power(),
             "params": features_dict,
             "interactions":[
                 {'first': first, 'second': second}

@@ -22,6 +22,9 @@ export const useTrainingStore = defineStore("TrainingStore", {
         selectedExposureVariable: "",
         selectedDistributionFunctionString: 'Poisson' as string,
         selectedLinkFunctionString: 'Log' as string,
+        selectedTheta: 1.0 as number,
+        selectedPower: 1.0 as number,
+        selectedVariancePower: 1.5 as number,
         datasetsString: [] as string[],
         chartData: [],  
         selectedElasticNetPenalty: 0 as number,
@@ -97,7 +100,47 @@ export const useTrainingStore = defineStore("TrainingStore", {
         resetState() {
             this.$reset();
         },
-        
+
+        setElasticNetPenalty(newValue: number) {
+            if (isNaN(newValue)) {
+                this.selectedElasticNetPenalty = 0;
+                return;
+            }
+
+            if (newValue >= 0) {
+                this.selectedElasticNetPenalty = newValue;
+            } else {
+                this.selectedElasticNetPenalty = 0;
+            }
+        },
+
+        setTheta(newValue: number) {
+            if (isNaN(newValue)) {
+                this.selectedTheta = 1.0;
+                return;
+            }
+
+            if (newValue > 0) {
+                this.selectedTheta = newValue;
+            } else {
+                this.selectedTheta = 1.0;
+            }
+        },
+
+        setDistribution(newDistribution: string) {
+            this.selectedDistributionFunctionString = newDistribution;
+
+            const isCurrentLinkAllowed = this.allowedLinks.includes(this.selectedLinkFunctionString);
+
+            if (!isCurrentLinkAllowed) {
+                this.selectedLinkFunctionString = this.allowedLinks[0];
+            }
+        },
+
+        setLinkFunction(newLink: string) {
+            this.selectedLinkFunctionString = newLink;
+        },
+
         updateInteractions(newInteractions: Array<string>) {
             // Convert the formatted strings back to interaction objects
             this.previousInteractions = newInteractions.map(interaction => {
@@ -128,23 +171,6 @@ export const useTrainingStore = defineStore("TrainingStore", {
             console.error('Error fetching excluded columns:', error);
         }
         },
-
-        // allowedLinks(distribution: string) {
-        //     switch (distribution) {
-        //         case "Gamma":
-        //             return ["Log", "Identity", "Inverse Power"];
-        //         case "Gaussian":
-        //             return ["Log", "Identity", "Inverse Power"];
-        //         case "Inverse Gaussian":
-        //             return ["Log", "Identity", "Inverse Squared", "Inverse Power"];
-        //         case "Poisson":
-        //             return ["Log", "Identity"];
-        //         case "Negative Binomial":
-        //             return ["Log", "CLogLog", "Identity", "Power"];
-        //         case "Tweedie":
-        //             return ["Log", "Power"]; 
-        //     }
-        // },
     
     notifyError(msg: string) {
         useNotification("negative", msg);
@@ -199,16 +225,17 @@ export const useTrainingStore = defineStore("TrainingStore", {
         }
         return name; // Return the original name if it's short enough
     },
-    updateModelProperty(property: UpdatableProperties, value: any): void{
-        this[property] = value;
-        localStorage.setItem(property, JSON.stringify(value));
-        console.log(`updateModelProperty: Updating ${String(property)} to ${JSON.stringify(value)}`);
-    },
+
+    // updateModelProperty(property: UpdatableProperties, value: any): void{
+    //     this[property] = value;
+    //     localStorage.setItem(property, JSON.stringify(value));
+    //     console.log(`updateModelProperty: Updating ${String(property)} to ${JSON.stringify(value)}`);
+    // },
+
     updatePreprocessing(index: number, newValue: any) {
         const column = this.datasetColumns[index];
         if (column) {
             column.preprocessing = newValue;
-            // Since Vue 2 doesn't reactively update arrays on index, force update
             this.datasetColumns[index] = column;
         }
     },
@@ -217,7 +244,6 @@ export const useTrainingStore = defineStore("TrainingStore", {
         if (column) {
             column.type = value;
         }
-        // Trigger a Vue reactivity update
         this.datasetColumns[index] = column;
     },  
     async getDatasetColumns(model_value = null) {
@@ -257,6 +283,9 @@ export const useTrainingStore = defineStore("TrainingStore", {
                     this.selectedLinkFunctionString = paramsResponse.data.link_function;
                     this.selectedElasticNetPenalty = paramsResponse.data.elastic_net_penalty ? paramsResponse.data.elastic_net_penalty : 0;
                     this.selectedL1Ratio = paramsResponse.data.l1_ratio ? paramsResponse.data.l1_ratio : 0;
+                    this.selectedTheta = paramsResponse.data.theta ? paramsResponse.data.theta : 0;
+                    this.selectedPower = paramsResponse.data.power ? paramsResponse.data.power : 0;
+                    this.selectedVariancePower = paramsResponse.data.var_power ? paramsResponse.data.var_power : 0;
                     
                     
                     console.log("paramsResponse:", paramsResponse.data);
@@ -355,7 +384,10 @@ export const useTrainingStore = defineStore("TrainingStore", {
             distribution_function: this.selectedDistributionFunctionString,
             link_function: this.selectedLinkFunctionString,
             elastic_net_penalty: this.selectedElasticNetPenalty,
-            l1_ratio: this.selectedL1Ratio
+            l1_ratio: this.selectedL1Ratio,
+            theta: this.selectedTheta,
+            power: this.selectedPower,
+            variance_power: this.selectedVariancePower
         };
 
         // Reduce function to construct Variables object    

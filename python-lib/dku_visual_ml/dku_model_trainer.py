@@ -367,6 +367,9 @@ class VisualMLModelTrainer(DataikuClientProject):
             "l1_ratio": [self.visual_ml_config.l1_ratio],
             "interaction_columns_first":first_columns,
             "interaction_columns_second":second_columns,
+            "alpha": self.visual_ml_config.theta,
+            "power": self.visual_ml_config.power,
+            "var_power": self.visual_ml_config.var_power
         })
         
         # Handle exposure and offset variables

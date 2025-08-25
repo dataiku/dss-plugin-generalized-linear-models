@@ -99,7 +99,10 @@ class DKUVisualMLConfig:
         self.elastic_net_penalty = float(request_json.get('model_parameters', {}).get('elastic_net_penalty'))
         self.l1_ratio = float(request_json.get('model_parameters', {}).get('l1_ratio'))
         self.model_name_string = request_json.get('model_parameters', {}).get('model_name', None)
-        
+        self.theta = request_json.get('model_parameters', {}).get('theta', None)
+        self.power = request_json.get('model_parameters', {}).get('power', None)
+        self.variance_power = request_json.get('model_parameters', {}).get('variance_power', None)
+
         self.variables = dict(request_json.get('variables'))
         self.variables_list = [{'name': key, **value} for key, value in self.variables.items()]
         self.interaction_variables =  request_json.get('interaction_variables', None)

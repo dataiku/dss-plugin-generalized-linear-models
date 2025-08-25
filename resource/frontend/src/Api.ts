@@ -121,6 +121,9 @@ interface MLTaskParams {
     link_function: string;
     elastic_net_penalty: number;
     l1_ratio: number;
+    theta: number;
+    power: number;
+    var_power: number;
     params: {
         [key: string]: {
             role: string;
