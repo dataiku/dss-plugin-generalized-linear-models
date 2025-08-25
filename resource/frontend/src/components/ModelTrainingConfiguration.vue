@@ -128,7 +128,7 @@
                 color="primary"
                 label="Train Model" 
                 @click="submitVariables"
-                :disable="!trainingStore.isModelNameValid.valid"
+                :disable="!trainingStore.isTrainingAvailable.valid"
                 />
             </div>
             </q-footer>
