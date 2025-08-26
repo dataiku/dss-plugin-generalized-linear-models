@@ -9,12 +9,12 @@
                     @update:modelValue="onModelChange"
                 />
     
-                <BsLabel v-if="store.activeModelName" label="Select the number of bins" />
-                <BsSlider v-if="store.activeModelName" @update:modelValue="onNbBinsChange" v-model="liftChartStore.formOptions.nbBins" :min="2" :max="20" />
+                <BsLabel label="Select the number of bins" />
+                <BsSlider @update:modelValue="onNbBinsChange" v-model="liftChartStore.formOptions.nbBins" :min="2" :max="20" />
         
                 <div class="train-test-wrapper">
-                    <BsLabel v-if="store.activeModelName" label="Run analysis on dataset " />
-                    <GLMToggle v-if="store.activeModelName" v-model="trainTestValue" @update:model-value="onTrainTestChange" option1="Train" option2="Test" />
+                    <BsLabel label="Run analysis on dataset " />
+                    <GLMToggle v-model="trainTestValue" @update:model-value="onTrainTestChange" option1="Train" option2="Test" />
                 </div>
 
                 <div class="button-container">
@@ -74,8 +74,7 @@ export default defineComponent({
             await this.liftChartStore.applyForm();
             await this.liftChartStore.fetchLiftData();
         },
-    },
-    mounted() {}
+    }
 })
 </script>
 
