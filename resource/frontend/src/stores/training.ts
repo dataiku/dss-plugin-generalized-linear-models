@@ -62,7 +62,8 @@ export const useTrainingStore = defineStore("TrainingStore", {
         updateModels: false as boolean,
     }),
     getters: {
-        isModelNameValid(state) {
+        isTrainingAvailable(state) {
+            // Check for model name and variable included
             const store = useModelStore();
 
             const trimmedName = state.modelName.trim();
@@ -76,8 +77,14 @@ export const useTrainingStore = defineStore("TrainingStore", {
                     return { valid: false, reason: 'This model name already exists.' };
                 }
             }
-            
-            return { valid: true, reason: '' };
+
+            const variableIncluded = this.datasetColumns.some(colum => colum.isIncluded === true);
+
+            if (variableIncluded) {
+                return { valid: true, reason: '' };
+            } else {
+                return { valid: false, reason: 'At least one variable should be included. ' };
+            }
         },
         allowedLinks(state) {
             switch (state.selectedDistributionFunctionString) {

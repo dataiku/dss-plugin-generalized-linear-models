@@ -61,7 +61,7 @@ interface ModelPoint {
 
 interface ModelInfo {
     id: string;
-    analysis_name: string;
+    experiment_name: string;
     input_dataset: string;
 }
 

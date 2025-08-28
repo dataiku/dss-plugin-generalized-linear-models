@@ -45,6 +45,10 @@ export const useLiftChartStore = defineStore("liftChart", {
             this.formOptions.trainTest = trainTest;
         },
 
+        resetChart() {
+            this.liftChartData = [];
+        },
+
         async fetchLiftData() {
             const modelName = this.chartOptions.model;
             if (!modelName) {

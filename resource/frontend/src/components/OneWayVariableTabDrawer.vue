@@ -139,6 +139,7 @@ export default defineComponent({
             this.oneWayStore.resetState();
             this.store.setActiveModel(value);
             this.oneWayStore.fetchVariablesForModel(value);
+            this.liftChartStore.resetChart();
         },
         async onComparisonModelChange(value: string | null) {
             this.store.setComparedModel(value);

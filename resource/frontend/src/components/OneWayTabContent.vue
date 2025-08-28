@@ -191,7 +191,12 @@ export default defineComponent({
     },
     methods: {
       async deployModel() {
-        this.store.deployActiveModel();
+        const model = this.store.getModelByName(this.selectedModel);
+        if (model) {
+          this.store.deployModel(model);
+        } else {
+          console.error("Model name does not exists in list.");
+        }
       },
       async exportOneWay() {
         this.oneWayStore.exportOneWayChart();
