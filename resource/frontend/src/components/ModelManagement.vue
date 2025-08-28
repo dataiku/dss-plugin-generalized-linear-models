@@ -64,6 +64,7 @@ import type { QTableColumn } from 'quasar';
 import { QIcon, QTooltip, QTd } from 'quasar';
 import { useModelStore } from '../stores/webapp';
 import { useTrainingStore } from '../stores/training';
+import { useAnalysisStore } from '../stores/analysisStore';
 
 const columns: QTableColumn[] = [
       { name: 'model_name', align: 'center', label: 'Model Name', field: 'name', sortable: true},
@@ -94,6 +95,7 @@ export default defineComponent({
       return {
           store: useModelStore(),
           trainingStore: useTrainingStore(),
+          analysisStore: useAnalysisStore(),
       };
   },
   methods: {
@@ -101,19 +103,16 @@ export default defineComponent({
         return `/projects/${this.store.projectKey}/analysis/${this.store.analysisId}/ml/p/${this.store.mlTaskId}/${model.id}/report/tabular-summary`;
     },
     async deployModel(model: ModelPoint) {
-      await this.store.deployModel(model);
+      await this.store.deployModel({id: model.id, input_dataset: this.analysisStore.selectedMlTask.trainSet, experiment_name: this.analysisStore.selectedMlTask.analysisName});
     },
     async deleteModel(model: ModelPoint) {
-      await this.store.deleteModel(model);
+      await this.store.deleteModel({id: model.id, input_dataset: this.analysisStore.selectedMlTask.trainSet, experiment_name: this.analysisStore.selectedMlTask.analysisName});
       this.trainingStore.updateModels = true;
     },
     async exportModel(model: ModelPoint) {
       await this.store.exportModel(model);
 
     }
-  },
-  mounted() {
-    this.store.loadModels();
   }
 })
 </script>

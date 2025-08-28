@@ -1,5 +1,5 @@
 <template>
-    <BsLayoutDefault ref="layout" :left-panel-width="370">
+    <BsLayoutDefault ref="layout" :left-panel-width="370" :class="{ 'no-analysis-selected': !analysisStore.selectedMlTask.mlTaskId }">
         <template v-for="tabInfo in tabs" :key="tabInfo.name">
             <BsTab :name="tabInfo.name" :docTitle="tabInfo.docTitle" :show-seperator="tabInfo.showSeperator">
                 <BsTabIcon>
@@ -42,6 +42,7 @@
 import OneWayVariableTabDrawer from './components/OneWayVariableTabDrawer.vue';
 import LiftChartTabDrawer from './components/LiftChartTabDrawer.vue';
 
+import AnalysisSetup from './components/AnalysisSetup.vue';
 import OneWayTabContent from './components/OneWayTabContent.vue';
 import VariableLevelStatsTabContent from './components/VariableLevelStatsTabContent.vue';
 import LiftChartTabContent from './components/LiftChartTabContent.vue';
@@ -57,10 +58,12 @@ import oneWayIcon from "./assets/images/one-way.svg";
 import trainingIcon from "./assets/images/training.svg";
 import globeIcon from "./assets/images/globe.svg";
 import statsIcon from "./assets/images/variable-level-stats.svg";
-import liftIcon from "./assets/images/lift-chart.svg"; 
-import { useOneWayChartStore } from "./stores/oneWayChartStore.ts"
-import { useLiftChartStore } from "./stores/liftChartStore.ts"
-import { useVariableLevelStatsStore } from "./stores/variableLevelStatsStore.ts"
+import liftIcon from "./assets/images/lift-chart.svg";
+import analysisIcon from "./assets/images/analysis.svg";
+import { useOneWayChartStore } from "./stores/oneWayChartStore"
+import { useLiftChartStore } from "./stores/liftChartStore"
+import { useAnalysisStore } from "./stores/analysisStore"
+import { useVariableLevelStatsStore } from "./stores/variableLevelStatsStore"
 
 import { useLoader } from "./composables/use-loader";
 import { useTrainingStore } from './stores/training';
@@ -75,11 +78,13 @@ export default defineComponent({
       ModelManagement,
       EmptyState,
       ModelTrainingTabContent,
-      CustomDocumentation
+      CustomDocumentation,
+      AnalysisSetup
     },
     data() {
     return {
         store: useModelStore(),
+        analysisStore: useAnalysisStore(),
         trainingStore: useTrainingStore(),
         oneWayStore: useOneWayChartStore(),
         liftChartStore: useLiftChartStore(),
@@ -89,6 +94,21 @@ export default defineComponent({
     computed: {
     tabs() {
             return [
+                {
+                    name: "Analysis Setup",
+                    docTitle: "GLM Hub",
+                    icon: analysisIcon,
+                    contentComponent: "AnalysisSetup",
+                    contentProps: {},
+                    showEmptyState: false,
+                    emptyState: {
+                        title: "Analysis Setup",
+                        subtitle:
+                            "Select an existing analysis or create a new one",
+                    },
+                    showSeperator: false,
+                    displayTitleInHeader: true,
+                },
                 {
                     name: "Model/Variable Configuration",
                     docTitle: "GLM Hub",
@@ -102,7 +122,7 @@ export default defineComponent({
                             "Configure a model and start training",
                     },
                     showSeperator: false,
-                    displayTitleInHeader: true
+                    displayTitleInHeader: true,
                 },
                 {
                     name: "Observed vs Predicted Chart",
@@ -158,7 +178,7 @@ export default defineComponent({
                         subtitle: "Select a model in the left menu to generate a lift chart",
                     },
                     showSeperator: true,
-                    displayTitleInHeader: false
+                    displayTitleInHeader: false,
                 },
                 {
                     name: "GLM Model Management",
@@ -210,9 +230,6 @@ export default defineComponent({
                 layout.tabIndex = index;
             }
         },
-    },
-    mounted() {
-        this.store.sendWebappId();
     }
 })
 </script>

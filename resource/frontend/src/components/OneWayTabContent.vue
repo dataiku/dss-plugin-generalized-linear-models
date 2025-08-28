@@ -191,7 +191,7 @@ export default defineComponent({
     },
     methods: {
       async deployModel() {
-        this.store.deployModel();
+        this.store.deployActiveModel();
       },
       async exportOneWay() {
         this.oneWayStore.exportOneWayChart();

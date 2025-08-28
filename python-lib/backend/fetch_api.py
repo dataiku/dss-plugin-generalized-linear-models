@@ -39,10 +39,10 @@ def get_variables():
     result = data_service.get_variables(request.get_json())
     return jsonify(result)
 
-@fetch_api.route("/models", methods=["GET"])
+@fetch_api.route("/models", methods=["POST"])
 def get_models():
     data_service = current_app.data_service
-    result = data_service.get_models()
+    result = data_service.get_models(request.get_json())
     return jsonify(result)
 
 @fetch_api.route("/predicted_base", methods=["POST"])
@@ -132,15 +132,38 @@ def export_one_way():
         as_attachment=True,
         download_name='one_way_variable.csv'
     )
-
-@fetch_api.route("/get_excluded_columns", methods=["GET"])
-def get_excluded_columns():
-    data_service = current_app.data_service
-    result = data_service.get_excluded_columns()
-    return jsonify(result)
-
-@fetch_api.route("/get_dataset_columns", methods=["GET"])
+@fetch_api.route("/get_dataset_columns", methods=["POST"])
 def get_dataset_columns():
     data_service = current_app.data_service
-    result = data_service.get_dataset_columns()
+    result = data_service.get_dataset_columns(request.get_json())
+    return jsonify(result)
+
+@fetch_api.route("/get_project", methods=["GET"])
+def get_project():
+    data_service = current_app.data_service
+    result = data_service.get_project()
+    return jsonify(result)
+
+@fetch_api.route("/get_ml_tasks", methods=["GET"])
+def get_ml_tasks():
+    data_service = current_app.data_service
+    result = data_service.get_ml_tasks()
+    return jsonify(result)
+
+@fetch_api.route("/get_datasets", methods=["GET"])
+def get_datasets():
+    data_service = current_app.data_service
+    result = data_service.get_datasets()
+    return jsonify(result)
+
+@fetch_api.route("/get_variables_for_dataset", methods=["POST"])
+def get_variables_for_dataset():
+    data_service = current_app.data_service
+    result = data_service.get_variables_for_dataset(request.get_json())
+    return jsonify(result)
+
+@fetch_api.route("/create_ml_task", methods=["POST"])
+def create_ml_task():
+    data_service = current_app.data_service
+    result = data_service.create_ml_task(request.get_json())
     return jsonify(result)

@@ -17,5 +17,5 @@
       "vite/client"
     ]
   },
-  "exclude": ["dist", ".quasar", "node_modules"]
+  "exclude": ["dist", ".quasar", "node_modules", ".venv"]
 }

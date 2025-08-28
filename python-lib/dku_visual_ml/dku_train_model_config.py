@@ -1,28 +1,19 @@
 from logging_assist.logging import logger
-from dataiku.customwebapp import get_webapp_config
 from logging_assist.logging import logger
 
 class DKUVisualMLConfig:
     
-    def __init__(self):
+    def __init__(self, analysis_name=None, input_dataset=None, policy=None, test_dataset=None, target_column=None, exposure_column=None):
         
         logger.debug("Initalising a dku visual ML config with the existing web app settings")
         
-        web_app_config = get_webapp_config()
-        self.create_new_analysis = web_app_config.get("analysis_id") == 'new'
-        if self.create_new_analysis:
-            self.analysis_id = None
-        else:
-            self.analysis_id = web_app_config.get("analysis_id")
-        self.target_column = web_app_config.get("target_column")
-        self.input_dataset = web_app_config.get("training_dataset_string")
+        self.target_column = target_column
+        self.input_dataset = input_dataset
         self.prediction_type = "REGRESSION"
-        self.exposure_column = web_app_config.get("exposure_column")
-        self.analysis_name = web_app_config.get("analysis_name")
-        self.policy = web_app_config.get("policy")
-        self.test_dataset_string = web_app_config.get("test_dataset_string")
-        self.code_env_string = web_app_config.get("code_env_string")
-        self.saved_model_id = web_app_config.get("saved_model_id")
+        self.exposure_column = exposure_column
+        self.analysis_name = analysis_name
+        self.policy = policy
+        self.test_dataset_string = test_dataset
         
         logger.debug("Successfully initalised a dku visual ML config with the existing web app settings")
         self.log_configuration()
@@ -88,12 +79,12 @@ class DKUVisualMLConfig:
             return model_features
         else: raise ValueError(f"No Variables set to active for model training")
 
-                
-
-
     def update_model_parameters(self, request_json):
         
         logger.debug("Initalising DKUVisualMLConfig ")
+        self.target_column = request_json.get('target')
+        self.exposure_column = request_json.get('exposure')
+
         self.distribution_function = request_json.get('model_parameters', {}).get('distribution_function').lower()
         self.link_function = request_json.get('model_parameters', {}).get('link_function').lower()
         self.elastic_net_penalty = float(request_json.get('model_parameters', {}).get('elastic_net_penalty'))

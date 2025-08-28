@@ -184,10 +184,6 @@
         updateModels() {
             return this.trainingStore.updateModels;
         }
-    },
-    async mounted() {
-        await this.store.loadModels();
-        await this.trainingStore.getDatasetColumns();
     }
     })
     </script>   

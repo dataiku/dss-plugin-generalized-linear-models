@@ -20,11 +20,13 @@ class VisualMLModelTrainer(DataikuClientProject):
         project: The default project from the Dataiku API client.
     """
     
-    def __init__(self, visual_ml_config=None):
+    def __init__(self, visual_ml_config=None, mltask_id=None, analysis_id=None):
         super().__init__()
         logger.info("Initializing a Visual ML training task")
         self.visual_ml_config = visual_ml_config
         self.mltask = None
+        if mltask_id and analysis_id:
+            self.setup_using_existing_ml_task(mltask_id, analysis_id)
 
         logger.info("Initalized a Visual ML training task successfully")
         if visual_ml_config:
@@ -48,13 +50,13 @@ class VisualMLModelTrainer(DataikuClientProject):
         self.mltask.wait_guess_complete()
         logger.debug("Successfully refreshed the ml task")
     
-    def setup_using_existing_ml_task(self, analysis_id):
+    def setup_using_existing_ml_task(self, mltask_id, analysis_id):
         
-        logger.debug(f"Updating the ml task with analysis id {analysis_id}")
+        logger.debug(f"Updating the ml task with analysis id {analysis_id} and mltask_id {mltask_id}")
         
-        self.analysis= self.project.get_analysis(analysis_id)
-        self.mltask_id = self.analysis.list_ml_tasks().get('mlTasks')[0].get('mlTaskId')
-        self.mltask = self.analysis.get_ml_task(self.mltask_id)
+        # self.analysis= self.project.get_analysis(analysis_id)
+        # self.mltask_id = self.analysis.list_ml_tasks().get('mlTasks')[0].get('mlTaskId')
+        self.mltask = self.project.get_ml_task(mltask_id=mltask_id, analysis_id=analysis_id)
         self.remove_failed_trainings()
         
         logger.info(f"Successfully update the existing ML task")
@@ -64,11 +66,10 @@ class VisualMLModelTrainer(DataikuClientProject):
         logger.info(f"Assigning train test policy")   
      
         if self.visual_ml_config.policy == "explicit_test_set":
-            logger.info(f"Configuration specifies test set, asigning")   
+            logger.info(f"Configuration specifies test set, assigning")   
             settings = self.mltask.get_settings()
             settings.split_params.set_split_explicit(
                 dku_dataset_selection_params, 
-                #dku_dataset_selection_params, 
                 dataset_name=self.visual_ml_config.input_dataset,
                 test_dataset_name=self.visual_ml_config.test_dataset_string)
             settings.save()
@@ -117,11 +118,15 @@ class VisualMLModelTrainer(DataikuClientProject):
         
         analysis_id = self.mltask.get_settings().analysis_id
         self.rename_analysis(analysis_id)
+
+        self.assign_train_test_policy()
+        self.update_base_mltask_params()
+        self.disable_existing_variables()
         logger.info("Inital ML Task Created")
         return self.mltask
         
         
-    def create_visual_ml_task(self):
+    def update_visual_ml_task(self):
         """
         Creates a new visual ML task in Dataiku.
         """
@@ -129,13 +134,11 @@ class VisualMLModelTrainer(DataikuClientProject):
         
        
         # Create a new ML Task to predict the variable from the specified dataset
-        if not self.mltask:
-            logger.info("Creating a new ML task")
-            target = self.visual_ml_config.get_target_variable()
-            self.mltask = self.create_initial_ml_task(target)
-        else:
-            logger.info("ML task already exists")
-            #self._refresh_mltask()
+        # if not self.mltask:
+        #     logger.info("Creating a new ML task")
+        #     self.mltask = self.create_initial_ml_task()
+        # else:
+        #     logger.info("ML task already exists")
             
         self.assign_train_test_policy()
         self.update_mltask_modelling_params()
@@ -312,7 +315,7 @@ class VisualMLModelTrainer(DataikuClientProject):
         """
         logging.info("Starting model training.")
                             
-        self.create_visual_ml_task()
+        self.update_visual_ml_task()
         self.enable_glm_algorithm()
         settings_new = self.configure_variables()
         self.set_code_env_settings(code_env_string)
@@ -343,19 +346,38 @@ class VisualMLModelTrainer(DataikuClientProject):
             interaction_columns_second.append(second)
             
         return interaction_columns_first, interaction_columns_second
+    
+    def update_base_mltask_params(self):
+        """
+        Updates the basic initial modeling parameters
+        """
+        settings = self.mltask.get_settings()
+        settings.get_raw()['modeling']['skipExpensiveReports'] = True
+        exposure_variable = self.visual_ml_config.get_exposure_variable()
+
+        algo_settings = settings.get_algorithm_settings(
+            'CustomPyPredAlgo_generalized-linear-models_generalized-linear-models_regression'
+        )
+        algo_settings['params'].update({
+                "offset_mode": "OFFSETS/EXPOSURES",
+                "offset_columns": [],
+                "exposure_columns": [exposure_variable],
+                "training_dataset": self.visual_ml_config.input_dataset,
+            })
         
+        settings.save()
+        return
+
     def update_mltask_modelling_params(self):
         """
         Updates the modeling parameters based on the distribution function, link function, elastic net penalty, l1 ratio
         and any special variables like exposure or offset.
         """
         settings = self.mltask.get_settings()
-        settings.get_raw()['modeling']['skipExpensiveReports'] = True
-        exposure_variable = self.visual_ml_config.get_exposure_variable()
         interaction_variables = self.visual_ml_config.get_interaction_variables()
         first_columns, second_columns = self.process_interaction_columns(interaction_variables)
             
-        offset_variable = None
+        # offset_variable = None
         
         algo_settings = settings.get_algorithm_settings(
             'CustomPyPredAlgo_generalized-linear-models_generalized-linear-models_regression'
@@ -369,34 +391,8 @@ class VisualMLModelTrainer(DataikuClientProject):
             "interaction_columns_second":second_columns,
             "alpha": self.visual_ml_config.theta,
             "power": self.visual_ml_config.power,
-            "var_power": self.visual_ml_config.var_power
+            "var_power": self.visual_ml_config.variance_power
         })
-        
-        # Handle exposure and offset variables
-        if offset_variable and exposure_variable:
-            algo_settings['params'].update({
-                "offset_mode": "OFFSETS/EXPOSURES",
-                "offset_columns": [offset_variable],
-                "exposure_columns": [exposure_variable],
-                "training_dataset": self.visual_ml_config.input_dataset,
-            })
-        elif exposure_variable:
-            algo_settings['params'].update({
-                "offset_mode": "OFFSETS/EXPOSURES",
-                "offset_columns": [],
-                "exposure_columns": [exposure_variable],
-                "training_dataset": self.visual_ml_config.input_dataset,
-            })
-        elif offset_variable:
-            algo_settings['params'].update({
-                "offset_mode": "OFFSETS",
-                "offset_columns": [offset_variable],
-                "training_dataset": self.visual_ml_config.input_dataset,
-            })
-        else:
-            algo_settings['params'].update({
-                "offset_mode": "BASIC",
-            })
         
         settings.save()
         return

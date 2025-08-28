@@ -18,16 +18,10 @@ a,
   a:hover {
     background-color: hsla(160, 100%, 37%, 0.2);
   }
+
+ .no-analysis-selected .q-tab--inactive {
+  pointer-events: none;
+  opacity: 0.5;
 }
-/*
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-  }
 }
 
- #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
-  } */

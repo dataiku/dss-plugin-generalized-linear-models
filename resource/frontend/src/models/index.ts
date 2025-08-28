@@ -48,6 +48,13 @@ export type ModelPoint = {
     analysis_id: string;
 }
 
+export type ModelInfo = { 
+    id: string;
+    experiment_name: string;
+    input_dataset: string;
+}
+
+
 export type Interaction = { 
     first: string;
     second: string;
@@ -107,10 +114,38 @@ export type AccType = {
     };
 }
 
+export type Project = {
+    projectKey: string;
+}
+
+export type MlTask = {
+    analysisName: string;
+    analysisId: string;
+    mlTaskId: string;
+    trainSet: string;
+    splitPolicy: string;
+    testSet: string;
+    targetColumn: string;
+    exposureColumn: string;
+    isValid: boolean;
+}
+
+export type MlTaskConfiguration = {
+    analysisName: string;
+    trainSet: string;
+    splitPolicy: string;
+    testSet: string;
+    targetColumn: string;
+    exposureColumn: string;
+}
+
 export type APIResponse = {
     data: MLTaskParams;
     }   
     interface MLTaskParams {
+        theta: number;
+        power: number;
+        var_power: number;
         params: {
             [key: string]: {
                 role: string;
