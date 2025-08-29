@@ -1,15 +1,12 @@
-# Create a new file: backend/services.py
 import pandas as pd
 from flask import current_app
 import time
 import random
 import dataiku
 
-# You would import your actual logic and dummy data here
 from .local_config import *
 from .dataiku_api import dataiku_api
 from .api_utils import calculate_base_levels, get_model_train_set, get_model_test_set, get_model_predicted_base, get_model_base_values_modalities_types, get_model_relativities, get_model_relativities_interaction, get_model_variable_level_stats, format_models
-from dataiku.customwebapp import get_webapp_config
 from chart_formatters.lift_chart import LiftChartFormatter
 from model_cache.model_cache import ModelCache
 from dku_visual_ml.dku_model_trainer import VisualMLModelTrainer
@@ -17,6 +14,7 @@ from dku_visual_ml.dku_model_retrival import VisualMLModelRetriver
 from glm_handler.glm_data_handler import GlmDataHandler
 from dku_visual_ml.dku_train_model_config import DKUVisualMLConfig
 from dku_visual_ml.dku_model_deployer import VisualMLModelDeployer
+from dku_visual_ml.dku_base import DataikuClientProject
 
 class MockDataService:
     """
@@ -50,7 +48,7 @@ class MockDataService:
     def get_variables(self, request_json: dict):
         return dummy_variables
     
-    def get_models(self):
+    def get_models(self, request_json: dict):
         return dummy_models
     
     def get_predicted_base(self, request_json: dict):
@@ -104,17 +102,17 @@ class MockDataService:
         csv_data = variable_level_stats_df.to_csv(index=False).encode('utf-8')
         return csv_data
     
-    def get_excluded_columns(self):
-        exposure_column = "Exposure"
-        target_column = "ClaimAmount"
+    # def get_excluded_columns(self):
+    #     exposure_column = "Exposure"
+    #     target_column = "ClaimAmount"
         
-        cols_json = {
-            "target_column": target_column,
-            "exposure_column": exposure_column
-        }
-        return cols_json
+    #     cols_json = {
+    #         "target_column": target_column,
+    #         "exposure_column": exposure_column
+    #     }
+    #     return cols_json
     
-    def get_dataset_columns(self):
+    def get_dataset_columns(self, request_json: dict):
         dataset_name = "claim_train"
         exposure_column = "exposure"
         
@@ -126,9 +124,26 @@ class MockDataService:
         current_app.logger.info(f"Successfully retrieved column for dataset '{dataset_name}': {[col['column'] for col in cols_json]}")
 
         return cols_json
+
+    def get_project(self):
+        project_key = "SOL_CLAIM_MODELING"
+        return {"projectKey": project_key}
     
-    def update_config(self, request_json):
-        return {'message': 'Settings updated.'}
+    def get_ml_tasks(self):
+        ml_tasks = dummy_ml_tasks
+        return ml_tasks
+    
+    def get_datasets(self):
+        datasets = dummy_datasets
+        return datasets
+    
+    def create_ml_task(self, request_json):
+        ml_task = dummy_ml_tasks[0]
+        return ml_task
+    
+    def get_variables_for_dataset(self, request_json):
+        variables = dummy_variables
+        return variables
     
     
 class DataikuDataService:
@@ -137,23 +152,18 @@ class DataikuDataService:
     """
     def __init__(self):
         self.model_cache = ModelCache()
-        self.visual_ml_config = DKUVisualMLConfig()
-        self.visual_ml_trainer = VisualMLModelTrainer(self.visual_ml_config)
+        self.dku_handler = DataikuClientProject()
         self.data_handler = GlmDataHandler()
-        if self.visual_ml_config.create_new_analysis:
-            self.visual_ml_trainer.create_initial_ml_task()
-        else:
-            self.visual_ml_trainer.setup_using_existing_ml_task(
-                self.visual_ml_config.analysis_id
-            )
-        self.visual_ml_deployer = VisualMLModelDeployer(self.visual_ml_trainer.mltask, self.visual_ml_config.saved_model_id)
+        self.visual_ml_deployer = VisualMLModelDeployer()
     
     def train_model(self, request_json: dict):
         current_app.logger.info(f"Initalising Model Training with request {request_json}")
-    
+        
+        self.visual_ml_config = DKUVisualMLConfig()
         self.visual_ml_config.update_model_parameters(request_json)
 
         current_app.logger.debug("Creating Visual ML Trainer")
+        self.visual_ml_trainer = VisualMLModelTrainer(mltask_id=request_json["ml_task_id"], analysis_id=request_json["analysis_id"])
         self.visual_ml_trainer.update_visual_ml_config(self.visual_ml_config)
 
         model_details, error_message = self.visual_ml_trainer.train_model(
@@ -174,7 +184,9 @@ class DataikuDataService:
         current_app.logger.info(f"Initalising Model Deployment with request {request_json}")
     
         model_id = request_json['id']
-        self.visual_ml_deployer.set_new_active_version(model_id, self.visual_ml_config.input_dataset, self.visual_ml_config.analysis_name)
+        input_dataset = request_json['input_dataset']
+        experiment_name = request_json['experiment_name']
+        self.visual_ml_deployer.set_new_active_version(model_id, input_dataset, experiment_name)
 
         return {'message': 'Model deployed successfully.'}
     
@@ -182,7 +194,9 @@ class DataikuDataService:
         current_app.logger.info(f"Deleting Model with request {request_json}")
     
         model_id = request_json['id']
-        self.visual_ml_deployer.delete_model(model_id)
+        input_dataset = request_json['input_dataset']
+        experiment_name = request_json['experiment_name']
+        self.visual_ml_deployer.delete_model(model_id, input_dataset, experiment_name)
         model_retriver = VisualMLModelRetriver(model_id)
         model_retriver.delete_model(model_id)
 
@@ -215,15 +229,15 @@ class DataikuDataService:
         else: 
             return variables
 
-    def get_models(self):
-        latest_ml_task = self.visual_ml_trainer.get_latest_ml_task()
-        
-        if latest_ml_task is None:
-            raise ValueError("ML task not initialized")
+    def get_models(self, request_json: dict):
+        ml_task_id = request_json["mlTaskId"]
+        analysis_id = request_json["analysisId"]
+        self.visual_ml_trainer = VisualMLModelTrainer(mltask_id=ml_task_id, analysis_id=analysis_id)
+        ml_task = self.visual_ml_trainer.mltask
 
         current_app.logger.info(f"Mltask has : {len(self.visual_ml_trainer.mltask.get_trained_models_ids())} Models")
         
-        models = format_models(latest_ml_task)
+        models = format_models(ml_task)
         current_app.logger.info(f"models from global ML task is {models}")
         return models
     
@@ -488,27 +502,10 @@ class DataikuDataService:
 
         return csv_data
     
-    def get_excluded_columns(self):
+    def get_dataset_columns(self, request_json):
         try:
-            web_app_config = get_webapp_config()
-            exposure_column = web_app_config.get("exposure_column")
-            target_column = web_app_config.get("target_column")
-        
-            cols_json = {
-                "target_column": target_column,
-                "exposure_column": exposure_column
-            }
-            return cols_json
-        
-        except KeyError as e:
-            current_app.logger.error(f"Error retrieving target and exposure {e}")
-            raise KeyError(f'Error retrieving target and exposure : {e}')
-    
-    def get_dataset_columns(self):
-        try:
-            web_app_config = get_webapp_config()
-            dataset_name = web_app_config.get("training_dataset_string")
-            exposure_column = web_app_config.get("exposure_column")
+            dataset_name = request_json['dataset']
+            exposure_column = request_json['exposure']
             
             current_app.logger.info(f"Training Dataset name selected is: {dataset_name}")
             
@@ -522,15 +519,28 @@ class DataikuDataService:
         except KeyError as e:
             current_app.logger.error(f"Error retrieving target and exposure {e}")
             raise KeyError(f'Error retrieving target and exposure : {e}')
-
-    def update_config(self, request_json):
-        webapp_id = request_json['webAppId']
-        self.visual_ml_deployer._set_webapp_id(webapp_id)
-        if self.visual_ml_config.create_new_analysis:
-            webapp = dataiku_api.default_project.get_webapp(webapp_id)
-            settings = webapp.get_settings()
-            settings.get_raw()['config']['analysis_id'] = self.visual_ml_trainer.visual_ml_config.analysis_id
-            settings.save()
-            return {'message': 'Settings updated.'}
-        else:
-            return {'message': 'No need to update settings'}
+    
+    def get_project(self):
+        project_key = dataiku_api.default_project.project_key
+        return {"projectKey": project_key}
+    
+    def get_ml_tasks(self):
+        ml_tasks = self.dku_handler.get_ml_tasks()
+        return ml_tasks
+    
+    def get_datasets(self):
+        datasets = self.dku_handler.get_datasets()
+        return datasets
+    
+    def create_ml_task(self, request_json):
+        self.visual_ml_config = DKUVisualMLConfig(analysis_name=request_json['analysisName'], input_dataset=request_json['trainSet'], policy=request_json['splitPolicy'], test_dataset=request_json['testSet'], target_column=request_json['targetColumn'], exposure_column=request_json['exposureColumn'])
+        self.visual_ml_trainer = VisualMLModelTrainer(self.visual_ml_config)
+        self.visual_ml_trainer.create_initial_ml_task()
+        ml_task_id = self.visual_ml_trainer.mltask.mltask_id
+        ml_task_config = self.dku_handler.get_ml_task_config(ml_task_id)
+        ml_task = self.dku_handler.format_ml_task(ml_task_config)
+        return ml_task
+    
+    def get_variables_for_dataset(self, request_json):
+        variables = self.dku_handler.get_variables_for_dataset(dataset_name=request_json['name'])
+        return variables

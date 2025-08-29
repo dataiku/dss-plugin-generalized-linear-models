@@ -1,7 +1,8 @@
 import { defineStore } from "pinia";
 import { API } from "../Api";
 import { useNotification } from "../composables/use-notification";
-import type { ModelPoint, ModelMetricsDataPoint, BaseValue, RelativityPoint } from '../models';
+import type { ModelPoint, ModelMetricsDataPoint, BaseValue, RelativityPoint, ModelInfo } from '../models';
+import { useAnalysisStore } from "./analysisStore";
 
 export const useModelStore = defineStore("ModelStore", {
     state: () => ({
@@ -44,27 +45,20 @@ export const useModelStore = defineStore("ModelStore", {
         getModelByName(name: string) : ModelPoint | undefined {
             return this.models.find((obj: ModelPoint) => obj.name === name);
         },
-        async sendWebappId() {
-            const iframes = window.parent.document.getElementsByTagName('iframe');
-            const url = iframes[0].src;
-            const urlParams = new URLSearchParams(new URL(url).search);
-            const webAppId = urlParams.get('webAppId');
-            if (webAppId === null) {
-              throw new Error('WebAppId not found in URL');
-            }
-            await API.sendWebappId({"webAppId": webAppId});
-          },
 
         async loadModels() {
             this.isLoading = true;
             try {
-                const response = await API.getModels();
+                const store = useAnalysisStore();
+                const response = await API.getModels({mlTaskId: store.selectedMlTask.mlTaskId, analysisId: store.selectedMlTask.analysisId});
                 this.models = response.data;
+                console.log(response);
                 if (this.models.length > 0) {
                     this.projectKey = this.models[0].project_key;
                     this.mlTaskId = this.models[0].ml_task_id;
                     this.analysisId = this.models[0].analysis_id;
                 }
+                console.log(this.models);
             } catch (error) {
                 this.handleError(error);
             } finally {
@@ -148,7 +142,7 @@ export const useModelStore = defineStore("ModelStore", {
             const response = await this.exportModel(this.activeModel);
         },
 
-        async deployModel(model: ModelPoint) {
+        async deployModel(model: ModelInfo) {
             try {
                 const response = await API.deployModel(model);
                 if (response.status == 200) {
@@ -168,10 +162,11 @@ export const useModelStore = defineStore("ModelStore", {
                 this.notifyError("No active model selected to deploy.");
                 return;
             }
-            const response = await this.deployModel(this.activeModel);
+            const analysisStore = useAnalysisStore();
+            const response = await this.deployModel({id: this.activeModel.id, input_dataset: analysisStore.selectedMlTask.trainSet, experiment_name: analysisStore.selectedMlTask.analysisName});
         },
 
-        async deleteModel(model: ModelPoint) {
+        async deleteModel(model: ModelInfo) {
             this.isLoading = true;
             try {
                 const response = await API.deleteModel(model);

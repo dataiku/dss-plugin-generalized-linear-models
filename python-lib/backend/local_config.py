@@ -10,9 +10,6 @@ DEFAULT_PROJECT_KEY = "SOL_CLAIM_MODELING"
 
 CONFIG = {
     # put your webapp desired config
-    "webapp_config": {
-        "model_id": "aHJZVrBQ",
-    },
     "default_project_key": DEFAULT_PROJECT_KEY,
     "training_dataset_string": "claim_train",
     "exposure_column":"exposure"
@@ -24,7 +21,6 @@ CONFIG = {
 
 def get_setup_for_dataiku_client():
     return {
-        "webapp_config": CONFIG.get("webapp_config"),
         "default_project_key": CONFIG.get("default_project_key"),
         "training_dataset_string": CONFIG.get("claim_train"),
         "exposure_column": CONFIG.get("exposure")
@@ -254,3 +250,41 @@ dummy_variable_level_stats = pd.DataFrame({'variable': ['VehBrand', 'VehBrand', 
 
 data = {'Name': ['John', 'Alice', 'Bob'], 'Age': [30, 25, 35]}
 variable_level_stats_df = pd.DataFrame(data)
+
+dummy_ml_tasks = [{
+    "analysisId": "2B0D6NTv",
+    "analysisName": "claim_train_prepared_demo",
+    "exposureColumn": "Exposure",
+    "isValid": True,
+    "mlTaskId": "ij54DRl2",
+    "splitPolicy": "random",
+    "targetColumn": "ClaimNb",
+    "testSet": "",
+    "trainSet": "claim_train_prepared"
+},
+{
+    "analysisId": "83wW2HFr",
+    "analysisName": "claims_new_data",
+    "exposureColumn": "",
+    "isValid": False,
+    "mlTaskId": "qdFTxhSq",
+    "splitPolicy": "random",
+    "targetColumn": "claim_count",
+    "testSet": "",
+    "trainSet": "claims"
+},
+{
+    "analysisId": "HA7bSJVN",
+    "analysisName": "claim_train_prepared_3",
+    "exposureColumn": "Exposure",
+    "isValid": True,
+    "mlTaskId": "NhcG8d0k",
+    "splitPolicy": "random",
+    "targetColumn": "ClaimNb",
+    "testSet": "",
+    "trainSet": "claim_train_prepared"
+}]
+
+dummy_datasets = [{"name": "claim_train_prepared"}, {"name": "claims"}]
+
+dummy_variables = [{"name": "Variable1"}, {"name": "Variable2"}, {"name": "Variable3"}]

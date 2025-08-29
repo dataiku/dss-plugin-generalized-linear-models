@@ -9,6 +9,7 @@ import type {
 import type { ColumnInput, Interaction, Column, APIResponse } from "../models";
 import { AxiosError, isAxiosError } from "axios";
 import { useModelStore } from "./webapp";
+import { useAnalysisStore } from "./analysisStore";
 
 type UpdatableProperties = 'selectedDatasetString' | 'selectedDistributionFunctionString' | 'selectedLinkFunctionString';
 
@@ -156,27 +157,20 @@ export const useTrainingStore = defineStore("TrainingStore", {
             });
         },
         async fetchExcludedColumns() {
-            try {
-            const excludedColumnsResponse = await API.getExcludedColumns();
-            const { target_column, exposure_column } = excludedColumnsResponse.data;
+            const analysisStore = useAnalysisStore();
             
-            // Update selectedTargetVariable and selectedExposureVariable
-            this.selectedTargetVariable = target_column;
-            this.selectedExposureVariable = exposure_column;
+            this.selectedTargetVariable = analysisStore.selectedMlTask.targetColumn;
+            this.selectedExposureVariable = analysisStore.selectedMlTask.exposureColumn;
             
-            // Update the roles in datasetColumns
             this.datasetColumns.forEach(column => {
-                if (column.name === target_column) {
+                if (column.name === this.selectedTargetVariable) {
                 column.role = 'Target';
-                } else if (column.name === exposure_column) {
+                } else if (column.name === this.selectedExposureVariable) {
                 column.role = 'Exposure';
                 } else {
                 column.role = 'Variable';
                 }
             });
-        } catch (error) {
-            console.error('Error fetching excluded columns:', error);
-        }
         },
     
     notifyError(msg: string) {
@@ -233,12 +227,6 @@ export const useTrainingStore = defineStore("TrainingStore", {
         return name; // Return the original name if it's short enough
     },
 
-    // updateModelProperty(property: UpdatableProperties, value: any): void{
-    //     this[property] = value;
-    //     localStorage.setItem(property, JSON.stringify(value));
-    //     console.log(`updateModelProperty: Updating ${String(property)} to ${JSON.stringify(value)}`);
-    // },
-
     updatePreprocessing(index: number, newValue: any) {
         const column = this.datasetColumns[index];
         if (column) {
@@ -254,14 +242,14 @@ export const useTrainingStore = defineStore("TrainingStore", {
         this.datasetColumns[index] = column;
     },  
     async getDatasetColumns(model_value = null) {
+        const analysisStore = useAnalysisStore();
         if (model_value) {
             console.log("model_id parameter provided:", model_value);
             this.isLoading = true;
             this.datasetColumns = []
             const store = useModelStore();
             try {
-                    const response = await API.getDatasetColumns();
-                    // const selectedModelString = model_value;
+                    const response = await API.getDatasetColumns({dataset: analysisStore.selectedMlTask.trainSet, exposure: analysisStore.selectedMlTask.exposureColumn});
 
                     const model = store.models.filter((v: ModelPoint) => v.name == model_value)[0];
                     console.log("Filtered model:", model);
@@ -359,7 +347,7 @@ export const useTrainingStore = defineStore("TrainingStore", {
             console.log("No model id provided:");
             try {
                 this.isLoading = true;
-                const response = await API.getDatasetColumns();
+                const response = await API.getDatasetColumns({dataset: analysisStore.selectedMlTask.trainSet, exposure: analysisStore.selectedMlTask.exposureColumn});
 
                 this.datasetColumns = response.data.map((column: ColumnInput) => ({
                     name: column.column,
@@ -384,8 +372,10 @@ export const useTrainingStore = defineStore("TrainingStore", {
     async trainModel() {
         this.isLoading = true;
         if (!this.validateSubmission()) {
+            this.isLoading = false;
             return;
         }
+        const analysisStore = useAnalysisStore();
         const modelParameters = {
             model_name: this.modelName,
             distribution_function: this.selectedDistributionFunctionString,
@@ -410,13 +400,19 @@ export const useTrainingStore = defineStore("TrainingStore", {
         }, {});
         // Now modelParameters is available to be included in payload
         const payload = {
-        model_parameters: modelParameters,
-        variables: variableParameters,
-        interaction_variables: this.previousInteractions.map(interaction => ({
-            first: interaction.first,
-            second: interaction.second
-        }))
-};
+            model_parameters: modelParameters,
+            variables: variableParameters,
+            interaction_variables: this.previousInteractions.map(interaction => ({
+                first: interaction.first,
+                second: interaction.second
+            })),
+            ml_task_id: analysisStore.selectedMlTask.mlTaskId,
+            analysis_id: analysisStore.selectedMlTask.analysisId,
+            target: analysisStore.selectedMlTask.targetColumn,
+            exposure: analysisStore.selectedMlTask.exposureColumn
+        };
+        
+        console.log('ready');
         try {
             console.log("Payload:", payload);
             const modelUID = await API.trainModel(payload);

@@ -1,12 +1,9 @@
-import dataiku
 import dataikuapi
 from logging_assist.logging import logger
 import re
 from dku_visual_ml.dku_base import DataikuClientProject
 from dataiku.doctor.posttraining.model_information_handler import PredictionModelInformationHandler
 from typing import List, Dict, Any, Optional
-
-# need to come up with a structure way of storing features as its being done twice
 
 class VisualMLModelRetriver(DataikuClientProject):
     """
@@ -234,7 +231,7 @@ class VisualMLModelRetriver(DataikuClientProject):
     
     def get_theta(self):
         logger.debug("Getting the Theta")
-        return self.algo_settings.get('params').get('theta')
+        return self.algo_settings.get('params').get('alpha')
     
     def get_power(self):
         logger.debug("Getting the Power")
@@ -271,7 +268,7 @@ class VisualMLModelRetriver(DataikuClientProject):
             "link_function":self.get_link_function(),
             "elastic_net_penalty": self.get_elastic_net_penalty(),
             "l1_ratio": self.get_l1_ratio(),
-            "theta": self.get_alpha(),
+            "theta": self.get_theta(),
             "power": self.get_power(),
             "var_power": self.get_var_power(),
             "params": features_dict,

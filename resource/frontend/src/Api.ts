@@ -59,6 +59,12 @@ interface ModelPoint {
     analysis_id: string;
 }
 
+interface ModelInfo {
+    id: string;
+    experiment_name: string;
+    input_dataset: string;
+}
+
 interface ModelVariablePoint {
     id: string;
     name: string;
@@ -89,6 +95,11 @@ interface VariablePoint {
     variable: string;
     isInModel: boolean;
     variableType: string;
+}
+
+
+interface VariableName {
+    name: string;
 }
 
 interface DatasetName {
@@ -133,33 +144,74 @@ interface MLTaskParams {
             baseLevel: string;
         }
     };
+    interactions: Array<{
+        first: string;
+        second: string;
+    }>;
 }
 
+interface Project {
+    projectKey: string;
+}
+
+interface MlTask {
+    analysisName: string;
+    analysisId: string;
+    mlTaskId: string;
+    trainSet: string;
+    splitPolicy: string;
+    testSet: string;
+    targetColumn: string;
+    exposureColumn: string;
+    isValid: boolean;
+}
+
+interface MlTaskConfiguration {
+    analysisName: string;
+    trainSet: string;
+    splitPolicy: string;
+    testSet: string;
+    targetColumn: string;
+    exposureColumn: string;
+}
+
+interface MlTaskIds {
+    mlTaskId: string;
+    analysisId: string;
+}
+
+interface DatasetExposure {
+    dataset: string;
+    exposure: string;
+}
 
 export let API = {
-    sendWebappId: (data: any) => axios.post<number>("/api/send_webapp_id", data),
     getLatestMLTaskParams: (data:any) => axios.post<MLTaskParams>("/api/get_latest_mltask_params", data),
-    getExcludedColumns: () => axios.get<ExcludedColumns>("/api/get_excluded_columns"),
     getPredictedBase: (data: ModelVariablePoint) => axios.post<DataPoint[]>("/api/predicted_base", data),
     getBaseValues: (data: ModelPoint) => axios.post<BaseValue[]>("/api/base_values", data),
     getLiftData: (data: ModelNbBins) => axios.post<LiftDataPoint[]>("/api/lift_data", data),
     updateData: (data: FeatureNbBin) => axios.post<DataPoint[]>("/api/update_bins", data),
     getRelativities: (data: ModelPoint) => axios.post<RelativityPoint[]>("/api/relativities", data),
-    getModels: () => axios.get<ModelPoint[]>("/api/models"),
+    getModels: (data: MlTaskIds) => axios.post<ModelPoint[]>("/api/models", data),
     getVariables: (data: ModelPoint) => axios.post<VariablePoint[]>("/api/variables", data),
-    getDatasetColumns: () => axios.get("/api/get_dataset_columns", {}),
+    getDatasetColumns: (data: DatasetExposure) => axios.post("/api/get_dataset_columns", data),
     trainModel: (payload: any) => 
         axios.post<string[]>("/api/train_model", payload)
         .catch((error: AxiosError<ErrorResponse>) => {
             throw error;
         }),
-    deployModel: (model: ModelPoint) => axios.post<number>("/api/deploy_model", model),
-    deleteModel: (model: ModelPoint) => axios.post<number>("/api/delete_model", model),
+    deployModel: (model: ModelInfo) => axios.post<number>("/api/deploy_model", model),
+    deleteModel: (model: ModelInfo) => axios.post<number>("/api/delete_model", model),
     getModelMetrics: (data: any) => axios.post<ModelMetricsDataPoint>("/api/get_model_metrics", data),
     exportModel: (model: ModelPoint) => axios.post<Blob>("/api/export_model", model),
     exportVariableLevelStats: (model: ModelPoint) => axios.post<Blob>("/api/export_variable_level_stats", model),
     exportLiftChart: (model: ModelNbBins) => axios.post<Blob>("/api/export_lift_chart", model),
     exportOneWay: (model: ModelVariablePoint) => axios.post<Blob>("/api/export_one_way", model),
     getVariableLevelStats: (data: ModelPoint) => axios.post<VariableLevelStatsPoint[]>("/api/get_variable_level_stats", data),
+    getProject: () => axios.get<Project>("api/get_project"),
+    getMlTasks: () => axios.get<MlTask[]>("/api/get_ml_tasks"),
+    getDatasets: () => axios.get<DatasetName[]>("/api/get_datasets"),
+    getVariablesForDataset: (dataset: DatasetName) => axios.post<VariableName[]>("/api/get_variables_for_dataset", dataset),
+    createMlTask: (mlTaskConfiguration: MlTaskConfiguration) => axios.post<MlTask>("/api/create_ml_task", mlTaskConfiguration)
 }
 

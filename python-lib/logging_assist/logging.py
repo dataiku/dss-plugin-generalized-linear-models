@@ -1,8 +1,5 @@
 import logging
 
-from dataiku.customwebapp import get_webapp_config
-
-
 class LazyLogger:
     _logger = None
     _initialized = False
@@ -11,8 +8,6 @@ class LazyLogger:
     def _initialize_logger(cls):
         if not cls._initialized:
             try:
-                webapp_config = get_webapp_config()
-                log_level = webapp_config.get('log_level', 'DEBUG')
                 log_level = 'DEBUG'
             except Exception as e:
                 log_level = 'DEBUG'

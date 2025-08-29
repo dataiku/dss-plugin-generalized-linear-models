@@ -179,9 +179,6 @@ export default defineComponent({
             this.oneWayStore.setTrainTest(value == 'Train' ? true : false);
             this.store.setTrainTest(value == 'Train' ? true : false);
         }
-    },
-    mounted() {
-        this.store.loadModels();
     }
 })
 </script>

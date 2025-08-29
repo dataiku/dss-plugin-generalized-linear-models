@@ -1,7 +1,6 @@
 import logging
 from typing import Any, Dict
 import dataiku
-from dataiku.customwebapp import get_webapp_config
 import pandas as pd
 from dataiku.customrecipe import get_recipe_config
 import os
@@ -10,13 +9,11 @@ from typing import Optional
 
 class DataikuApi:
     def __init__(self):
-        self._webapp_config = None
         self._default_project = None
         self._default_project_key = None
         self._client = dataiku.api_client()
 
-    def setup(self, webapp_config: Dict, default_project_key: str):
-        self._webapp_config = webapp_config
+    def setup(self, default_project_key: str):
         self._default_project_key = default_project_key
 
     @property
