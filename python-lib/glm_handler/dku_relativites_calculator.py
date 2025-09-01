@@ -145,7 +145,12 @@ class RelativitiesCalculator:
             self.relativities[feature] = {base_value: 1.0}
             train_row_copy = sample_train_row.copy()
 
-            values_to_process = self.modalities[feature]
+            exposure_col = self.model_retriever.exposure_columns
+            exposure_per_modality = self.train_set.groupby(feature)[exposure_col].sum()
+            top_modalities = exposure_per_modality.nlargest(99).index.tolist()
+            values_to_process = top_modalities
+            if base_value not in values_to_process:
+                values_to_process.append(base_value)
 
             for value in values_to_process:
                 train_row_copy[feature] = value
@@ -239,48 +244,73 @@ class RelativitiesCalculator:
         logger.info(f"{dataset_type.capitalize()} dataset prepared: {dataset.shape}")
         return dataset
     
-    def compute_base_predictions_new(self, test_set, used_features):
-        logger.info(f"Starting compute_base_predictions_new for {used_features}")
-        base_data = {}
-        copy_test_df = test_set.copy()
-        copy_test_df[self.model_retriever.exposure_columns] = 1
-
-        for feature in used_features:
-            feature_df = copy_test_df.groupby(feature, as_index=False).first()
-
-            for other_feature in used_features:
-                if other_feature != feature:
-                    feature_df[other_feature] = self.base_values[other_feature]
-
-            predictions = self.model_retriever.predictor.predict(feature_df)
-            base_data[feature] = pd.DataFrame({
-                f'base_{feature}': predictions['prediction'],
-                feature: feature_df[feature]
-            })
-
-        logger.info("Finished compute_base_predictions_new")
-        return base_data
-
-    def compute_base_predictions_variable(self, test_set, used_features, feature):
+    def compute_base_predictions_variable(self, test_set, used_features, feature, max_modalities=100, grouping_info=None):
         logger.info(f"Starting compute_base_predictions for {feature}")
         base_data = {}
         copy_test_df = test_set.copy()
         copy_test_df[self.model_retriever.exposure_columns] = 1
 
-        feature_df = copy_test_df.groupby(feature, as_index=False).first()
+        feature_type = self.variable_types.get(feature, None)
+        exposure_col = self.model_retriever.exposure_columns
+        if exposure_col is None:
+            copy_test_df['weight'] = 1
+            exposure_col = 'weight'
+
+        bin_map = None
+        if feature_type == 'CATEGORY':
+            exposure_per_modality = copy_test_df.groupby(feature)[exposure_col].sum()
+            top_modalities = exposure_per_modality.nlargest(max_modalities - 1).index
+            copy_test_df[feature] = copy_test_df[feature].where(copy_test_df[feature].isin(top_modalities), other='Other')
+            feature_df = copy_test_df.groupby(feature, as_index=False).first()
+            feature_df[exposure_col] = copy_test_df.groupby(feature)[exposure_col].sum().values
+        elif feature_type == 'NUMERIC':
+            unique_vals = copy_test_df[feature].nunique(dropna=True)
+            if unique_vals > max_modalities:
+                if grouping_info is None:
+                    copy_test_df['feature_bin'] = pd.qcut(copy_test_df[feature], q=max_modalities, duplicates='drop')
+                    def weighted_mean(x):
+                        return np.average(x[feature], weights=x[exposure_col])
+                    bin_means = copy_test_df.groupby('feature_bin').apply(weighted_mean)
+                    bin_map = dict(zip(bin_means.index, bin_means.values))
+                    # Map the bin containing the base_value to the base_value itself
+                    base_value = self.base_values.get(feature, None)
+                    if base_value is not None:
+                        for bin_label in bin_map:
+                            left = bin_label.left if hasattr(bin_label, 'left') else None
+                            right = bin_label.right if hasattr(bin_label, 'right') else None
+                            if left is not None and right is not None and left < base_value <= right:
+                                bin_map[bin_label] = float(base_value)
+                                break
+                else:
+                    bin_map = grouping_info
+                    copy_test_df['feature_bin'] = pd.qcut(copy_test_df[feature], q=max_modalities, duplicates='drop')
+                copy_test_df[feature] = copy_test_df['feature_bin'].map(bin_map).astype(float)
+                feature_df = copy_test_df.groupby('feature_bin', as_index=False).first()
+                feature_df[feature] = feature_df['feature_bin'].map(bin_map).astype(float)
+                feature_df[exposure_col] = copy_test_df.groupby('feature_bin')[exposure_col].sum().values
+                feature_df = feature_df.drop(columns=['feature_bin'])
+            else:
+                feature_df = copy_test_df.groupby(feature, as_index=False).first()
+                feature_df[exposure_col] = copy_test_df.groupby(feature)[exposure_col].sum().values
+        else:
+            feature_df = copy_test_df.groupby(feature, as_index=False).first()
+            feature_df[exposure_col] = copy_test_df.groupby(feature)[exposure_col].sum().values
 
         for other_feature in used_features:
             if other_feature != feature:
                 feature_df[other_feature] = self.base_values[other_feature]
 
+        logger.debug("predictions")
+        logger.debug(feature_df)
         predictions = self.model_retriever.predictor.predict(feature_df)
+        logger.debug(predictions)
         base_data[feature] = pd.DataFrame({
             f'base_{feature}': predictions['prediction'],
             feature: feature_df[feature]
         })
 
         logger.info("Finished compute_base_predictions")
-        return base_data
+        return base_data, bin_map
     
     def get_formated_predicted_base(self):
         logger.info("Getting formatted and predicted base")
@@ -292,6 +322,7 @@ class RelativitiesCalculator:
                      'fittedAverage', 'Value', 'baseLevelPrediction', 'dataset']
         logger.info("Successfully got formatted and predicted base")
         return df
+    
     def get_formated_predicted_base_variable(self, variable):
         logger.info("Getting formatted and predicted base")
         self.get_predicted_and_base_variable(variable)
@@ -310,11 +341,25 @@ class RelativitiesCalculator:
         logger.info("Successfully Merged Base predictions")
         return test_set
     
-    def process_dataset_variable(self, dataset, dataset_name, variable):
+    def process_dataset_variable(self, dataset, dataset_name, variable, max_modalities=100):
         logger.info(f"Processing dataset {dataset_name}")
         used_features = self.model_retriever.get_used_features()
-        base_data = self.compute_base_predictions_variable(dataset, used_features, variable)
-        dataset = self.merge_predictions(dataset, base_data)
+        # Compute base_data and get grouping info
+        base_data, bin_map = self.compute_base_predictions_variable(dataset, used_features, variable, max_modalities=max_modalities)
+        feature_type = self.variable_types.get(variable, None)
+        exposure_col = self.model_retriever.exposure_columns or 'weight'
+        grouped_dataset = dataset.copy()
+        if feature_type == 'CATEGORY':
+            exposure_per_modality = grouped_dataset.groupby(variable)[exposure_col].sum()
+            top_modalities = exposure_per_modality.nlargest(max_modalities - 1).index
+            grouped_dataset[variable] = grouped_dataset[variable].where(grouped_dataset[variable].isin(top_modalities), other='Other')
+        elif feature_type == 'NUMERIC':
+            unique_vals = grouped_dataset[variable].nunique(dropna=True)
+            if unique_vals > max_modalities and bin_map is not None:
+                grouped_dataset['feature_bin'] = pd.qcut(grouped_dataset[variable], q=max_modalities, duplicates='drop')
+                grouped_dataset[variable] = grouped_dataset['feature_bin'].map(bin_map).astype(float)
+                grouped_dataset = grouped_dataset.drop(columns=['feature_bin'])
+        dataset = self.merge_predictions(grouped_dataset, base_data)
         predicted_base = self.data_handler.calculate_weighted_aggregations(dataset, [variable], ([variable] if variable in used_features else []))
         predicted_base_df = self.data_handler.construct_final_dataframe(predicted_base)
         predicted_base_df['dataset'] = dataset_name

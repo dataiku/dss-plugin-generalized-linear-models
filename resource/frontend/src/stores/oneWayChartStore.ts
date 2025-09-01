@@ -163,11 +163,9 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
                     API.getPredictedBase(modelTrainPoint)
                 ];
                 if (store.comparedModel?.id) {
-                    console.log(store.comparedModel);
                     const comparedModelTrainPoint = {id: store.comparedModel.id, name: store.comparedModel.name, trainTest: store.trainTest, variable: this.formOptions.selectedVariable.variable, chartRescaling: this.chartOptions.chartRescaling};
                     promises.push(API.getPredictedBase(comparedModelTrainPoint));
                 } else {
-                    console.log("cancel");
                     this.comparisonChartData = [];
                 }
 
