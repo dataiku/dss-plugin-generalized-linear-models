@@ -287,14 +287,14 @@ class RelativitiesCalculator:
                 copy_test_df[feature] = copy_test_df['feature_bin'].map(bin_map).astype(float)
                 feature_df = copy_test_df.groupby('feature_bin', as_index=False).first()
                 feature_df[feature] = feature_df['feature_bin'].map(bin_map).astype(float)
-                feature_df[exposure_col] = copy_test_df.groupby('feature_bin')[exposure_col].sum().values
+                feature_df[exposure_col] = 1
                 feature_df = feature_df.drop(columns=['feature_bin'])
             else:
                 feature_df = copy_test_df.groupby(feature, as_index=False).first()
-                feature_df[exposure_col] = copy_test_df.groupby(feature)[exposure_col].sum().values
+                feature_df[exposure_col] = 1
         else:
             feature_df = copy_test_df.groupby(feature, as_index=False).first()
-            feature_df[exposure_col] = copy_test_df.groupby(feature)[exposure_col].sum().values
+            feature_df[exposure_col] = 1
 
         for other_feature in used_features:
             if other_feature != feature:
