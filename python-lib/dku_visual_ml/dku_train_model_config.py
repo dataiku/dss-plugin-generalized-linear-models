@@ -3,18 +3,11 @@ from logging_assist.logging import logger
 
 class DKUVisualMLConfig:
     
-    def __init__(self, analysis_name=None, input_dataset=None, policy=None, test_dataset=None, target_column=None, exposure_column=None):
+    def __init__(self):#, analysis_name=None, input_dataset=None, policy=None, test_dataset=None, target_column=None, exposure_column=None):
         
         logger.debug("Initalising a dku visual ML config with the existing web app settings")
         
-        self.target_column = target_column
-        self.input_dataset = input_dataset
-        self.prediction_type = "REGRESSION"
-        self.exposure_column = exposure_column
-        self.analysis_name = analysis_name
-        self.policy = policy
-        self.test_dataset_string = test_dataset
-        
+        self.prediction_type = "REGRESSION"        
         logger.debug("Successfully initalised a dku visual ML config with the existing web app settings")
         self.log_configuration()
     
@@ -57,7 +50,8 @@ class DKUVisualMLConfig:
                 included_variables.append(variable)
         if len(included_variables)>0:
             return included_variables
-        else: raise ValueError(f"No Variables set to active for model training")
+        else: 
+            return []
         
     def get_excluded_features(self):
         excluded_variables = []
@@ -77,28 +71,35 @@ class DKUVisualMLConfig:
         
         if len(model_features)>0:
             return model_features
-        else: raise ValueError(f"No Variables set to active for model training")
+        else: 
+            return []
 
     def update_model_parameters(self, request_json):
         
         logger.debug("Initalising DKUVisualMLConfig ")
-        self.target_column = request_json.get('target')
-        self.exposure_column = request_json.get('exposure')
+        self.target_column = request_json.get('targetColumn')
+        self.exposure_column = request_json.get('exposureColumn')
 
-        self.distribution_function = request_json.get('model_parameters', {}).get('distribution_function').lower()
-        self.link_function = request_json.get('model_parameters', {}).get('link_function').lower()
-        self.elastic_net_penalty = float(request_json.get('model_parameters', {}).get('elastic_net_penalty'))
-        self.l1_ratio = float(request_json.get('model_parameters', {}).get('l1_ratio'))
-        self.model_name_string = request_json.get('model_parameters', {}).get('model_name', None)
-        self.theta = request_json.get('model_parameters', {}).get('theta', None)
-        self.power = request_json.get('model_parameters', {}).get('power', None)
-        self.variance_power = request_json.get('model_parameters', {}).get('variance_power', None)
+        if 'splitPolicy' in request_json: # when creating
+            self.input_dataset = request_json.get('trainSet', "")
+            self.analysis_name = request_json.get('analysisName', "")
+            self.policy = request_json.get('splitPolicy', "")
+            self.test_dataset_string = request_json.get('testSet', "")
 
-        self.variables = dict(request_json.get('variables'))
+        if 'model_parameters' in request_json.keys(): # when training
+            self.distribution_function = request_json.get('model_parameters', {}).get('distribution_function').lower()
+            self.link_function = request_json.get('model_parameters', {}).get('link_function').lower()
+            self.elastic_net_penalty = float(request_json.get('model_parameters', {}).get('elastic_net_penalty'))
+            self.l1_ratio = float(request_json.get('model_parameters', {}).get('l1_ratio'))
+            self.model_name_string = request_json.get('model_parameters', {}).get('model_name', None)
+            self.theta = request_json.get('model_parameters', {}).get('theta', None)
+            self.power = request_json.get('model_parameters', {}).get('power', None)
+            self.variance_power = request_json.get('model_parameters', {}).get('variance_power', None)
+
+        self.variables = dict(request_json.get('variables', {}))
         self.variables_list = [{'name': key, **value} for key, value in self.variables.items()]
-        self.interaction_variables =  request_json.get('interaction_variables', None)
+        self.interaction_variables =  request_json.get('interaction_variables', [])
         self.log_configuration()
-        # Check for required parameters
 
     def validate_setup(self):
         

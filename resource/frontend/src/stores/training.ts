@@ -408,11 +408,10 @@ export const useTrainingStore = defineStore("TrainingStore", {
             })),
             ml_task_id: analysisStore.selectedMlTask.mlTaskId,
             analysis_id: analysisStore.selectedMlTask.analysisId,
-            target: analysisStore.selectedMlTask.targetColumn,
-            exposure: analysisStore.selectedMlTask.exposureColumn
+            targetColumn: analysisStore.selectedMlTask.targetColumn,
+            exposureColumn: analysisStore.selectedMlTask.exposureColumn
         };
         
-        console.log('ready');
         try {
             console.log("Payload:", payload);
             const modelUID = await API.trainModel(payload);

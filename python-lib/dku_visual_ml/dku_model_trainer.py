@@ -54,8 +54,6 @@ class VisualMLModelTrainer(DataikuClientProject):
         
         logger.debug(f"Updating the ml task with analysis id {analysis_id} and mltask_id {mltask_id}")
         
-        # self.analysis= self.project.get_analysis(analysis_id)
-        # self.mltask_id = self.analysis.list_ml_tasks().get('mlTasks')[0].get('mlTaskId')
         self.mltask = self.project.get_ml_task(mltask_id=mltask_id, analysis_id=analysis_id)
         self.remove_failed_trainings()
         
@@ -64,19 +62,17 @@ class VisualMLModelTrainer(DataikuClientProject):
 
     def assign_train_test_policy(self):
         logger.info(f"Assigning train test policy")   
-     
-        if self.visual_ml_config.policy == "explicit_test_set":
-            logger.info(f"Configuration specifies test set, assigning")   
-            settings = self.mltask.get_settings()
-            settings.split_params.set_split_explicit(
-                dku_dataset_selection_params, 
-                dataset_name=self.visual_ml_config.input_dataset,
-                test_dataset_name=self.visual_ml_config.test_dataset_string)
-            settings.save()
-            logger.info(f"Saved test set to setting")  
-              
-        else:
-            return
+
+        if hasattr(self.visual_ml_config, "policy"):
+            if self.visual_ml_config.policy == "explicit_test_set":
+                logger.info(f"Configuration specifies test set, assigning")   
+                settings = self.mltask.get_settings()
+                settings.split_params.set_split_explicit(
+                    dku_dataset_selection_params, 
+                    dataset_name=self.visual_ml_config.input_dataset,
+                    test_dataset_name=self.visual_ml_config.test_dataset_string)
+                settings.save()
+                logger.info(f"Saved test set to setting")
         
     def disable_existing_variables(self):
         logger.debug(f"Disabling variables from the ml task config") 
@@ -119,31 +115,23 @@ class VisualMLModelTrainer(DataikuClientProject):
         analysis_id = self.mltask.get_settings().analysis_id
         self.rename_analysis(analysis_id)
 
-        self.assign_train_test_policy()
-        self.update_base_mltask_params()
-        self.disable_existing_variables()
-        logger.info("Inital ML Task Created")
+        self.update_visual_ml_task()
+        self.enable_glm_algorithm()
+        self.configure_variables()
+
         return self.mltask
         
         
     def update_visual_ml_task(self):
         """
-        Creates a new visual ML task in Dataiku.
+        Updates a visual ML task in Dataiku.
         """
         logger.info("Creating Visual ML task")
-        
-       
-        # Create a new ML Task to predict the variable from the specified dataset
-        # if not self.mltask:
-        #     logger.info("Creating a new ML task")
-        #     self.mltask = self.create_initial_ml_task()
-        # else:
-        #     logger.info("ML task already exists")
-            
+
         self.assign_train_test_policy()
         self.update_mltask_modelling_params()
         self.disable_existing_variables()
-        logger.info("Successfully created Visual ML task")
+        logger.info("Successfully updated Visual ML task")
     
     def enable_glm_algorithm(self):
         """
@@ -152,8 +140,6 @@ class VisualMLModelTrainer(DataikuClientProject):
         logger.info("Setting the model to GLM algorithm in ml task settings")
         settings = self.mltask.get_settings()
         settings.disable_all_algorithms()
-        
-        # Assuming GLM is represented as 'GLM_REGRESSION' or 'GLM_CLASSIFICATION', adjust as necessary
         settings.set_algorithm_enabled("CustomPyPredAlgo_generalized-linear-models_generalized-linear-models_regression", True)
         settings.save()
         logger.info("Successfully set the model to GLM algorithm in ml task settings")
@@ -205,6 +191,7 @@ class VisualMLModelTrainer(DataikuClientProject):
         logger.debug("Updating the Dataiku ML task settings for exposure variables")
         exposure_variable = self.visual_ml_config.get_exposure_variable()
         settings = self.mltask.get_settings()
+        logger.debug(exposure_variable)
         settings.use_feature(exposure_variable)
         fs = settings.get_feature_preprocessing(exposure_variable)
         fs = self.update_to_numeric(fs, None)
@@ -347,27 +334,6 @@ class VisualMLModelTrainer(DataikuClientProject):
             
         return interaction_columns_first, interaction_columns_second
     
-    def update_base_mltask_params(self):
-        """
-        Updates the basic initial modeling parameters
-        """
-        settings = self.mltask.get_settings()
-        settings.get_raw()['modeling']['skipExpensiveReports'] = True
-        exposure_variable = self.visual_ml_config.get_exposure_variable()
-
-        algo_settings = settings.get_algorithm_settings(
-            'CustomPyPredAlgo_generalized-linear-models_generalized-linear-models_regression'
-        )
-        algo_settings['params'].update({
-                "offset_mode": "OFFSETS/EXPOSURES",
-                "offset_columns": [],
-                "exposure_columns": [exposure_variable],
-                "training_dataset": self.visual_ml_config.input_dataset,
-            })
-        
-        settings.save()
-        return
-
     def update_mltask_modelling_params(self):
         """
         Updates the modeling parameters based on the distribution function, link function, elastic net penalty, l1 ratio
@@ -376,23 +342,32 @@ class VisualMLModelTrainer(DataikuClientProject):
         settings = self.mltask.get_settings()
         interaction_variables = self.visual_ml_config.get_interaction_variables()
         first_columns, second_columns = self.process_interaction_columns(interaction_variables)
-            
-        # offset_variable = None
         
-        algo_settings = settings.get_algorithm_settings(
-            'CustomPyPredAlgo_generalized-linear-models_generalized-linear-models_regression'
-        )
-        algo_settings['params'].update({
-            f"{self.visual_ml_config.distribution_function}_link": self.visual_ml_config.link_function,
-            "family_name": self.visual_ml_config.distribution_function,
-            "penalty": [self.visual_ml_config.elastic_net_penalty],
-            "l1_ratio": [self.visual_ml_config.l1_ratio],
-            "interaction_columns_first":first_columns,
-            "interaction_columns_second":second_columns,
-            "alpha": self.visual_ml_config.theta,
-            "power": self.visual_ml_config.power,
-            "var_power": self.visual_ml_config.variance_power
-        })
+        if hasattr(self.visual_ml_config, 'distribution_function'): # for training
+            algo_settings = settings.get_algorithm_settings(
+                'CustomPyPredAlgo_generalized-linear-models_generalized-linear-models_regression'
+            )
+            algo_settings['params'].update({
+                f"{self.visual_ml_config.distribution_function}_link": self.visual_ml_config.link_function,
+                "family_name": self.visual_ml_config.distribution_function,
+                "penalty": [self.visual_ml_config.elastic_net_penalty],
+                "l1_ratio": [self.visual_ml_config.l1_ratio],
+                "interaction_columns_first":first_columns,
+                "interaction_columns_second":second_columns,
+                "alpha": self.visual_ml_config.theta,
+                "power": self.visual_ml_config.power,
+                "var_power": self.visual_ml_config.variance_power
+            })
+        else: # for init
+            algo_settings = settings.get_algorithm_settings(
+                'CustomPyPredAlgo_generalized-linear-models_generalized-linear-models_regression'
+            )
+            algo_settings['params'].update({
+                "offset_mode": "OFFSETS/EXPOSURES",
+                "offset_columns": [],
+                "exposure_columns": [self.visual_ml_config.exposure_column],
+                "training_dataset": self.visual_ml_config.input_dataset,
+            })
         
         settings.save()
         return

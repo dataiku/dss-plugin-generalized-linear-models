@@ -533,12 +533,14 @@ class DataikuDataService:
         return datasets
     
     def create_ml_task(self, request_json):
-        self.visual_ml_config = DKUVisualMLConfig(analysis_name=request_json['analysisName'], input_dataset=request_json['trainSet'], policy=request_json['splitPolicy'], test_dataset=request_json['testSet'], target_column=request_json['targetColumn'], exposure_column=request_json['exposureColumn'])
+        self.visual_ml_config = DKUVisualMLConfig()
         self.visual_ml_trainer = VisualMLModelTrainer(self.visual_ml_config)
+        self.visual_ml_config.update_model_parameters(request_json)
         self.visual_ml_trainer.create_initial_ml_task()
         ml_task_id = self.visual_ml_trainer.mltask.mltask_id
         ml_task_config = self.dku_handler.get_ml_task_config(ml_task_id)
         ml_task = self.dku_handler.format_ml_task(ml_task_config)
+        current_app.logger.info(ml_task)
         return ml_task
     
     def get_variables_for_dataset(self, request_json):
