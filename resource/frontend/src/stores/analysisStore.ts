@@ -8,6 +8,7 @@ import { use } from "echarts";
 import { useOneWayChartStore } from "./oneWayChartStore";
 import { useLiftChartStore } from "./liftChartStore";
 import { useVariableLevelStatsStore } from "./variableLevelStatsStore";
+import { WT1iser, WT1EventActions } from '../utilities/utils';
 
 export const useAnalysisStore = defineStore("AnalysisStore", {
     state: () => ({
@@ -82,6 +83,7 @@ export const useAnalysisStore = defineStore("AnalysisStore", {
                 const mlTask = response.data;
                 this.mlTasks.push(mlTask);
                 this.selectedMlTask = mlTask;
+                WT1iser.action(WT1EventActions.CREATE_ANALYSIS, 'Setup', { splitPolicy: formData.splitPolicy });
             } catch (error) {
                 console.error("Failed to create analysis:", error);
                 throw error;
@@ -106,6 +108,7 @@ export const useAnalysisStore = defineStore("AnalysisStore", {
         selectMlTask(mlTask: MlTask) {
             this.resetAllStores();
             this.selectedMlTask = mlTask;
+            WT1iser.action(WT1EventActions.SELECT_ANALYSIS, 'Setup');
             if (this.selectedMlTask.mlTaskId) {
                 const store = useModelStore();
                 store.loadModels();

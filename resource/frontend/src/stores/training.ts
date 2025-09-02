@@ -10,6 +10,7 @@ import type { ColumnInput, Interaction, Column, APIResponse } from "../models";
 import { AxiosError, isAxiosError } from "axios";
 import { useModelStore } from "./webapp";
 import { useAnalysisStore } from "./analysisStore";
+import { WT1iser, WT1EventActions } from '../utilities/utils';
 
 type UpdatableProperties = 'selectedDatasetString' | 'selectedDistributionFunctionString' | 'selectedLinkFunctionString';
 
@@ -340,7 +341,7 @@ export const useTrainingStore = defineStore("TrainingStore", {
                 } finally {
                     this.isLoading = false;
                 }
-                
+                WT1iser.action(WT1EventActions.LOAD_PREVIOUS_MODEL, 'Training');
 
         } 
         else {
@@ -415,6 +416,12 @@ export const useTrainingStore = defineStore("TrainingStore", {
         try {
             console.log("Payload:", payload);
             const modelUID = await API.trainModel(payload);
+            WT1iser.action(WT1EventActions.TRAIN_MODEL, 'Training', {
+                distribution: this.selectedDistributionFunctionString,
+                link: this.selectedLinkFunctionString,
+                elasticNetPenalty: this.selectedElasticNetPenalty,
+                l1Ratio: this.selectedL1Ratio
+            });
             // Handle successful submission here
         } catch (error) {
         if (isAxiosError(error)) {

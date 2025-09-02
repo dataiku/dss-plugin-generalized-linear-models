@@ -3,6 +3,7 @@ import { API } from "../Api";
 import { useNotification } from "../composables/use-notification";
 import { useModelStore } from "./webapp";
 import type { DataPoint, VariablePoint, ModelPoint } from '../models';
+import { WT1iser, WT1EventActions } from '../utilities/utils';
 
 interface RelativityRow {
   class: string;
@@ -92,6 +93,12 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
             }
             this.applyForm();
             this.processAndFilterData();
+            WT1iser.action(WT1EventActions.TRAIN_MODEL, 'Training', {
+                chartDistribution: this.chartOptions.chartDistribution,
+                chartRescaling: this.chartOptions.chartRescaling,
+                nbBins: this.chartOptions.nbBins,
+                trainTest: this.chartOptions.trainTest
+            });
             this.isLoading = false;
         },
 

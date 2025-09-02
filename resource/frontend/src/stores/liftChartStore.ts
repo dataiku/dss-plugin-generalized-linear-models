@@ -3,6 +3,7 @@ import { API } from "../Api";
 import { useNotification } from "../composables/use-notification";
 import { useModelStore } from "./webapp";
 import type { LiftDataPoint, ModelPoint } from '../models';
+import { WT1iser, WT1EventActions } from '../utilities/utils';
 
 export const useLiftChartStore = defineStore("liftChart", {
     state: () => ({
@@ -23,9 +24,6 @@ export const useLiftChartStore = defineStore("liftChart", {
     }),
 
     actions: {
-        // resetState() {
-        //     this.$reset();
-        // },
 
         handleError(error: any) {
             const errorMessage = error.message || "An unknown error occurred in the Lift Chart feature.";
@@ -64,6 +62,10 @@ export const useLiftChartStore = defineStore("liftChart", {
                 const modelNbBins = { nbBins: this.chartOptions.nbBins, id: model.id, name: model.name, trainTest: this.chartOptions.trainTest};
                 const response = await API.getLiftData(modelNbBins);
                 this.liftChartData = response.data;
+                WT1iser.action(WT1EventActions.CREATE_LIFT_CHART, 'Lift Chart', {
+                    nbBins: this.chartOptions.nbBins,
+                    trainTest: this.chartOptions.trainTest
+                });
             } catch (err) {
                 this.handleError(err);
                 this.liftChartData = [];
@@ -89,6 +91,10 @@ export const useLiftChartStore = defineStore("liftChart", {
                 const modelNbBins = { nbBins: this.chartOptions.nbBins, id: model.id, name: model.name, trainTest: this.chartOptions.trainTest};
                 const response = await API.exportLiftChart(modelNbBins);
                 this._triggerDownload(response.data, `lift_chart_${store.activeModel.name}.csv`);
+                WT1iser.action(WT1EventActions.DOWNLOAD_LIFT_CHART, 'Lift Chart', {
+                    nbBins: this.chartOptions.nbBins,
+                    trainTest: this.chartOptions.trainTest
+                });
             } catch (error) {
                 this.handleError(error);
             }

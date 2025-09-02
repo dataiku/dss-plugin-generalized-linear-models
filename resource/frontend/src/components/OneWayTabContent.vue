@@ -23,13 +23,13 @@
                   <q-icon name="rocket_launch" />
                   <q-tooltip>Deploy Model</q-tooltip>
               </BsButton>
-            <BsButton   
+            <!-- <BsButton   
                   dense
                   outline
                   @click="exportOneWay">
                   <q-icon name="download" />
                   <q-tooltip>Export One-Way</q-tooltip>
-              </BsButton>
+              </BsButton> -->
           </div>
         </div>
         <div class="chart-row">

@@ -4,6 +4,7 @@ import { useNotification } from "../composables/use-notification";
 import type { ModelPoint, VariableLevelStatsPoint } from '../models';
 import type { QTableColumn } from 'quasar';
 import { useModelStore } from "./webapp";
+import { WT1iser, WT1EventActions } from '../utilities/utils';
 
 const VARIABLE_STATS_COLUMNS: QTableColumn[] = [
     { name: 'variable', align: 'left', label: 'Variable', field: 'variable', sortable: true },
@@ -58,7 +59,7 @@ export const useVariableLevelStatsStore = defineStore("variableLevelStats", {
                     weight_pct: this._round(point.weight_pct),
                     relativity: this._round(point.relativity),
                 }));
-
+                WT1iser.action(WT1EventActions.CREATE_STATS_TABLE, 'Stats');
             } catch (err) {
                 this.handleError(err);
                 this.modelStats = [];
@@ -76,6 +77,7 @@ export const useVariableLevelStatsStore = defineStore("variableLevelStats", {
             try {
                 const response = await API.exportVariableLevelStats(store.activeModel);
                 this._triggerDownload(response.data, `variable_level_stats_${store.activeModel.name}.csv`);
+                WT1iser.action(WT1EventActions.DOWNLOAD_STATS_TABLE, 'Stats');
             } catch (error) {
                 this.handleError(error);
             }
