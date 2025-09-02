@@ -4,6 +4,10 @@ import { useNotification } from "../composables/use-notification";
 import type { MlTask } from '../models';
 import { useModelStore } from "./webapp";
 import { useTrainingStore } from "./training";
+import { use } from "echarts";
+import { useOneWayChartStore } from "./oneWayChartStore";
+import { useLiftChartStore } from "./liftChartStore";
+import { useVariableLevelStatsStore } from "./variableLevelStatsStore";
 
 export const useAnalysisStore = defineStore("AnalysisStore", {
     state: () => ({
@@ -86,7 +90,21 @@ export const useAnalysisStore = defineStore("AnalysisStore", {
             }
         },
 
+        resetAllStores() {
+            const modelStore = useModelStore()
+            const trainingStore = useTrainingStore();
+            const oneWayChartStore = useOneWayChartStore();
+            const liftChartStore = useLiftChartStore();
+            const variableLevelStatsStore = useVariableLevelStatsStore();
+            modelStore.$reset();
+            trainingStore.$reset();
+            oneWayChartStore.$reset();
+            liftChartStore.$reset();
+            variableLevelStatsStore.$reset();
+        },
+
         selectMlTask(mlTask: MlTask) {
+            this.resetAllStores();
             this.selectedMlTask = mlTask;
             if (this.selectedMlTask.mlTaskId) {
                 const store = useModelStore();

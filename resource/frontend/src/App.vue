@@ -5,12 +5,16 @@
                 <BsTabIcon>
                     <img :src="tabInfo.icon" :alt="`${tabInfo.name} Icon`" />
                 </BsTabIcon>
-                <BsHeader>
-                    <template #documentation>
-                        <BsLabel v-if="tabInfo.displayTitleInHeader" :label="tabInfo.name" className="tab-title"></BsLabel>
-                        <CustomDocumentation></CustomDocumentation>
-                    </template>
-                </BsHeader>
+                    <BsHeader>
+                            <template #documentation>
+                                <div class="header-components">
+                                    <BsLabel class="header-label" label="Analysis: " v-if="tabInfo.name !== 'Analysis Setup'" />
+                                    <AnalysisSelector class="header-analysis-selector" v-if="tabInfo.name !== 'Analysis Setup'" />
+                                    <BsLabel v-if="tabInfo.displayTitleInHeader" :label="tabInfo.name" className="tab-title"></BsLabel>
+                                </div>
+                                <CustomDocumentation></CustomDocumentation>
+                            </template>
+                    </BsHeader>
                 <BsDrawer v-if="tabInfo.drawerComponent">
                     <component
                         :is="tabInfo.drawerComponent"
@@ -51,6 +55,7 @@ import ModelManagement from './components/ModelManagement.vue'
 import ModelTrainingTabContent from './components/ModelTrainingTabContent.vue'
 import EmptyState from './components/EmptyState.vue';
 import CustomDocumentation from './components/CustomDocumentation.vue';
+import AnalysisSelector from './components/AnalysisSelector.vue';
 import { BsLayoutDefault } from "quasar-ui-bs";
 import { defineComponent } from "vue";
 import { useModelStore } from "./stores/webapp";
@@ -79,7 +84,8 @@ export default defineComponent({
       EmptyState,
       ModelTrainingTabContent,
       CustomDocumentation,
-      AnalysisSetup
+      AnalysisSetup,
+      AnalysisSelector
     },
     data() {
     return {
@@ -282,5 +288,21 @@ header {
     line-height: 22px;
     position: fixed;
     left: 90px;
+}
+
+.header-components {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.header-analysis-selector {
+    padding-right: 16px;
+}
+
+.header-label {
+    font-weight: 600;
+    font-size: 16px;
+    color: #333E48;
 }
 </style>

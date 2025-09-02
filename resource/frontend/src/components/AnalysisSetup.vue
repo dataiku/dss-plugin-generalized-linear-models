@@ -3,47 +3,7 @@
     <q-card flat bordered>
         <q-card-section>
             <BsLabel label="Select an Existing Analysis" className="section-title" />
-            <BsSelect
-            :model-value="store.selectedMlTask"
-            :all-options="store.mlTaskOptions"
-            option-value="mlTaskId"
-            @update:modelValue="value => store.selectMlTask(value)"
-            :disabled="mode === 'create'"
-        >
-            <template #selected-item>
-                <div v-if="store.selectedMlTask.mlTaskId">
-                    {{ store.selectedMlTask.analysisName }} ({{ store.selectedMlTask.mlTaskId }})
-                </div>
-                <div v-else class="text-grey">
-                    Select an analysis...
-                </div>
-            </template>
-
-            <template #option="props">
-                <q-item
-                    v-bind="props.itemProps"
-                    clickable
-                    :disable="!isTaskValid(props.opt)"
-                >
-                    <q-item-section>
-                        <q-item-label :class="{ 'text-grey-7': !isTaskValid(props.opt) }">
-                            {{ props.opt.analysisName }}
-                        </q-item-label>
-                        <q-item-label caption :class="{ 'text-grey-5': !isTaskValid(props.opt) }">
-                            Target: {{ props.opt.targetColumn }} | Dataset: {{ props.opt.trainSet }}
-                        </q-item-label>
-                        <q-item-label caption :class="{ 'text-grey-5': !isTaskValid(props.opt) }">
-                            ID: {{ props.opt.analysisId }} / {{ props.opt.mlTaskId }}
-                        </q-item-label>
-                    </q-item-section>
-
-                    <q-item-section v-if="!isTaskValid(props.opt)" side>
-                        <q-icon name="warning" color="grey-5" />
-                        <q-tooltip>This task is invalid or failed</q-tooltip>
-                    </q-item-section>
-                </q-item>
-            </template>
-        </BsSelect>
+            <AnalysisSelector/>
             <div class="create-switch-container">
                 <BsButton 
                     v-if="mode === 'select'"
@@ -118,13 +78,15 @@
 
 <script lang="ts">
 import { BsButton, BsLabel, BsSelect } from 'quasar-ui-bs';
+import AnalysisSelector from './AnalysisSelector.vue';
 import { defineComponent } from 'vue';
 import { useAnalysisStore } from '../stores/analysisStore';
 import type { MlTask } from '../models';
 
 export default defineComponent({
     components: {
-        BsSelect,
+    BsSelect,
+    AnalysisSelector,
         BsLabel,
         BsButton
     },
