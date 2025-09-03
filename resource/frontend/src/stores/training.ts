@@ -106,9 +106,6 @@ export const useTrainingStore = defineStore("TrainingStore", {
         }
     },
     actions: {
-        resetState() {
-            this.$reset();
-        },
 
         setElasticNetPenalty(newValue: number) {
             if (isNaN(newValue)) {

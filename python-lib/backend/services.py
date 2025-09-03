@@ -219,7 +219,6 @@ class DataikuDataService:
         try:
             model_retriever = VisualMLModelRetriver(full_model_id)
             variables = model_retriever.get_features_used_in_modelling()
-
         except ValueError as e:
             current_app.logger.error(f"Validation Error: {e}")
             raise ValueError(f"Validation Error: {e}")

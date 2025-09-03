@@ -64,9 +64,6 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
     },
 
     actions: {
-        resetState() {
-            this.$reset();
-        },
 
         handleError(error: any) {
             const errorMessage = error.message || "An unknown error occurred in the One-Way Chart feature.";

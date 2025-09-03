@@ -40,7 +40,7 @@ export const useModelStore = defineStore("ModelStore", {
     },
 
     actions: {
-        
+
         getModelByName(name: string) : ModelPoint | undefined {
             return this.models.find((obj: ModelPoint) => obj.name === name);
         },
@@ -51,13 +51,11 @@ export const useModelStore = defineStore("ModelStore", {
                 const store = useAnalysisStore();
                 const response = await API.getModels({mlTaskId: store.selectedMlTask.mlTaskId, analysisId: store.selectedMlTask.analysisId});
                 this.models = response.data;
-                console.log(response);
                 if (this.models.length > 0) {
                     this.projectKey = this.models[0].project_key;
                     this.mlTaskId = this.models[0].ml_task_id;
                     this.analysisId = this.models[0].analysis_id;
                 }
-                console.log(this.models);
             } catch (error) {
                 this.handleError(error);
             } finally {

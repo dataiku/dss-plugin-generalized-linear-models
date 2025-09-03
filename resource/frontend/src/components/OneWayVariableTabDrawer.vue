@@ -135,7 +135,6 @@ export default defineComponent({
     },
     methods: {
         async onPrimaryModelChange(value: string) {
-            this.store.$reset();
             this.oneWayStore.$reset();
             this.store.setActiveModel(value);
             this.oneWayStore.fetchVariablesForModel(value);

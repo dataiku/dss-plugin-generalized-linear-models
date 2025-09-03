@@ -1,10 +1,8 @@
 import { defineStore } from "pinia";
 import { API } from "../Api";
-import { useNotification } from "../composables/use-notification";
 import type { MlTask } from '../models';
 import { useModelStore } from "./webapp";
 import { useTrainingStore } from "./training";
-import { use } from "echarts";
 import { useOneWayChartStore } from "./oneWayChartStore";
 import { useLiftChartStore } from "./liftChartStore";
 import { useVariableLevelStatsStore } from "./variableLevelStatsStore";
@@ -27,9 +25,6 @@ export const useAnalysisStore = defineStore("AnalysisStore", {
         },
     },
     actions: {
-        resetState() {
-            this.$reset();
-        },
 
         async getProject() {
             try {
