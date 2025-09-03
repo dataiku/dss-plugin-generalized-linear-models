@@ -287,4 +287,6 @@ dummy_ml_tasks = [{
 
 dummy_datasets = [{"name": "claim_train_prepared"}, {"name": "claims"}]
 
-dummy_variables = [{"name": "Variable1"}, {"name": "Variable2"}, {"name": "Variable3"}]
+dummy_variables = [{"variable": "Variable1", "isInModel": True, "variableType": "categorical"}, 
+                   {"variable": "Variable2", "isInModel": True, "variableType": "numeric"}, 
+                   {"variable": "Variable3", "isInModel": False, "variableType": "numeric"}]

@@ -31,7 +31,6 @@ export class WT1iser {
     return {
       tab: tab,
       pluginVersion: this.pluginVersion,
-      pluginID: this.pluginID
     }
   }
   public static open(tab: string): void {

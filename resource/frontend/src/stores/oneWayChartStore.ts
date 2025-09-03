@@ -176,7 +176,8 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
                 const responses = await Promise.all(promises);
                 
                 this.primaryModelRawData = responses[0].data;
-
+                console.log("load predicted base");
+                console.log(this.primaryModelRawData);
                 if (responses.length > 1) {
                     this.comparisonModelRawData = responses[1].data;
                 } else {

@@ -112,7 +112,7 @@ export default {
         label: label,
         weight: this.barData[index],
         observed: this.observedAverageLine[index],
-        predicted: this.fittedAverageLine[index], // 'predicted' will be our sorting key for fitted average
+        predicted: this.fittedAverageLine[index],
         base: this.baseLevelPredictionLine[index],
         // Handle optional data series
         fitted2: this.fittedAverageLine2 ? this.fittedAverageLine2[index] : null,

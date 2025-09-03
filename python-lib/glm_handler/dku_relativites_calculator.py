@@ -262,7 +262,7 @@ class RelativitiesCalculator:
             top_modalities = exposure_per_modality.nlargest(max_modalities - 1).index
             copy_test_df[feature] = copy_test_df[feature].where(copy_test_df[feature].isin(top_modalities), other='Other')
             feature_df = copy_test_df.groupby(feature, as_index=False).first()
-            feature_df[exposure_col] = copy_test_df.groupby(feature)[exposure_col].sum().values
+            feature_df[exposure_col] = 1
         elif feature_type == 'NUMERIC':
             unique_vals = copy_test_df[feature].nunique(dropna=True)
             if unique_vals > max_modalities:
