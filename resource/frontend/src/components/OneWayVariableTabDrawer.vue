@@ -135,8 +135,8 @@ export default defineComponent({
     },
     methods: {
         async onPrimaryModelChange(value: string) {
-            this.store.resetState();
-            this.oneWayStore.resetState();
+            this.store.$reset();
+            this.oneWayStore.$reset();
             this.store.setActiveModel(value);
             this.oneWayStore.fetchVariablesForModel(value);
             this.liftChartStore.resetChart();

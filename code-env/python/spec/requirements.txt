@@ -1,5 +1,3 @@
-dash==2.14.2
-dash_bootstrap_components
 scipy==1.11.4; python_version=='3.9'
 scipy==1.10.1; python_version=='3.8'
 scipy==1.7.3; python_version=='3.7'

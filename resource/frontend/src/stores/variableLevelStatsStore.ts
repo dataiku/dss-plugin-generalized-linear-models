@@ -26,9 +26,6 @@ export const useVariableLevelStatsStore = defineStore("variableLevelStats", {
     }),
 
     actions: {
-        resetState() {
-            this.$reset();
-        },
         
         handleError(error: any) {
             const errorMessage = error.message || "An unknown error occurred in the Variable Stats feature.";
