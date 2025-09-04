@@ -72,6 +72,7 @@ import { useVariableLevelStatsStore } from "./stores/variableLevelStatsStore"
 
 import { useLoader } from "./composables/use-loader";
 import { useTrainingStore } from './stores/training';
+import { WT1iser } from './utilities/utils';
 
 export default defineComponent({
     components: {
@@ -229,6 +230,7 @@ export default defineComponent({
     },
     methods: {
         goToTab(index: number) {
+            WT1iser.tabChange({ tabIndex: index });
             const layout = this.$refs.layout as InstanceType<
                 typeof BsLayoutDefault
             >;
