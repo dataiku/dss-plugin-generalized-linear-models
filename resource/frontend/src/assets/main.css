@@ -1,9 +1,6 @@
 @import './base.css';
 
 #app {
-  /* max-width: 1280px; */
-  
-
   font-weight: normal;
 }
 
@@ -24,4 +21,3 @@ a,
   opacity: 0.5;
 }
 }
-

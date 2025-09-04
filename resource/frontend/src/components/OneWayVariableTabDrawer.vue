@@ -145,8 +145,10 @@ export default defineComponent({
             this.oneWayStore.setComparisonModel(value);
             if (this.oneWayStore.formOptions.selectedVariable) {
                 await this.oneWayStore.selectVariable(this.oneWayStore.formOptions.selectedVariable);
+            }
+            if (value === null) {
                 if (this.oneWayStore.comparisonChartData.length == 0) {
-                    await this.oneWayStore.processAndFilterData();
+                    this.oneWayStore.processAndFilterData();
                 }
             }
         },

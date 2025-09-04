@@ -122,7 +122,6 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
         setComparisonModel(comparisonModel: string | null) {
             if (!comparisonModel) {
                 this.formOptions.comparisonModel = "";
-                // this.createChart();
                 this.processAndFilterData();
             } else {
                 this.formOptions.comparisonModel = comparisonModel;
