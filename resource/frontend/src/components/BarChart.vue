@@ -6,7 +6,7 @@
       :init-options="{
           renderer: 'canvas',
       }"
-      style="height: 400px; width: 100%; min-width: 500px"
+      style="height: 400px; width: 100%; min-width: 600px"
     />
   </template>
   
