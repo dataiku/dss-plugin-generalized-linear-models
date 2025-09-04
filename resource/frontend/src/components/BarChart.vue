@@ -214,12 +214,12 @@ export default {
 
       // 5. Define the final chart option object, with legend only for present series.
       this.chartOption = {
-          xAxis: [{
-              type: this.xaxisType==="categorical" ? "category" : null,
-              data: sortedXaxisLabels, // Use sorted labels
-              axisLabel: {'interval': 0, 'rotate': 45 },
-              axisLine: { onZero: false},
-          }],
+      xAxis: [{
+        type: "category",
+        data: sortedXaxisLabels, // Use sorted labels
+        axisLabel: {'interval': 0, 'rotate': 45 },
+        axisLine: { onZero: false},
+      }],
           yAxis: [
               {
                   type: "value",
