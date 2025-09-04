@@ -285,7 +285,6 @@ export default {
     },
     levelOrder: {
         handler() {
-            console.log("change level order");
             this.createChartData();
         }
     }

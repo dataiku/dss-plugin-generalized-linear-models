@@ -46,7 +46,6 @@ export const useAnalysisStore = defineStore("AnalysisStore", {
                     API.getDatasets(),
                 ]);
                 this.mlTasks = mlTasks.data
-                console.log(this.mlTasks);
                 this.datasets = datasets.data.map(item => item.name);
             } catch (error) {
                 console.error("Failed to fetch initial data:", error);
