@@ -3,7 +3,7 @@ import { API } from "../Api";
 import { useNotification } from "../composables/use-notification";
 import type { ModelPoint, ModelMetricsDataPoint, BaseValue, RelativityPoint, ModelInfo } from '../models';
 import { useAnalysisStore } from "./analysisStore";
-import { WT1iser, WT1EventActions } from '../utilities/utils';
+import { WT1iser } from '../utilities/utils';
 
 export const useModelStore = defineStore("ModelStore", {
     state: () => ({
@@ -70,7 +70,7 @@ export const useModelStore = defineStore("ModelStore", {
                 return;
             }
             this.activeModel = model;
-            WT1iser.action(WT1EventActions.SELECT_MODEL, 'Model');
+            WT1iser.selectModel();
             this.isLoading = true;
             try {
                 // Fetch only the data directly related to this model.
@@ -142,7 +142,7 @@ export const useModelStore = defineStore("ModelStore", {
         async deployModel(model: ModelInfo) {
             try {
                 const response = await API.deployModel(model);
-                WT1iser.action(WT1EventActions.DEPLOY_MODEL, 'Model');
+                WT1iser.deployModel();
                 if (response.status == 200) {
                     this.notifyInfo("Model deployed.");
                 } else {
@@ -168,7 +168,7 @@ export const useModelStore = defineStore("ModelStore", {
             this.isLoading = true;
             try {
                 const response = await API.deleteModel(model);
-                WT1iser.action(WT1EventActions.DELETE_MODEL, 'Model');
+                WT1iser.deleteModel();
             } catch (error) {
                 this.handleError(error);
             }

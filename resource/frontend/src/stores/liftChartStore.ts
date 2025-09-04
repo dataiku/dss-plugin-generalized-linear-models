@@ -3,7 +3,7 @@ import { API } from "../Api";
 import { useNotification } from "../composables/use-notification";
 import { useModelStore } from "./webapp";
 import type { LiftDataPoint, ModelPoint } from '../models';
-import { WT1iser, WT1EventActions } from '../utilities/utils';
+import { WT1iser } from '../utilities/utils';
 
 export const useLiftChartStore = defineStore("liftChart", {
     state: () => ({
@@ -62,7 +62,7 @@ export const useLiftChartStore = defineStore("liftChart", {
                 const modelNbBins = { nbBins: this.chartOptions.nbBins, id: model.id, name: model.name, trainTest: this.chartOptions.trainTest};
                 const response = await API.getLiftData(modelNbBins);
                 this.liftChartData = response.data;
-                WT1iser.action(WT1EventActions.CREATE_LIFT_CHART, 'Lift Chart', {
+                WT1iser.createLiftChart({
                     nbBins: this.chartOptions.nbBins,
                     trainTest: this.chartOptions.trainTest
                 });
@@ -91,10 +91,7 @@ export const useLiftChartStore = defineStore("liftChart", {
                 const modelNbBins = { nbBins: this.chartOptions.nbBins, id: model.id, name: model.name, trainTest: this.chartOptions.trainTest};
                 const response = await API.exportLiftChart(modelNbBins);
                 this._triggerDownload(response.data, `lift_chart_${store.activeModel.name}.csv`);
-                WT1iser.action(WT1EventActions.DOWNLOAD_LIFT_CHART, 'Lift Chart', {
-                    nbBins: this.chartOptions.nbBins,
-                    trainTest: this.chartOptions.trainTest
-                });
+                WT1iser.downloadLiftChart();
             } catch (error) {
                 this.handleError(error);
             }

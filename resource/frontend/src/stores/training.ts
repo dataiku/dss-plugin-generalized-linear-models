@@ -10,7 +10,7 @@ import type { ColumnInput, Interaction, Column, APIResponse } from "../models";
 import { AxiosError, isAxiosError } from "axios";
 import { useModelStore } from "./webapp";
 import { useAnalysisStore } from "./analysisStore";
-import { WT1iser, WT1EventActions } from '../utilities/utils';
+import { WT1iser } from '../utilities/utils';
 
 type UpdatableProperties = 'selectedDatasetString' | 'selectedDistributionFunctionString' | 'selectedLinkFunctionString';
 
@@ -338,7 +338,7 @@ export const useTrainingStore = defineStore("TrainingStore", {
                 } finally {
                     this.isLoading = false;
                 }
-                WT1iser.action(WT1EventActions.LOAD_PREVIOUS_MODEL, 'Training');
+                WT1iser.loadPreviousModel();
 
         } 
         else {
@@ -413,7 +413,7 @@ export const useTrainingStore = defineStore("TrainingStore", {
         try {
             console.log("Payload:", payload);
             const modelUID = await API.trainModel(payload);
-            WT1iser.action(WT1EventActions.TRAIN_MODEL, 'Training', {
+            WT1iser.trainModel({
                 distribution: this.selectedDistributionFunctionString,
                 link: this.selectedLinkFunctionString,
                 elasticNetPenalty: this.selectedElasticNetPenalty,
