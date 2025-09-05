@@ -73,12 +73,7 @@ export default defineComponent({
     },
     methods: {
       async deployModel() {
-        const model = this.store.getModelByName(this.liftChartStore.formOptions.model);
-        if (model) {
-          this.store.deployModel(model);
-        } else {
-          console.error("Model name does not exists in list.");
-        }
+        this.store.deployActiveModel();
       },
       async exportLiftChart() {
         this.liftChartStore.exportLiftChart();
