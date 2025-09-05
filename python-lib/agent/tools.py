@@ -1,20 +1,22 @@
+
+from typing import Any, Dict, List, Optional, Union
 from backend.services import DataikuDataService
 
 service = DataikuDataService()
 
 def train_model(
-	ml_task_id,
-	analysis_id,
-	targetColumn=None,
-	exposureColumn=None,
-	splitPolicy=None,
-	trainSet=None,
-	analysisName=None,
-	testSet=None,
-	model_parameters=None,
-	variables=None,
-	interaction_variables=None
-):
+	ml_task_id: str,
+	analysis_id: str,
+	targetColumn: Optional[str] = None,
+	exposureColumn: Optional[str] = None,
+	splitPolicy: Optional[str] = None,
+	trainSet: Optional[str] = None,
+	analysisName: Optional[str] = None,
+	testSet: Optional[str] = None,
+	model_parameters: Optional[Dict[str, Any]] = None,
+	variables: Optional[Dict[str, Any]] = None,
+	interaction_variables: Optional[List[Any]] = None
+) -> Dict[str, Any]:
 	"""
 	Train a model using the DataikuDataService.
 	Args:
@@ -52,7 +54,7 @@ def train_model(
 		request_json['interaction_variables'] = interaction_variables
 	return service.train_model(request_json)
 
-def deploy_model(id, input_dataset, experiment_name):
+def deploy_model(id: str, input_dataset: str, experiment_name: str) -> Dict[str, Any]:
 	"""
 	Deploy a model using the DataikuDataService.
 	Args:
@@ -65,7 +67,7 @@ def deploy_model(id, input_dataset, experiment_name):
 	request_json = dict(id=id, input_dataset=input_dataset, experiment_name=experiment_name)
 	return service.deploy_model(request_json)
 
-def delete_model(id, input_dataset, experiment_name):
+def delete_model(id: str, input_dataset: str, experiment_name: str) -> Dict[str, Any]:
 	"""
 	Delete a model using the DataikuDataService.
 	Args:
@@ -78,7 +80,7 @@ def delete_model(id, input_dataset, experiment_name):
 	request_json = dict(id=id, input_dataset=input_dataset, experiment_name=experiment_name)
 	return service.delete_model(request_json)
 
-def get_latest_mltask_params(id):
+def get_latest_mltask_params(id: str) -> Dict[str, Any]:
 	"""
 	Get the latest ML task parameters for a model.
 	Args:
@@ -89,7 +91,7 @@ def get_latest_mltask_params(id):
 	request_json = dict(id=id)
 	return service.get_latest_mltask_params(request_json)
 
-def get_variables(id):
+def get_variables(id: str) -> List[Any]:
 	"""
 	Get variables used in a model.
 	Args:
@@ -100,7 +102,7 @@ def get_variables(id):
 	request_json = dict(id=id)
 	return service.get_variables(request_json)
 
-def get_models(mlTaskId, analysisId):
+def get_models(mlTaskId: str, analysisId: str) -> List[Any]:
 	"""
 	Get all models for a given ML task and analysis.
 	Args:
@@ -112,7 +114,7 @@ def get_models(mlTaskId, analysisId):
 	request_json = dict(mlTaskId=mlTaskId, analysisId=analysisId)
 	return service.get_models(request_json)
 
-def get_predicted_base(id, trainTest, variable):
+def get_predicted_base(id: str, trainTest: bool, variable: str) -> List[Any]:
 	"""
 	Get predicted base values for a variable in a model.
 	Args:
@@ -125,7 +127,7 @@ def get_predicted_base(id, trainTest, variable):
 	request_json = dict(id=id, trainTest=trainTest, variable=variable)
 	return service.get_predicted_base(request_json)
 
-def get_base_values(id):
+def get_base_values(id: str) -> List[Any]:
 	"""
 	Get base values for a model.
 	Args:
@@ -136,7 +138,7 @@ def get_base_values(id):
 	request_json = dict(id=id)
 	return service.get_base_values(request_json)
 
-def get_lift_data(id, nbBins, trainTest):
+def get_lift_data(id: str, nbBins: int, trainTest: bool) -> List[Any]:
 	"""
 	Get lift chart data for a model.
 	Args:
@@ -149,7 +151,7 @@ def get_lift_data(id, nbBins, trainTest):
 	request_json = dict(id=id, nbBins=nbBins, trainTest=trainTest)
 	return service.get_lift_data(request_json)
 
-def get_relativities(id):
+def get_relativities(id: str) -> List[Any]:
 	"""
 	Get relativities for a model.
 	Args:
@@ -160,7 +162,7 @@ def get_relativities(id):
 	request_json = dict(id=id)
 	return service.get_relativities(request_json)
 
-def get_variable_level_stats(id):
+def get_variable_level_stats(id: str) -> List[Any]:
 	"""
 	Get variable level statistics for a model.
 	Args:
@@ -171,7 +173,7 @@ def get_variable_level_stats(id):
 	request_json = dict(id=id)
 	return service.get_variable_level_stats(request_json)
 
-def get_model_metrics(id):
+def get_model_metrics(id: str) -> Dict[str, Any]:
 	"""
 	Get model metrics (AIC, BIC, Deviance) for a model.
 	Args:
@@ -182,7 +184,7 @@ def get_model_metrics(id):
 	request_json = dict(id=id)
 	return service.get_model_metrics(request_json)
 
-def export_model(id):
+def export_model(id: str) -> bytes:
 	"""
 	Export a model as CSV.
 	Args:
@@ -193,7 +195,7 @@ def export_model(id):
 	request_json = dict(id=id)
 	return service.export_model(request_json)
 
-def export_variable_level_stats(id):
+def export_variable_level_stats(id: str) -> bytes:
 	"""
 	Export variable level stats as CSV.
 	Args:
@@ -204,7 +206,7 @@ def export_variable_level_stats(id):
 	request_json = dict(id=id)
 	return service.export_variable_level_stats(request_json)
 
-def export_lift_chart(id, nbBins, trainTest):
+def export_lift_chart(id: str, nbBins: int, trainTest: bool) -> bytes:
 	"""
 	Export lift chart as CSV.
 	Args:
@@ -217,7 +219,7 @@ def export_lift_chart(id, nbBins, trainTest):
 	request_json = dict(id=id, nbBins=nbBins, trainTest=trainTest)
 	return service.export_lift_chart(request_json)
 
-def export_one_way(id, variable, trainTest, rescale):
+def export_one_way(id: str, variable: str, trainTest: bool, rescale: str) -> bytes:
 	"""
 	Export one-way chart as CSV.
 	Args:
@@ -231,7 +233,7 @@ def export_one_way(id, variable, trainTest, rescale):
 	request_json = dict(id=id, variable=variable, trainTest=trainTest, rescale=rescale)
 	return service.export_one_way(request_json)
 
-def get_dataset_columns(dataset, exposure):
+def get_dataset_columns(dataset: str, exposure: str) -> List[Any]:
 	"""
 	Get dataset columns and base levels.
 	Args:
@@ -243,7 +245,7 @@ def get_dataset_columns(dataset, exposure):
 	request_json = dict(dataset=dataset, exposure=exposure)
 	return service.get_dataset_columns(request_json)
 
-def get_project():
+def get_project() -> Dict[str, Any]:
 	"""
 	Get the current project key.
 	Returns:
@@ -251,7 +253,7 @@ def get_project():
 	"""
 	return service.get_project()
 
-def get_ml_tasks():
+def get_ml_tasks() -> List[Any]:
 	"""
 	Get all ML tasks in the project.
 	Returns:
@@ -259,7 +261,7 @@ def get_ml_tasks():
 	"""
 	return service.get_ml_tasks()
 
-def get_datasets():
+def get_datasets() -> List[Any]:
 	"""
 	Get all datasets in the project.
 	Returns:
@@ -269,15 +271,15 @@ def get_datasets():
 
 
 def create_ml_task(
-	targetColumn=None,
-	exposureColumn=None,
-	splitPolicy=None,
-	trainSet=None,
-	analysisName=None,
-	testSet=None,
-	variables=None,
-	interaction_variables=None
-):
+	targetColumn: Optional[str] = None,
+	exposureColumn: Optional[str] = None,
+	splitPolicy: Optional[str] = None,
+	trainSet: Optional[str] = None,
+	analysisName: Optional[str] = None,
+	testSet: Optional[str] = None,
+	variables: Optional[Dict[str, Any]] = None,
+	interaction_variables: Optional[List[Any]] = None
+) -> Dict[str, Any]:
 	"""
 	Create a new ML task using splitPolicy-related parameters.
 	Args:
@@ -311,7 +313,7 @@ def create_ml_task(
 		request_json['interaction_variables'] = interaction_variables
 	return service.create_ml_task(request_json)
 
-def get_variables_for_dataset(name):
+def get_variables_for_dataset(name: str) -> List[Any]:
 	"""
 	Get variables for a given dataset.
 	Args:
