@@ -56,8 +56,9 @@ class DataikuClientProject:
         ml_tasks = self.project.list_ml_tasks()
         ml_tasks_formatted = []
         for ml_task_config in ml_tasks['mlTasks']:
-            ml_task_formatted = self.format_ml_task(ml_task_config)
-            ml_tasks_formatted.append(ml_task_formatted)
+            if ml_task_config['taskType'] == 'PREDICTION':
+                ml_task_formatted = self.format_ml_task(ml_task_config)
+                ml_tasks_formatted.append(ml_task_formatted)
         return ml_tasks_formatted
     
     def get_ml_task_config(self, ml_task_id):
