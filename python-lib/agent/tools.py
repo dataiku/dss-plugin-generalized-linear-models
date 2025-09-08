@@ -30,29 +30,32 @@ def train_model(
 	Returns:
 		Service response dict.
 	"""
-	request_json = dict(
-		ml_task_id=ml_task_id,
-		analysis_id=analysis_id,
-	)
-	if targetColumn is not None:
-		request_json['targetColumn'] = targetColumn
-	if exposureColumn is not None:
-		request_json['exposureColumn'] = exposureColumn
-	if splitPolicy is not None:
-		request_json['splitPolicy'] = splitPolicy
-	if trainSet is not None:
-		request_json['trainSet'] = trainSet
-	if analysisName is not None:
-		request_json['analysisName'] = analysisName
-	if testSet is not None:
-		request_json['testSet'] = testSet
-	if model_parameters is not None:
-		request_json['model_parameters'] = model_parameters
-	if variables is not None:
-		request_json['variables'] = variables
-	if interaction_variables is not None:
-		request_json['interaction_variables'] = interaction_variables
-	return service.train_model(request_json)
+	try:
+		request_json = dict(
+			ml_task_id=ml_task_id,
+			analysis_id=analysis_id,
+		)
+		if targetColumn is not None:
+			request_json['targetColumn'] = targetColumn
+		if exposureColumn is not None:
+			request_json['exposureColumn'] = exposureColumn
+		if splitPolicy is not None:
+			request_json['splitPolicy'] = splitPolicy
+		if trainSet is not None:
+			request_json['trainSet'] = trainSet
+		if analysisName is not None:
+			request_json['analysisName'] = analysisName
+		if testSet is not None:
+			request_json['testSet'] = testSet
+		if model_parameters is not None:
+			request_json['model_parameters'] = model_parameters
+		if variables is not None:
+			request_json['variables'] = variables
+		if interaction_variables is not None:
+			request_json['interaction_variables'] = interaction_variables
+		return service.train_model(request_json)
+	except Exception as e:
+		return {'error': str(e)}
 
 def deploy_model(id: str, input_dataset: str, experiment_name: str) -> Dict[str, Any]:
 	"""
@@ -64,8 +67,11 @@ def deploy_model(id: str, input_dataset: str, experiment_name: str) -> Dict[str,
 	Returns:
 		Service response dict.
 	"""
-	request_json = dict(id=id, input_dataset=input_dataset, experiment_name=experiment_name)
-	return service.deploy_model(request_json)
+	try:
+		request_json = dict(id=id, input_dataset=input_dataset, experiment_name=experiment_name)
+		return service.deploy_model(request_json)
+	except Exception as e:
+		return {'error': str(e)}
 
 def delete_model(id: str, input_dataset: str, experiment_name: str) -> Dict[str, Any]:
 	"""
@@ -77,8 +83,11 @@ def delete_model(id: str, input_dataset: str, experiment_name: str) -> Dict[str,
 	Returns:
 		Service response dict.
 	"""
-	request_json = dict(id=id, input_dataset=input_dataset, experiment_name=experiment_name)
-	return service.delete_model(request_json)
+	try:
+		request_json = dict(id=id, input_dataset=input_dataset, experiment_name=experiment_name)
+		return service.delete_model(request_json)
+	except Exception as e:
+		return {'error': str(e)}
 
 def get_latest_mltask_params(id: str) -> Dict[str, Any]:
 	"""
@@ -88,8 +97,11 @@ def get_latest_mltask_params(id: str) -> Dict[str, Any]:
 	Returns:
 		Setup parameters dict.
 	"""
-	request_json = dict(id=id)
-	return service.get_latest_mltask_params(request_json)
+	try:
+		request_json = dict(id=id)
+		return service.get_latest_mltask_params(request_json)
+	except Exception as e:
+		return {'error': str(e)}
 
 def get_variables(id: str) -> List[Any]:
 	"""
@@ -99,8 +111,11 @@ def get_variables(id: str) -> List[Any]:
 	Returns:
 		List of variables.
 	"""
-	request_json = dict(id=id)
-	return service.get_variables(request_json)
+	try:
+		request_json = dict(id=id)
+		return service.get_variables(request_json)
+	except Exception as e:
+		return {'error': str(e)}
 
 def get_models(mlTaskId: str, analysisId: str) -> List[Any]:
 	"""
@@ -111,8 +126,11 @@ def get_models(mlTaskId: str, analysisId: str) -> List[Any]:
 	Returns:
 		List of models.
 	"""
-	request_json = dict(mlTaskId=mlTaskId, analysisId=analysisId)
-	return service.get_models(request_json)
+	try:
+		request_json = dict(mlTaskId=mlTaskId, analysisId=analysisId)
+		return service.get_models(request_json)
+	except Exception as e:
+		return {'error': str(e)}
 
 def get_predicted_base(id: str, trainTest: bool, variable: str) -> List[Any]:
 	"""
@@ -124,8 +142,11 @@ def get_predicted_base(id: str, trainTest: bool, variable: str) -> List[Any]:
 	Returns:
 		List of predicted base values.
 	"""
-	request_json = dict(id=id, trainTest=trainTest, variable=variable)
-	return service.get_predicted_base(request_json)
+	try:
+		request_json = dict(id=id, trainTest=trainTest, variable=variable)
+		return service.get_predicted_base(request_json)
+	except Exception as e:
+		return {'error': str(e)}
 
 def get_base_values(id: str) -> List[Any]:
 	"""
@@ -135,8 +156,11 @@ def get_base_values(id: str) -> List[Any]:
 	Returns:
 		List of base values.
 	"""
-	request_json = dict(id=id)
-	return service.get_base_values(request_json)
+	try:
+		request_json = dict(id=id)
+		return service.get_base_values(request_json)
+	except Exception as e:
+		return {'error': str(e)}
 
 def get_lift_data(id: str, nbBins: int, trainTest: bool) -> List[Any]:
 	"""
@@ -148,8 +172,11 @@ def get_lift_data(id: str, nbBins: int, trainTest: bool) -> List[Any]:
 	Returns:
 		List of lift chart data.
 	"""
-	request_json = dict(id=id, nbBins=nbBins, trainTest=trainTest)
-	return service.get_lift_data(request_json)
+	try:
+		request_json = dict(id=id, nbBins=nbBins, trainTest=trainTest)
+		return service.get_lift_data(request_json)
+	except Exception as e:
+		return {'error': str(e)}
 
 def get_relativities(id: str) -> List[Any]:
 	"""
@@ -159,8 +186,11 @@ def get_relativities(id: str) -> List[Any]:
 	Returns:
 		List of relativities.
 	"""
-	request_json = dict(id=id)
-	return service.get_relativities(request_json)
+	try:
+		request_json = dict(id=id)
+		return service.get_relativities(request_json)
+	except Exception as e:
+		return {'error': str(e)}
 
 def get_variable_level_stats(id: str) -> List[Any]:
 	"""
@@ -170,8 +200,11 @@ def get_variable_level_stats(id: str) -> List[Any]:
 	Returns:
 		List of variable level stats.
 	"""
-	request_json = dict(id=id)
-	return service.get_variable_level_stats(request_json)
+	try:
+		request_json = dict(id=id)
+		return service.get_variable_level_stats(request_json)
+	except Exception as e:
+		return {'error': str(e)}
 
 def get_model_metrics(id: str) -> Dict[str, Any]:
 	"""
@@ -181,8 +214,11 @@ def get_model_metrics(id: str) -> Dict[str, Any]:
 	Returns:
 		Dict of metrics.
 	"""
-	request_json = dict(id=id)
-	return service.get_model_metrics(request_json)
+	try:
+		request_json = dict(id=id)
+		return service.get_model_metrics(request_json)
+	except Exception as e:
+		return {'error': str(e)}
 
 def export_model(id: str) -> bytes:
 	"""
@@ -192,8 +228,11 @@ def export_model(id: str) -> bytes:
 	Returns:
 		CSV bytes.
 	"""
-	request_json = dict(id=id)
-	return service.export_model(request_json)
+	try:
+		request_json = dict(id=id)
+		return service.export_model(request_json)
+	except Exception as e:
+		return {'error': str(e)}
 
 def export_variable_level_stats(id: str) -> bytes:
 	"""
@@ -203,8 +242,11 @@ def export_variable_level_stats(id: str) -> bytes:
 	Returns:
 		CSV bytes.
 	"""
-	request_json = dict(id=id)
-	return service.export_variable_level_stats(request_json)
+	try:
+		request_json = dict(id=id)
+		return service.export_variable_level_stats(request_json)
+	except Exception as e:
+		return {'error': str(e)}
 
 def export_lift_chart(id: str, nbBins: int, trainTest: bool) -> bytes:
 	"""
@@ -216,8 +258,11 @@ def export_lift_chart(id: str, nbBins: int, trainTest: bool) -> bytes:
 	Returns:
 		CSV bytes.
 	"""
-	request_json = dict(id=id, nbBins=nbBins, trainTest=trainTest)
-	return service.export_lift_chart(request_json)
+	try:
+		request_json = dict(id=id, nbBins=nbBins, trainTest=trainTest)
+		return service.export_lift_chart(request_json)
+	except Exception as e:
+		return {'error': str(e)}
 
 def export_one_way(id: str, variable: str, trainTest: bool, rescale: str) -> bytes:
 	"""
@@ -230,8 +275,11 @@ def export_one_way(id: str, variable: str, trainTest: bool, rescale: str) -> byt
 	Returns:
 		CSV bytes.
 	"""
-	request_json = dict(id=id, variable=variable, trainTest=trainTest, rescale=rescale)
-	return service.export_one_way(request_json)
+	try:
+		request_json = dict(id=id, variable=variable, trainTest=trainTest, rescale=rescale)
+		return service.export_one_way(request_json)
+	except Exception as e:
+		return {'error': str(e)}
 
 def get_dataset_columns(dataset: str, exposure: str) -> List[Any]:
 	"""
@@ -242,8 +290,11 @@ def get_dataset_columns(dataset: str, exposure: str) -> List[Any]:
 	Returns:
 		List of columns and base levels.
 	"""
-	request_json = dict(dataset=dataset, exposure=exposure)
-	return service.get_dataset_columns(request_json)
+	try:
+		request_json = dict(dataset=dataset, exposure=exposure)
+		return service.get_dataset_columns(request_json)
+	except Exception as e:
+		return {'error': str(e)}
 
 def get_project() -> Dict[str, Any]:
 	"""
@@ -251,7 +302,10 @@ def get_project() -> Dict[str, Any]:
 	Returns:
 		Dict with projectKey.
 	"""
-	return service.get_project()
+	try:
+		return service.get_project()
+	except Exception as e:
+		return {'error': str(e)}
 
 def get_ml_tasks() -> List[Any]:
 	"""
@@ -259,7 +313,10 @@ def get_ml_tasks() -> List[Any]:
 	Returns:
 		List of ML tasks.
 	"""
-	return service.get_ml_tasks()
+	try:
+		return service.get_ml_tasks()
+	except Exception as e:
+		return {'error': str(e)}
 
 def get_datasets() -> List[Any]:
 	"""
@@ -267,7 +324,10 @@ def get_datasets() -> List[Any]:
 	Returns:
 		List of datasets.
 	"""
-	return service.get_datasets()
+	try:
+		return service.get_datasets()
+	except Exception as e:
+		return {'error': str(e)}
 
 
 def create_ml_task(
@@ -294,24 +354,27 @@ def create_ml_task(
 	Returns:
 		Service response dict.
 	"""
-	request_json = {}
-	if targetColumn is not None:
-		request_json['targetColumn'] = targetColumn
-	if exposureColumn is not None:
-		request_json['exposureColumn'] = exposureColumn
-	if splitPolicy is not None:
-		request_json['splitPolicy'] = splitPolicy
-	if trainSet is not None:
-		request_json['trainSet'] = trainSet
-	if analysisName is not None:
-		request_json['analysisName'] = analysisName
-	if testSet is not None:
-		request_json['testSet'] = testSet
-	if variables is not None:
-		request_json['variables'] = variables
-	if interaction_variables is not None:
-		request_json['interaction_variables'] = interaction_variables
-	return service.create_ml_task(request_json)
+	try:
+		request_json = {}
+		if targetColumn is not None:
+			request_json['targetColumn'] = targetColumn
+		if exposureColumn is not None:
+			request_json['exposureColumn'] = exposureColumn
+		if splitPolicy is not None:
+			request_json['splitPolicy'] = splitPolicy
+		if trainSet is not None:
+			request_json['trainSet'] = trainSet
+		if analysisName is not None:
+			request_json['analysisName'] = analysisName
+		if testSet is not None:
+			request_json['testSet'] = testSet
+		if variables is not None:
+			request_json['variables'] = variables
+		if interaction_variables is not None:
+			request_json['interaction_variables'] = interaction_variables
+		return service.create_ml_task(request_json)
+	except Exception as e:
+		return {'error': str(e)}
 
 def get_variables_for_dataset(name: str) -> List[Any]:
 	"""
@@ -321,5 +384,8 @@ def get_variables_for_dataset(name: str) -> List[Any]:
 	Returns:
 		List of variables.
 	"""
-	request_json = dict(name=name)
-	return service.get_variables_for_dataset(request_json)
+	try:
+		request_json = dict(name=name)
+		return service.get_variables_for_dataset(request_json)
+	except Exception as e:
+		return {'error': str(e)}
