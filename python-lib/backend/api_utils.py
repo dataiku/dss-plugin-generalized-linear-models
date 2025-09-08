@@ -1,5 +1,4 @@
 import re
-from flask import current_app
 from logging_assist.logging import logger
 from model_cache.model_conformity_checker import ModelConformityChecker
 from .dataiku_api import dataiku_api
@@ -27,14 +26,8 @@ def format_models(global_dku_mltask):
             date = [v['value'] for v in model_details.get_user_meta()['labels'] if v['key'] == 'model:date'][0]
             models.append({"id": ml_id, "name": matches[0], "date": date, "project_key": project_key, "ml_task_id": ml_task_id, "analysis_id": analysis_id})
         else:
-            current_app.logger.info(f"model {ml_id} is not conform")
+            logger.info(f"model {ml_id} is not conform")
     return models
-
-def np_encode(obj):
-    if isinstance(obj, np.int64):
-        return int(obj)
-    return obj
-
 
 def natural_sort_key(s):
     import re
