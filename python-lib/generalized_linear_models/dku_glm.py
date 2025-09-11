@@ -114,12 +114,10 @@ class BaseGLM(BaseEstimator, ClassifierMixin):
             return 'identity'
         elif user_link == 'cauchy':
             return link.Cauchy()
-        elif user_link == 'negative_binomial':
-            return link.NegativeBinomial()
         elif user_link == 'power':
-            return link.Power()
+            return link.Power(self.power)
         elif user_link == 'inverse_power':
-            return link.InversePower()
+            return link.InversePower(self.power)
         elif user_link == 'inverse_squared':
             return link.InverseSquared()
         else:
@@ -166,15 +164,16 @@ class BaseGLM(BaseEstimator, ClassifierMixin):
             return InverseGaussianDistribution()
 
         elif self.family_name == "negative_binomial":
-            return NegativeBinomialDistribution()
+            return NegativeBinomialDistribution(self.alpha)
 
         elif self.family_name == "poisson":
             return PoissonDistribution()
 
         elif self.family_name == "tweedie":
-            return TweedieDistribution()
+            return TweedieDistribution(self.var_power)
         else:
             raise ValueError("Unsupported family")
+        
     def assign_family_glum_class(self):
         self.family_glum_class = self.get_family_glumn_class()
 
