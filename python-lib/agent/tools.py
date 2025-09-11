@@ -24,7 +24,7 @@ def train_model(
 		analysis_id: The analysis ID.
 		targetColumn: Target column name.
 		exposureColumn: Exposure column name.
-		model_parameters: Dict of model parameters "distribution_function" ("Gamma", "Gaussian", "Inverse Gaussian", "Poisson", "Negative Binomial", "Tweedie"), "link_function" (), "elastic_net_penalty", "l1_ratio", "model_name_string", "theta", "power" (when using the power link), "variance_power" (when using the Tweedie distribution).
+		model_parameters: Dict of model parameters "distribution_function" ("Gamma", "Gaussian", "Inverse Gaussian", "Poisson", "Negative Binomial", "Tweedie"), "link_function" ("CLogLog", "Log", "Logit", "Cauchy", "Identity", "Power", "Inverse Power", "Inverse Squared"), "elastic_net_penalty", "l1_ratio", "model_name_string", "theta", "power" (when using the power link), "variance_power" (when using the Tweedie distribution).
 		variables: Dict of variables.
 		interaction_variables: (optional) List of interaction variables.
 	Returns:
