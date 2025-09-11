@@ -3,7 +3,7 @@ from logging_assist.logging import logger
 
 class DKUVisualMLConfig:
     
-    def __init__(self):#, analysis_name=None, input_dataset=None, policy=None, test_dataset=None, target_column=None, exposure_column=None):
+    def __init__(self):
         
         logger.debug("Initalising a dku visual ML config with the existing web app settings")
         

@@ -7,25 +7,25 @@ service = DataikuDataService()
 def train_model(
 	ml_task_id: str,
 	analysis_id: str,
-	targetColumn: Optional[str] = None,
-	exposureColumn: Optional[str] = None,
-	splitPolicy: Optional[str] = None,
-	trainSet: Optional[str] = None,
-	analysisName: Optional[str] = None,
+	targetColumn: str,
+	exposureColumn: str,
+	splitPolicy: str,
+	trainSet: str,
+	analysisName: str,
+	model_parameters: Dict[str, Any],
+	variables: Dict[str, Any],
+	interaction_variables: Optional[List[Any]] = None,
 	testSet: Optional[str] = None,
-	model_parameters: Optional[Dict[str, Any]] = None,
-	variables: Optional[Dict[str, Any]] = None,
-	interaction_variables: Optional[List[Any]] = None
 ) -> Dict[str, Any]:
 	"""
 	Train a model using the DataikuDataService.
 	Args:
 		ml_task_id: The ML task ID.
 		analysis_id: The analysis ID.
-		targetColumn: (optional) Target column name.
-		exposureColumn: (optional) Exposure column name.
-		model_parameters: (optional) Dict of model parameters (distribution_function, link_function, etc).
-		variables: (optional) Dict of variables.
+		targetColumn: Target column name.
+		exposureColumn: Exposure column name.
+		model_parameters: Dict of model parameters "distribution_function" ("Gamma", "Gaussian", "Inverse Gaussian", "Poisson", "Negative Binomial", "Tweedie"), "link_function" (), "elastic_net_penalty", "l1_ratio", "model_name_string", "theta", "power" (when using the power link), "variance_power" (when using the Tweedie distribution).
+		variables: Dict of variables.
 		interaction_variables: (optional) List of interaction variables.
 	Returns:
 		Service response dict.
