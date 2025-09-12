@@ -88,6 +88,11 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
                     await this.selectVariable(this.formOptions.selectedVariable);
                 }
             }
+            if (this.chartOptions.selectedVariable?.variable !== this.formOptions.selectedVariable?.variable) {
+                if (this.formOptions.selectedVariable) {
+                    await this.selectVariable(this.formOptions.selectedVariable);
+                }
+            }
             this.applyForm();
             this.processAndFilterData();
             WT1iser.createOneWayChart({
@@ -152,7 +157,8 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
             const store = useModelStore();
             let foundVariable = this.availableVariables.find(v => v === variableName);
             if (foundVariable) {
-                this.formOptions.selectedVariable = foundVariable
+                // this.formOptions.selectedVariable = foundVariable
+                this.formOptions.selectedVariable = { ...foundVariable };
             }
             if (!this.formOptions.selectedVariable || !store.activeModel?.id) {
                 this.primaryChartData = [];
@@ -188,7 +194,6 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
         },
         
         processAndFilterData() {
-            console.log('process and filter data')
             const store = useModelStore();
             let filteredPrimary = this.primaryModelRawData;
             if (this.chartOptions.chartRescaling == "Base level") {
@@ -213,7 +218,7 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
             }
                 this.comparisonChartData = filteredComparison;
             } else {
-                this.comparisonChartData = [];
+                this.comparisonChartData =  [];
             }
 
             if (this.chartOptions.selectedVariable?.isInModel) {
@@ -239,7 +244,6 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
                     return relativity;
                 });
             }
-            console.log('process and filter data done')
         },
 
         async exportOneWayChart() {
