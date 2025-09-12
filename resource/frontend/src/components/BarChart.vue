@@ -226,11 +226,15 @@ export default {
                   position: "left",
                   name: "value",
                   axisLine: { onZero: false, show: true },
-                  max: function(value: any) {
-                    return Math.round((value.max + (value.max-value.min)*0.1) * 100) / 100;
-                  },
                   min: function(value: any) {
-                    return Math.round((value.min - (value.max-value.min)*0.1) * 100) / 100;
+                    if (isNaN(value.min) || isNaN(value.max)) return 0;
+                    if (value.min === value.max) return value.min - 1; // avoid flat line
+                    return Math.floor((value.min - (value.max - value.min) * 0.1) * 100) / 100;
+                  },
+                  max: function(value: any) {
+                    if (isNaN(value.min) || isNaN(value.max)) return 1;
+                    if (value.min === value.max) return value.max + 1;
+                    return Math.ceil((value.max + (value.max - value.min) * 0.1) * 100) / 100;
                   },
               },
               {

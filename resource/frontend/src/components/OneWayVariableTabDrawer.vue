@@ -14,7 +14,7 @@
                     <BsSelect
                         v-if="store.activeModelName"
                         v-model="oneWayStore.formOptions.selectedVariable"
-                        :all-options="oneWayStore.variableOptions"
+                        :all-options="filteredVariableOptions"
                         @update:modelValue="onVariableChange"
                     >
                         <template v-slot:selected-item="scope">
@@ -23,7 +23,7 @@
                             </q-item>
                         </template>
                         <template #option="props">
-                            <q-item v-if="props.opt.isInModel || oneWayStore.includeSuspectVariables" v-bind="props.itemProps" clickable>
+                            <q-item v-bind="props.itemProps" clickable>
                                 <q-item-section side>
                                     <div v-if="props.opt.isInModel">selected</div>
                                     <div v-else>unselected</div>
@@ -111,6 +111,12 @@ export default defineComponent({
     computed: {
         trainTestValue() {
         return this.store.trainTest ? 'Train' : 'Test';
+        },
+        filteredVariableOptions() {
+            if (this.oneWayStore.includeSuspectVariables) {
+                return this.oneWayStore.variableOptions;
+            }
+            return this.oneWayStore.variableOptions.filter(opt => opt.isInModel);
         },
         isFormUnchanged() {
         const form = this.oneWayStore.formOptions;
