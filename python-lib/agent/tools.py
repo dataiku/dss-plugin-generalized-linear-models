@@ -13,7 +13,7 @@ def train_model(
 	trainSet: str,
 	analysisName: str,
 	model_parameters: Dict[str, Any],
-	variables: List[Dict[str, Any]],
+	variables: Dict[str, Any],
 	interaction_variables: Optional[List[Any]] = None,
 	testSet: Optional[str] = None,
 ) -> Dict[str, Any]:
@@ -26,7 +26,7 @@ def train_model(
 		targetColumn: Target column name.
 		exposureColumn: Exposure column name.
 		model_parameters: Dict of model parameters "distribution_function" ("Gamma", "Gaussian", "Inverse Gaussian", "Poisson", "Negative Binomial", "Tweedie"), "link_function" ("CLogLog", "Log", "Logit", "Cauchy", "Identity", "Power", "Inverse Power", "Inverse Squared"), "elastic_net_penalty", "l1_ratio", "model_name", "theta", "power" (when using the power link), "variance_power" (when using the Tweedie distribution).
-		variables: List of variable objects containing "name", "type" ("CATEGORY", "NUMERIC"), "role" ("REJECT", "INPUT", "Target", "Exposure"), included" (boolean).
+		variables: Dict of variable objects using the format {<variable_name>: {"type" ("CATEGORY", "NUMERIC"), "role" ("REJECT", "INPUT", "Target", "Exposure"), included" (boolean)}}.
 		interaction_variables: (optional) List of interaction variables.
 	Returns:
 		Service response dict.
