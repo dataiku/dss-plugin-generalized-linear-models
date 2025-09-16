@@ -13,7 +13,7 @@ def train_model(
 	trainSet: str,
 	analysisName: str,
 	model_parameters: Dict[str, Any],
-	variables: Dict[str, Any],
+	variables: List[Dict[str, Any]],
 	interaction_variables: Optional[List[Any]] = None,
 	testSet: Optional[str] = None,
 ) -> Dict[str, Any]:
@@ -31,32 +31,32 @@ def train_model(
 	Returns:
 		Service response dict.
 	"""
-	try:
-		request_json = dict(
-			ml_task_id=ml_task_id,
-			analysis_id=analysis_id,
-		)
-		if targetColumn is not None:
-			request_json['targetColumn'] = targetColumn
-		if exposureColumn is not None:
-			request_json['exposureColumn'] = exposureColumn
-		if splitPolicy is not None:
-			request_json['splitPolicy'] = splitPolicy
-		if trainSet is not None:
-			request_json['trainSet'] = trainSet
-		if analysisName is not None:
-			request_json['analysisName'] = analysisName
-		if testSet is not None:
-			request_json['testSet'] = testSet
-		if model_parameters is not None:
-			request_json['model_parameters'] = model_parameters
-		if variables is not None:
-			request_json['variables'] = variables
-		if interaction_variables is not None:
-			request_json['interaction_variables'] = interaction_variables
-		return service.train_model(request_json)
-	except Exception as e:
-		return {'error': str(e)}
+	# try:
+	request_json = dict(
+		ml_task_id=ml_task_id,
+		analysis_id=analysis_id,
+	)
+	if targetColumn is not None:
+		request_json['targetColumn'] = targetColumn
+	if exposureColumn is not None:
+		request_json['exposureColumn'] = exposureColumn
+	if splitPolicy is not None:
+		request_json['splitPolicy'] = splitPolicy
+	if trainSet is not None:
+		request_json['trainSet'] = trainSet
+	if analysisName is not None:
+		request_json['analysisName'] = analysisName
+	if testSet is not None:
+		request_json['testSet'] = testSet
+	if model_parameters is not None:
+		request_json['model_parameters'] = model_parameters
+	if variables is not None:
+		request_json['variables'] = variables
+	if interaction_variables is not None:
+		request_json['interaction_variables'] = interaction_variables
+	return service.train_model(request_json)
+	# except Exception as e:
+	# 	return {'error': str(e)}
 
 def deploy_model(id: str, input_dataset: str, experiment_name: str) -> Dict[str, Any]:
 	"""
