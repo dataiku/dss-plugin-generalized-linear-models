@@ -18,7 +18,8 @@ def train_model(
 	testSet: Optional[str] = None,
 ) -> Dict[str, Any]:
 	"""
-	Train a model using the DataikuDataService.
+	Train a model.
+	model_parameters and variables are mandatory. Find their formats below.
 	Args:
 		ml_task_id: The ML task ID.
 		analysis_id: The analysis ID.
