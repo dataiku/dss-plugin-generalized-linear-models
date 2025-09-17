@@ -133,15 +133,15 @@ def get_models(mlTaskId: str, analysisId: str) -> List[Any]:
 	except Exception as e:
 		return {'error': str(e)}
 
-def get_predicted_base(id: str, trainTest: bool, variable: str) -> List[Any]:
+def get_univariate_analysis(model_id: str, trainTest: bool, variable: str) -> List[Any]:
 	"""
-	Get predicted base values for a variable in a model.
+	Get the univariate comparison between predicted and observed, bucketed for the selected variable
 	Args:
-		id: Model ID.
+		model_id: Model ID.
 		trainTest: Boolean, True for train set, False for test set.
 		variable: Variable name.
 	Returns:
-		List of predicted base values.
+		List of prediction and observed for each bucket of variable.
 	"""
 	try:
 		request_json = dict(id=id, trainTest=trainTest, variable=variable)
