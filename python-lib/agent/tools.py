@@ -133,11 +133,11 @@ def get_models(mlTaskId: str, analysisId: str) -> List[Any]:
 	except Exception as e:
 		return {'error': str(e)}
 
-def get_univariate_analysis(model_id: str, trainTest: bool, variable: str) -> List[Any]:
+def get_univariate_analysis(id: str, trainTest: bool, variable: str) -> List[Any]:
 	"""
 	Get the univariate comparison between predicted and observed, bucketed for the selected variable
 	Args:
-		model_id: Model ID.
+		id: Model ID.
 		trainTest: Boolean, True for train set, False for test set.
 		variable: Variable name.
 	Returns:
