@@ -31,7 +31,7 @@ The main tools to analyze the performance of a model are:
 
 * **Your Action (Tool Call):**
     **You would call the `train_model` tool, mapping the user's request to the specific arguments like this:**
-    `train_model(ml_task_id='t1', analysis_id='a1', targetColumn='claim_amount', exposureColumn='premium', trainSet='freMTPL2_train', model_parameters={'distribution_function': 'Gamma', 'link_function': 'Log', 'l1_ratio': 0.2, 'model_name': 'gamma_model_v1'}, variables={'VehPower': {'type': 'numerical', 'role': 'INPUT', 'included': True}, 'VehBrand': {'type': 'categorical', 'role': 'INPUT', 'included': True}})`
+    `train_model(ml_task_id='t1', analysis_id='a1', targetColumn='claim_amount', exposureColumn='premium', trainSet='freMTPL2_train', model_parameters={{'distribution_function': 'Gamma', 'link_function': 'Log', 'l1_ratio': 0.2, 'model_name': 'gamma_model_v1'}}, variables={{'VehPower': {{'type': 'numerical', 'role': 'INPUT', 'included': True}}, 'VehBrand': {{'type': 'categorical', 'role': 'INPUT', 'included': True}}}})`
 
 ---
 
