@@ -121,7 +121,6 @@
         initialInteractions: {
         handler(newInteractions) {
             if (!this.internalUpdate && JSON.stringify(newInteractions) !== JSON.stringify(this.lastEmittedInteractions)) {
-            console.log("Initial interactions updated:", newInteractions);
             if (newInteractions && newInteractions.length > 0) {
                 this.interactions = (newInteractions as Interaction[]).map(interaction => ({
                 first: interaction.first || '',
@@ -134,6 +133,13 @@
             }
         },
         deep: true
+        },
+        filteredColumns: {
+          handler(newVal) {
+            console.log("filteredColumns updated:", newVal);
+          },
+          immediate: true,
+          deep: true
         }
     },
 

@@ -9,7 +9,7 @@
     >
         <template #body-cell-include="props">
             <q-td :props="props">
-                <BsCheckbox v-model="props.row.isIncluded" />
+                <BsCheckbox v-model="props.row.isIncluded"/>
             </q-td>
         </template>
 

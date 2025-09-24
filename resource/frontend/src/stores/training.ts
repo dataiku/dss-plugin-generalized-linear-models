@@ -166,7 +166,7 @@ export const useTrainingStore = defineStore("TrainingStore", {
                 } else if (column.name === this.selectedExposureVariable) {
                 column.role = 'Exposure';
                 } else {
-                column.role = 'Variable';
+                column.role = 'REJECT';
                 }
             });
         },
@@ -242,7 +242,6 @@ export const useTrainingStore = defineStore("TrainingStore", {
     async getDatasetColumns(model_value = null) {
         const analysisStore = useAnalysisStore();
         if (model_value) {
-            console.log("model_id parameter provided:", model_value);
             this.isLoading = true;
             this.datasetColumns = []
             const store = useModelStore();
@@ -250,20 +249,14 @@ export const useTrainingStore = defineStore("TrainingStore", {
                     const response = await API.getDatasetColumns({dataset: analysisStore.selectedMlTask.trainSet, exposure: analysisStore.selectedMlTask.exposureColumn});
 
                     const model = store.models.filter((v: ModelPoint) => v.name == model_value)[0];
-                    console.log("Filtered model:", model);
-                    console.log("Making request with model Id :", model);
 
                     const paramsResponse = await API.getLatestMLTaskParams(model)  as APIResponse;
-                    console.log("API.getLatestMLTaskParams response:", paramsResponse);
 
                     const params = paramsResponse.data.params;
-                    console.log("Extracted params:", params);
 
                     const responseColumns = response.data.map((column: ColumnInput) => column.column);
-                    console.log("responseColumns:", responseColumns);
 
                     const paramsColumns = Object.keys(params);
-                    console.log("paramsColumns:", paramsColumns);
                     
                     this.previousInteractions = paramsResponse.data.interactions 
                         ? paramsResponse.data.interactions.map(interaction => ({
@@ -271,7 +264,6 @@ export const useTrainingStore = defineStore("TrainingStore", {
                             second: interaction.second
                         }))
                         : [];
-                    console.log("Interaction recieved in parent", this.previousInteractions)
                     this.selectedDistributionFunctionString = paramsResponse.data.distribution_function;
                     this.selectedLinkFunctionString = paramsResponse.data.link_function;
                     this.selectedElasticNetPenalty = paramsResponse.data.elastic_net_penalty ? paramsResponse.data.elastic_net_penalty : 0;
@@ -280,8 +272,6 @@ export const useTrainingStore = defineStore("TrainingStore", {
                     this.selectedPower = paramsResponse.data.power ? paramsResponse.data.power : 0;
                     this.selectedVariancePower = paramsResponse.data.var_power ? paramsResponse.data.var_power : 0;
                     
-                    
-                    console.log("paramsResponse:", paramsResponse.data);
                     this.datasetColumns = response.data.map((column: ColumnInput) => {
                         const columnName = column.column;
                         const options = column.options;
@@ -303,13 +293,10 @@ export const useTrainingStore = defineStore("TrainingStore", {
                     const missingColumns = paramsColumns
                         .filter((col: string) => col !== this.selectedExposureVariable)
                         .filter((col: string) => !responseColumns.includes(col));
-                    console.log("missingColumns:", missingColumns);
 
                     const extraColumns = responseColumns
                         .filter((col: string) => col !== this.selectedExposureVariable)
                         .filter((col: string) => !paramsColumns.includes(col));
-                    console.log("extraColumns:", extraColumns);
-
                     
                     if (missingColumns.length > 0 || extraColumns.length > 0) {
                         let errorMessage = "Column mismatch: Your training dataset does not contain the same variables as the model you requested.\n";
@@ -342,23 +329,19 @@ export const useTrainingStore = defineStore("TrainingStore", {
 
         } 
         else {
-            console.log("No model id provided:");
             try {
                 this.isLoading = true;
                 const response = await API.getDatasetColumns({dataset: analysisStore.selectedMlTask.trainSet, exposure: analysisStore.selectedMlTask.exposureColumn});
-
                 this.datasetColumns = response.data.map((column: ColumnInput) => ({
                     name: column.column,
                     isIncluded: false,
-                    role: 'Variable',
+                    role: 'REJECT',
                     type: column.type,
                     preprocessing: 'Dummy Encode',
                     options: column.options,
                     baseLevel: column.baseLevel
                 }));
-
-            console.log("First assignment");
-            await this.fetchExcludedColumns();
+                await this.fetchExcludedColumns();
             } catch (error) {
                 console.error('Error fetching datasets:', error);
                 this.datasetColumns = [];
@@ -411,7 +394,6 @@ export const useTrainingStore = defineStore("TrainingStore", {
         };
         
         try {
-            console.log("Payload:", payload);
             const modelUID = await API.trainModel(payload);
             WT1iser.trainModel({
                 distribution: this.selectedDistributionFunctionString,
