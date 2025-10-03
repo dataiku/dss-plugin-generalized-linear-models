@@ -49,7 +49,7 @@ export const useVariableLevelStatsStore = defineStore("variableLevelStats", {
                 this.modelStats = response.data.map((point: any) => ({
                     ...point,
                     coefficient: this._round(point.coefficient),
-                    p_value: this._round(point.p_value),
+                    p_value: this._formatPValue(point.p_value),
                     standard_error: this._round(point.standard_error),
                     standard_error_pct: this._round(point.standard_error_pct),
                     weight: this._round(point.weight),
@@ -93,6 +93,13 @@ export const useVariableLevelStatsStore = defineStore("variableLevelStats", {
 
         _round(value: number): number {
             return Math.round(value * 1000) / 1000;
+        },
+        _formatPValue(value: number): string {
+            if (value == null) return '';
+            if (value < 0.001) {
+                return value.toExponential(2);
+            }
+            return (Math.round(value * 1000) / 1000).toString();
         },
 
         notifyError(message: string) {
