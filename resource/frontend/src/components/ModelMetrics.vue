@@ -10,15 +10,15 @@
           <!-- Metric Item -->
           <div class="col text-center q-pa-sm">
             <div class="text-h5 text-weight-regular">
-              {{ formatNumber(value) }}
+              <span>
+                <q-tooltip anchor="bottom middle" self="top middle">
+                  {{ formatFullNumber(value) }}
+                </q-tooltip>
+                {{ formatAbbreviatedNumber(value) }}
+              </span>
             </div>
             <div class="text-caption text-grey">
               {{ key }}
-              <!-- <q-icon name="info_outline" size="12px" color="grey" class="q-ml-xs">
-                <q-tooltip>
-                  Tooltip for {{ key }}
-                </q-tooltip>
-              </q-icon> -->
             </div>
           </div>
         </template>
@@ -43,7 +43,18 @@ export default defineComponent({
     },
   },
   methods: {
-    formatNumber(value: number): string {
+    formatAbbreviatedNumber(value: number): string {
+      if (value == null) return 'N/A';
+      const absValue = Math.abs(value);
+      if (absValue >= 1e9) return (value / 1e9).toFixed(2) + 'B';
+      if (absValue >= 1e6) return (value / 1e6).toFixed(2) + 'M';
+      if (absValue >= 1e3) return (value / 1e3).toFixed(2) + 'K';
+      return value.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+    },
+    formatFullNumber(value: number): string {
       if (value == null) return 'N/A';
       return value.toLocaleString('en-US', {
         minimumFractionDigits: 2,

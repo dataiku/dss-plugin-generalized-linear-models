@@ -41,23 +41,28 @@ def calculate_base_levels(df, exposure_column=None):
     for col in sorted_columns:
         if col == exposure_column:
             continue
-        
-        # Determine if the column contains numeric or non-numeric data
+    
         is_numeric = pd.api.types.is_numeric_dtype(df[col])
-        
-        if is_numeric:
-            options = sorted([str(val) for val in df[col].unique()], key=float)
-        else:
-            options = sorted([str(val) for val in df[col].unique()], key=natural_sort_key)
-        
+
         if exposure_column and exposure_column in df.columns:
             # Exposure-based calculation
             weighted_counts = df.groupby(col)[exposure_column].sum()
-            base_level = str(weighted_counts.idxmax())
+
+            top_modalities = weighted_counts.sort_values(ascending=False).head(100)
+            if is_numeric:
+                options = sorted([str(val) for val in top_modalities.index], key=float)
+            else:
+                options = sorted([str(val) for val in top_modalities.index], key=natural_sort_key)
+            base_level = str(top_modalities.idxmax())
         else:
             # Original mode-based calculation
+            unique_vals = df[col].unique()
+            if is_numeric:
+                options = sorted([str(val) for val in unique_vals], key=float)[:100]
+            else:
+                options = sorted([str(val) for val in unique_vals], key=natural_sort_key)[:100]
             base_level = str(df[col].mode().iloc[0])
-        
+
         cols_json.append({
             'column': col,
             'options': options,

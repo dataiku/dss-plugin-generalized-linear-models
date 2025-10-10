@@ -22,7 +22,7 @@
     import EmptyState from './EmptyState.vue';
     import ModelTrainingConfiguration from './ModelTrainingConfiguration.vue';
     import VariableConfiguration from './VariableConfiguration.vue';
-    import { BsTab, BsLabel, BsTabIcon, BsLayoutDefault, BsHeader, BsButton, BsDrawer, BsContent, BsTooltip, BsSlider, BsCard } from "quasar-ui-bs";
+    import { BsTab, BsLabel, BsTabIcon, BsHeader, BsButton, BsDrawer, BsContent, BsTooltip, BsSlider, BsCard } from "quasar-ui-bs";
     import { QRadio } from 'quasar';
     import VariableInteractions from './VariableInteractions.vue'
     import { useTrainingStore } from "../stores/training";
@@ -59,8 +59,9 @@
                     column.role !== 'Exposure')
             },
         selectedColumns() {
+            console.log("Selected columns computed:", this.store.datasetColumns);
             return this.store.datasetColumns.filter(column =>
-                column.role == 'Variable' && column.isIncluded == true)
+                column.role != 'Target' && column.role != 'Exposure' && column.isIncluded == true)
             },
     },
     watch: {

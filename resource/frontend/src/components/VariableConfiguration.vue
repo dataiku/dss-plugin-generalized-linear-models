@@ -6,10 +6,11 @@
         :columns="columns"
         row-key="name"
         :pagination="{ rowsPerPage: 0 }"
+        :virtual-scroll="false"
     >
         <template #body-cell-include="props">
             <q-td :props="props">
-                <BsCheckbox v-model="props.row.isIncluded" />
+                <BsCheckbox v-model="props.row.isIncluded"/>
             </q-td>
         </template>
 
