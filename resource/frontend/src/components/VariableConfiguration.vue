@@ -6,6 +6,7 @@
         :columns="columns"
         row-key="name"
         :pagination="{ rowsPerPage: 0 }"
+        :virtual-scroll="false"
     >
         <template #body-cell-include="props">
             <q-td :props="props">
