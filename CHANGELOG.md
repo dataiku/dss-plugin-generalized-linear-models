@@ -1,6 +1,6 @@
 # Changelog
 
-## [Version 2.0.0] - New Feature Release - 2025-09
+## [Version 2.0.0] - New Feature Release - 2025-10
 
 * Visual Webapp to train GLMs and assess their fit
 * Removal of the custom Model View
