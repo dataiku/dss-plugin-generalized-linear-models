@@ -1,13 +1,13 @@
 {
     "id": "generalized-linear-models",
-    "version": "2.0.0alpha1",
+    "version": "2.0.0",
     "meta": {
         "label": "Generalized Linear Models",
         "description": "Train and deploy Generalized Linear Models",
         "author": "Dataiku",
         "icon": "icon-bullseye",
         "tags": ["Machine Learning"],
-        "url": "https://www.dataiku.com/product/plugins/glm",
+        "url": "https://doc.dataiku.com/dss/latest/machine-learning/generalized-linear-models/index.html",
         "licenseInfo": "Apache Software License",
         "supportLevel": "NOT_SUPPORTED"
     }
