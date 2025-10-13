@@ -7,7 +7,7 @@
         "author": "Dataiku",
         "icon": "icon-bullseye",
         "tags": ["Machine Learning"],
-        "url": "https://www.dataiku.com/product/plugins/glm",
+        "url": "https://doc.dataiku.com/dss/latest/machine-learning/generalized-linear-models/index.html",
         "licenseInfo": "Apache Software License",
         "supportLevel": "NOT_SUPPORTED"
     }
