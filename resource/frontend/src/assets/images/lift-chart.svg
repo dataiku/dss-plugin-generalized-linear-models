@@ -1,0 +1,12 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path xmlns="http://www.w3.org/2000/svg" d="M2.75 2C3.16421 2 3.5 2.33579 3.5 2.75V4.65625H2V2.75C2 2.33579 2.33579 2 2.75 2Z" fill="black"/>
+<path xmlns="http://www.w3.org/2000/svg" d="M3.5 5.46875V9.28125H2V5.46875H3.5Z" fill="black"/>
+<path xmlns="http://www.w3.org/2000/svg" d="M3.5 10.0938V13.9062H2V10.0938H3.5Z" fill="black"/>
+<path xmlns="http://www.w3.org/2000/svg" d="M3.5 14.7188V18.5312H2V14.7188H3.5Z" fill="black"/>
+<path xmlns="http://www.w3.org/2000/svg" d="M3.5 19.3438V20.5H4.89062V22H3C2.95741 22 2.91565 21.9965 2.875 21.9896C2.83435 21.9965 2.79259 22 2.75 22C2.33579 22 2 21.6642 2 21.25V19.3438H3.5Z" fill="black"/>
+<path xmlns="http://www.w3.org/2000/svg" d="M5.67188 20.5H9.45312V22H5.67188V20.5Z" fill="black"/>
+<path xmlns="http://www.w3.org/2000/svg" d="M10.2344 20.5H14.0156V22H10.2344V20.5Z" fill="black"/>
+<path xmlns="http://www.w3.org/2000/svg" d="M14.7969 20.5H18.5781V22H14.7969V20.5Z" fill="black"/>
+<path xmlns="http://www.w3.org/2000/svg" d="M19.3594 20.5H21.25C21.6642 20.5 22 20.8358 22 21.25C22 21.6642 21.6642 22 21.25 22H19.3594V20.5Z" fill="black"/>
+<path xmlns="http://www.w3.org/2000/svg" d="M21.7219 6.08296C22.0439 5.82234 22.0936 5.35007 21.833 5.02813C21.5723 4.70618 21.1001 4.65647 20.7781 4.91709L5.02813 17.6671C4.70618 17.9277 4.65647 18.4 4.91709 18.7219C5.17771 19.0439 5.64998 19.0936 5.97192 18.833L21.7219 6.08296Z" fill="black"/>
+</svg>

@@ -66,7 +66,7 @@ def test_classification():
         power=1,
         var_power=1)
     
-    binary_model.column_labels = data.exog_name
+    binary_model.column_labels = data.exog_name[:3]
 
     binary_model.fit(X, y)
     # bic, aic, deviance
@@ -111,7 +111,7 @@ def test_classification_predictions():
         power=1,
         var_power=1)
     
-    binary_model.column_labels = data.exog_name
+    binary_model.column_labels = data.exog_name[:3]
 
     binary_model.fit(X, y)
     actual_predictions = [x > 0.5 for x in binary_model.predict(X)]

@@ -1,0 +1,11 @@
+dku_dataset_selection_params = {'useMemTable': False,
+               'filter': {'distinct': False, 'enabled': False},
+               'partitionSelectionMethod': 'ALL',
+               'latestPartitionsN': 1,
+               'ordering': {'enabled': False, 'rules': []},
+               'samplingMethod': 'FULL',
+               'maxRecords': 100000,
+               'targetRatio': 0.02,
+               'ascending': True,
+               'withinFirstN': -1,
+               'maxReadUncompressedBytes': -1}

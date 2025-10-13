@@ -221,5 +221,8 @@ def check_params(params):
                     required=True
                 )
             dku_config.exposure_columns = params.get('exposure_columns')
+    
+    dku_config.interaction_columns_first = params.get('interaction_columns_first')
+    dku_config.interaction_columns_second = params.get('interaction_columns_second')
 
     return dku_config

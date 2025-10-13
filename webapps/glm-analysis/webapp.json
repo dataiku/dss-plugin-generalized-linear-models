@@ -1,0 +1,18 @@
+{
+  "meta": {
+    "label": "GLM Analysis",
+    "description": "Analyze your GLM",
+    "icon": "icon-picture"
+  },
+  "baseType": "STANDARD",
+  "enableJavascriptModules": "true",
+  "hasBackend": "true",
+  "noJSSecurity": "true",
+  "standardWebAppLibraries": [
+    "jquery",
+    "dataiku",
+    "font_awesome"
+  ],
+  "params": [
+  ]
+}

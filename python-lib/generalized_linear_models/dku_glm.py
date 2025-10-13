@@ -10,6 +10,8 @@ from glum import NegativeBinomialDistribution
 import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
 import generalized_linear_models.link as link
+import pandas as pd
+from generalized_linear_models.interactions import Interactions
 
 class BaseGLM(BaseEstimator, ClassifierMixin):
     """
@@ -19,8 +21,9 @@ class BaseGLM(BaseEstimator, ClassifierMixin):
     def __init__(self, family_name="gaussian", binomial_link="logit", gamma_link="inverse_power", gaussian_link="identity", inverse_gaussian_link="inverse_squared",
                  poisson_link="log", negative_binomial_link="log", tweedie_link="log", alpha=1, power=1, penalty=0.0, l1_ratio=0.5,
                  var_power=1, offset_mode="BASIC", training_dataset=None, offset_columns=None, exposure_columns=None,
+                 interaction_columns_first=None, interaction_columns_second=None,
                  column_labels=None):
-
+        
         self.family_name = family_name
         self.binomial_link = binomial_link
         self.gamma_link = gamma_link
@@ -73,11 +76,16 @@ class BaseGLM(BaseEstimator, ClassifierMixin):
         self.offset_indices = []
         self.exposure_columns = exposure_columns
         self.exposure_indices = []
+        self.interaction_columns_first = interaction_columns_first
+        self.interaction_columns_second = interaction_columns_second
         self.column_labels = column_labels
         self.training_dataset = training_dataset
         self.removed_indices = None
         self.assign_family()
         self.assign_family_glum_class()
+        self.aic_value = None
+        self.bic_value = None
+        self.deviance_value = None
 
     def get_link_function(self):
         """
@@ -106,12 +114,10 @@ class BaseGLM(BaseEstimator, ClassifierMixin):
             return 'identity'
         elif user_link == 'cauchy':
             return link.Cauchy()
-        elif user_link == 'negative_binomial':
-            return link.NegativeBinomial()
         elif user_link == 'power':
-            return link.Power()
+            return link.Power(self.power)
         elif user_link == 'inverse_power':
-            return link.InversePower()
+            return link.InversePower(self.power)
         elif user_link == 'inverse_squared':
             return link.InverseSquared()
         else:
@@ -158,15 +164,16 @@ class BaseGLM(BaseEstimator, ClassifierMixin):
             return InverseGaussianDistribution()
 
         elif self.family_name == "negative_binomial":
-            return NegativeBinomialDistribution()
+            return NegativeBinomialDistribution(self.alpha)
 
         elif self.family_name == "poisson":
             return PoissonDistribution()
 
         elif self.family_name == "tweedie":
-            return TweedieDistribution()
+            return TweedieDistribution(self.var_power)
         else:
             raise ValueError("Unsupported family")
+        
     def assign_family_glum_class(self):
         self.family_glum_class = self.get_family_glumn_class()
 
@@ -217,21 +224,36 @@ class BaseGLM(BaseEstimator, ClassifierMixin):
 
         return offset_output
 
+    def set_interactions(self):
+        self.interactions = Interactions(self.interaction_columns_first, self.interaction_columns_second)
+
     def fit_model(self, X, y, sample_weight=None, prediction_is_classification=False):
         """
         fits a GLM model
         """
         self.classes_ = list(set(y))
         offsets, exposures = self.get_offsets_and_exposures(X)
-
+        self.set_interactions()
+        
         X = self.process_fixed_columns(X)
-
+        
+        X = self.interactions.transform(X, self.final_labels)
+        
         offset_output = self.compute_aggregate_offset(offsets, exposures)
-
+        
         #  fits and stores glum glm
-        model = GeneralizedLinearRegressor(alpha=self.penalty, l1_ratio=self.l1_ratio, fit_intercept=True,
+        self.fitted_model = GeneralizedLinearRegressor(alpha=self.penalty, l1_ratio=self.l1_ratio, fit_intercept=True,
                                             family=self.family, link=self.link)
-        self.fitted_model = model.fit(X, y, sample_weight=sample_weight, offset=offset_output)
+        X_df = pd.DataFrame(X, columns=self.final_labels)
+        self.fitted_model.fit(X_df, y, sample_weight=sample_weight, offset=offset_output, store_covariance_matrix=True)
+        
+        self.aic_value = np.round(self.fitted_model.aic(X_df, y), 2)
+        self.bic_value = np.round(self.fitted_model.bic(X_df, y), 2)
+        
+        predictions = self.fitted_model.predict(X_df)
+        self.deviance_value = np.round(self.family_glum_class.deviance(y ,predictions), 2)
+        
+        self.coef_table = self.fitted_model.coef_table()
         
         self.compute_coefs(prediction_is_classification)
         
@@ -271,6 +293,7 @@ class BaseGLM(BaseEstimator, ClassifierMixin):
 
     def process_fixed_columns(self, X):
         self.removed_indices = None
+        self.final_labels = self.column_labels.copy()
         if self.offset_indices is not None:
             self.removed_indices = self.offset_indices
         if self.exposure_indices is not None:
@@ -288,6 +311,9 @@ class BaseGLM(BaseEstimator, ClassifierMixin):
             self.removed_indices = list(set(self.removed_indices))
 
             X = np.delete(X, self.removed_indices, axis=1)
+            
+            for ind in sorted(self.removed_indices, reverse=True):
+                del self.final_labels[ind]
 
         return X
     
@@ -306,15 +332,19 @@ class BaseGLM(BaseEstimator, ClassifierMixin):
                                  'defined')
 
         return offsets, exposures
+    
 
     def predict_target(self, X):
+        
         offsets, exposures = self.get_offsets_and_exposures(X)
+        self.set_interactions()
         X = self.process_fixed_columns(X)
-
+        X = self.interactions.transform(X, self.final_labels)
         offset_output = self.compute_aggregate_offset(offsets, exposures)
-
+        
         # makes predictions and converts to DSS accepted format
         y_pred = np.array(self.fitted_model.predict(X, offset=offset_output))
+        
         return y_pred
 
 

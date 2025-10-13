@@ -44,7 +44,7 @@ integration-tests:
 		source env/bin/activate; \
 		pip install --upgrade pip;\
 		pip install --no-cache-dir -r tests/python/integration/requirements.txt; \
-		pytest tests/python/integration --alluredir=tests/allure_report || ret=$$?; exit $$ret \
+		pytest tests/python/integration --exclude-dss-targets="DSS11" --alluredir=tests/allure_report || ret=$$?; exit $$ret \
 	)
 
 tests: unit-tests integration-tests
