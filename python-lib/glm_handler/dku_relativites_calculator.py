@@ -187,8 +187,19 @@ class RelativitiesCalculator:
                 self.relativities_interaction[interaction_first] = {interaction_second:  {base_value_first: {base_value_second: 1.0}}}
             train_row_copy = sample_train_row.copy()
             
-            values_to_process_first = self.modalities[interaction_first]
-            values_to_process_second = self.modalities[interaction_second]
+            type_first = self.variable_types.get(interaction_first)
+            type_second = self.variable_types.get(interaction_second)
+
+            if type_first == 'CATEGORICAL':
+                values_to_process_first = self.modalities[interaction_first]
+            else:
+                values_to_process_first = [base_value_first]
+
+            if type_second == 'CATEGORICAL':
+                values_to_process_second = self.modalities[interaction_second]
+            else: 
+                values_to_process_second = [base_value_second]
+                
             
             for value_first in values_to_process_first:
                 for value_second in values_to_process_second:

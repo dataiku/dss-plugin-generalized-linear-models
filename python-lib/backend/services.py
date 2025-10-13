@@ -262,6 +262,7 @@ class DataikuDataService:
     
     def get_base_values(self, request_json: dict):
         full_model_id = request_json["id"]
+        
         current_app.logger.info(f"Request received for base_values for {full_model_id}")
 
         creation_args = {"data_handler": self.data_handler,
