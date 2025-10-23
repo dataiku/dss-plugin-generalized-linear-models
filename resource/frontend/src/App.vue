@@ -12,7 +12,6 @@
                                     <AnalysisSelector class="header-analysis-selector" v-if="tabInfo.name !== 'Analysis Setup'" />
                                     <BsLabel v-if="tabInfo.displayTitleInHeader" :label="tabInfo.name" className="tab-title"></BsLabel>
                                 </div>
-                                <CustomDocumentation></CustomDocumentation>
                             </template>
                     </BsHeader>
                 <BsDrawer v-if="tabInfo.drawerComponent">
@@ -296,6 +295,7 @@ header {
     display: flex;
     align-items: center;
     gap: 16px;
+    height: 36px;
 }
 
 .header-analysis-selector {
