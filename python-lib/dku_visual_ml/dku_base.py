@@ -1,4 +1,5 @@
 import dataiku
+import pandas as pd
 from logging_assist.logging import logger
 
 class DataikuClientProject:
@@ -77,5 +78,11 @@ class DataikuClientProject:
     def get_variables_for_dataset(self, dataset_name):
         dataset = dataiku.Dataset(dataset_name)
         columns = dataset.get_config()['schema']['columns']
-        column_names = [{'name': column['name']} for column in columns]
-        return column_names
+        df = dataset.get_dataframe(limit=100)
+        numeric_columns = []
+        for column in columns:
+            col_name = column['name']
+            if col_name in df.columns:
+                if pd.api.types.is_numeric_dtype(df[col_name]):
+                    numeric_columns.append({'name': col_name})
+        return numeric_columns
