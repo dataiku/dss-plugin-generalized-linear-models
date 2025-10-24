@@ -7,9 +7,7 @@
     :disabled="disabled"
   >
     <template #selected-item>
-      <div v-if="store.selectedMlTask.mlTaskId">
-        {{ store.selectedMlTask.analysisName }} ({{ store.selectedMlTask.mlTaskId }})
-      </div>
+      <div v-if="store.selectedMlTask.mlTaskId">{{store.selectedMlTask.analysisName}} ({{store.selectedMlTask.mlTaskId}})</div>
       <div v-else class="text-grey">
         Select an analysis...
       </div>
@@ -66,7 +64,14 @@ export default defineComponent({
 </script>
 
 <style scoped>
+
 .bs-select {
   min-width: 260px;
 }
+
+::v-deep(.bs-selection-content) {
+  max-width: 100% !important;
+  white-space: nowrap;
+}
+
 </style>
