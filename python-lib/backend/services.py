@@ -103,16 +103,6 @@ class MockDataService:
         csv_data = variable_level_stats_df.to_csv(index=False).encode('utf-8')
         return csv_data
     
-    # def get_excluded_columns(self):
-    #     exposure_column = "Exposure"
-    #     target_column = "ClaimAmount"
-        
-    #     cols_json = {
-    #         "target_column": target_column,
-    #         "exposure_column": exposure_column
-    #     }
-    #     return cols_json
-    
     def get_dataset_columns(self, request_json: dict):
         dataset_name = "claim_train"
         exposure_column = "exposure"

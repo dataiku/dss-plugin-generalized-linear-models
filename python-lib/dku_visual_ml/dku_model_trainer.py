@@ -55,7 +55,6 @@ class VisualMLModelTrainer(DataikuClientProject):
         logger.debug(f"Updating the ml task with analysis id {analysis_id} and mltask_id {mltask_id}")
         
         self.mltask = self.project.get_ml_task(mltask_id=mltask_id, analysis_id=analysis_id)
-        self.remove_failed_trainings()
         
         logger.info(f"Successfully update the existing ML task")
         
@@ -236,14 +235,6 @@ class VisualMLModelTrainer(DataikuClientProject):
         settings.mltask_settings['envSelection']['envName'] = code_env_string
         settings.save()
         logger.info(f"set code env settings to {self.mltask.get_settings().mltask_settings.get('envSelection')} ")
-    
-    def remove_failed_trainings(self):
-        
-        ids = self.mltask.get_trained_models_ids()
-        for model_id in ids:
-            state = self.mltask.get_trained_model_details(model_id).details.get('trainInfo').get('state')
-            if state == "FAILED":
-                self.mltask.delete_trained_model(model_id)
         
     
     def get_latest_model(self):
@@ -316,7 +307,6 @@ class VisualMLModelTrainer(DataikuClientProject):
         if status == "FAILED":
             if error_message == "Failed to train : <class 'numpy.linalg.LinAlgError'> : Matrix is singular.":
                 error_message = error_message + "Check colinearity of variables added to the model"
-            self.remove_failed_trainings()
             return None, error_message
         else:
             return None, error_message
