@@ -1,6 +1,6 @@
 {
     "id": "generalized-linear-models",
-    "version": "2.0.0",
+    "version": "2.0.0-backward1",
     "meta": {
         "label": "Generalized Linear Models",
         "description": "Train and deploy Generalized Linear Models",
