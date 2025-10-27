@@ -100,6 +100,9 @@ export const useAnalysisStore = defineStore("AnalysisStore", {
         },
 
         selectMlTask(mlTask: MlTask) {
+            if (this.selectedMlTask.mlTaskId === mlTask.mlTaskId) {
+                return;
+            }
             this.resetAllStores();
             this.selectedMlTask = mlTask;
             WT1iser.selectAnalysis();
