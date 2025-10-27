@@ -223,6 +223,7 @@ export default defineComponent({
 .train-test-wrapper {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 12px;
 }
 
