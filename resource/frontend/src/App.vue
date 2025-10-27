@@ -243,8 +243,13 @@ export default defineComponent({
 <style>
 
 .q-drawer--with-menu~.bs-drawer-container .bs-tab-title {
-    padding-top: 26px;
-    padding-bottom: 18px;
+    padding-top: 10px;
+    padding-bottom: 20px;
+    color: #2B66FF !important;
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: 22px;
 }
 </style>
 
@@ -288,7 +293,7 @@ header {
     font-weight: 600;
     line-height: 22px;
     position: fixed;
-    left: 90px;
+    left: 62px;
 }
 
 .header-components {
