@@ -18,7 +18,7 @@
                         @update:modelValue="onVariableChange"
                     >
                         <template v-slot:selected-item="scope">
-                            <q-item v-if="scope.opt">
+                            <q-item class="selected-variable-item" v-if="scope.opt">
                             {{ oneWayStore.formOptions.selectedVariable?.variable }}
                             </q-item>
                         </template>
@@ -230,5 +230,11 @@ export default defineComponent({
 .bs-primary-button {
     background-color:#2B66FF;
     color: white;
+}
+
+.selected-variable-item {
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 6px;
 }
 </style>
