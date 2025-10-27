@@ -9,7 +9,7 @@ from logging_assist.logging import logger
 from dku_visual_ml.custom_configurations import dku_dataset_selection_params
 from dku_visual_ml.dku_base import DataikuClientProject
 from typing import List, Dict, Any
-
+from processors.processors import rebase_mode_string, save_base_string
 
 class VisualMLModelTrainer(DataikuClientProject):
     """
@@ -393,11 +393,7 @@ class VisualMLModelTrainer(DataikuClientProject):
         if base_level is None:
             fs['customHandlingCode'] = ''
         else:
-            fs['customHandlingCode'] = (
-            'from dataiku.base.model_plugin import prepare_for_plugin\n'
-            'prepare_for_plugin(\'generalized-linear-models\', \'generalized-linear-models_regression\')\n'
-            'from processors.processors import save_base\n'
-            'processor = save_base({"base_level": ' + str(base_level) + '})\n')
+            fs['customHandlingCode'] = save_base_string(base_level)
         fs['customProcessorWantsMatrix'] = True
         fs['sendToInput'] = 'main'
         return fs
@@ -432,11 +428,7 @@ class VisualMLModelTrainer(DataikuClientProject):
         fs['customHandlingCode'] = ''
         fs['customProcessorWantsMatrix'] = False
         fs['sendToInput'] = 'main'
-        fs['customHandlingCode'] = (
-            'from dataiku.base.model_plugin import prepare_for_plugin\n'
-            'prepare_for_plugin(\'generalized-linear-models\', \'generalized-linear-models_regression\')\n'
-            'from processors.processors import rebase_mode\n'
-            'processor = rebase_mode({"base_level": "' + str(base_level) + '"})\n')
+        fs['customHandlingCode'] = rebase_mode_string(base_level)
         
         return fs      
 
