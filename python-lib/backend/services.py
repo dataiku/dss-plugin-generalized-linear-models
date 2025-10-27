@@ -23,6 +23,7 @@ class MockDataService:
     def train_model(self, request_json: dict):
         current_app.logger.info("Local set up: No model training completed")
         time.sleep(2)
+        raise ValueError("Model training error: Simulated training error for testing purposes.")
         return {'message': 'Model training initiated successfully.'}
     
     def deploy_model(self, request_json: dict):

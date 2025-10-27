@@ -76,11 +76,13 @@
     </div>
 </template>
 
+
 <script lang="ts">
 import { BsButton, BsLabel, BsSelect } from 'quasar-ui-bs';
 import AnalysisSelector from './AnalysisSelector.vue';
 import { defineComponent } from 'vue';
 import { useAnalysisStore } from '../stores/analysisStore';
+import { useNotification } from '../composables/use-notification';
 import type { MlTask } from '../models';
 
 export default defineComponent({
@@ -136,8 +138,8 @@ export default defineComponent({
             try {
                 await this.store.createNewMlTask(this.form);
                 this.switchToSelectMode();
-            } catch (error) {
-                console.error("Component failed to create analysis.");
+            } catch (error: any) {
+                useNotification("negative", error?.message || "Component failed to create analysis.");
             }
         },
         isTaskValid(mlTask: MlTask): boolean {
