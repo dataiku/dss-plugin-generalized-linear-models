@@ -3,7 +3,7 @@
     :model-value="store.selectedMlTask"
     :all-options="store.mlTaskOptions"
     option-value="mlTaskId"
-    @update:modelValue="value => store.selectMlTask(value)"
+    @update:modelValue="handleSelect"
     :disabled="disabled"
   >
     <template #selected-item>
@@ -53,12 +53,19 @@ export default defineComponent({
       default: false
     }
   },
-  setup() {
+  emits: ['analysis-selected'],
+  setup(props, { emit }) {
     const store = useAnalysisStore();
     function isTaskValid(mlTask: MlTask): boolean {
       return mlTask.isValid;
     }
-    return { store, isTaskValid };
+    function handleSelect(value: MlTask) {
+      if (!value) return; // Guard against null/undefined
+      
+      store.selectMlTask(value); // This is what it did before
+      emit('analysis-selected'); // This emits the event to the parent
+    }
+    return { store, isTaskValid, handleSelect };
   }
 });
 </script>

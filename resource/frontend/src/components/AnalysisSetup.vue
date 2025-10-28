@@ -3,7 +3,7 @@
     <q-card flat bordered>
         <q-card-section>
             <BsLabel label="Select an Existing Analysis" className="section-title" />
-            <AnalysisSelector/>
+            <AnalysisSelector @analysis-selected="bubbleSelectionEvent"/>
             <div class="create-switch-container">
                 <BsButton 
                     v-if="mode === 'select'"
@@ -93,7 +93,7 @@ export default defineComponent({
         BsButton
     },
     name: 'AnalysisSetup',
-    emits: ['analysis-created'],
+    emits: ['analysis-created', 'analysis-selected'],
     data() {
         return {
             store: useAnalysisStore(),
@@ -117,6 +117,9 @@ export default defineComponent({
         switchToCreateMode() {
             this.mode = 'create';
             this.store.selectMlTask({} as MlTask);
+        },
+        bubbleSelectionEvent() {
+            this.$emit('analysis-selected');
         },
         switchToSelectMode() {
             this.mode = 'select';
