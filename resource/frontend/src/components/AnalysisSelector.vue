@@ -61,9 +61,10 @@ export default defineComponent({
     }
     function handleSelect(value: MlTask) {
       if (!value) return; // Guard against null/undefined
-      
       store.selectMlTask(value); // This is what it did before
-      emit('analysis-selected'); // This emits the event to the parent
+      if (value.mlTaskId) {
+        emit('analysis-selected'); // This emits the event to the parent
+      }
     }
     return { store, isTaskValid, handleSelect };
   }
