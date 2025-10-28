@@ -76,7 +76,7 @@ export const useAnalysisStore = defineStore("AnalysisStore", {
                 const response = await API.createMlTask(formData);
                 const mlTask = response.data;
                 this.mlTasks.push(mlTask);
-                this.selectedMlTask = mlTask;
+                this.selectMlTask(mlTask);
                 WT1iser.createAnalysis({ splitPolicy: formData.splitPolicy });
             } catch (error) {
                 console.error("Failed to create analysis:", error);

@@ -93,6 +93,7 @@ export default defineComponent({
         BsButton
     },
     name: 'AnalysisSetup',
+    emits: ['analysis-created'],
     data() {
         return {
             store: useAnalysisStore(),
@@ -137,6 +138,7 @@ export default defineComponent({
             if (!this.isFormValid) return;
             try {
                 await this.store.createNewMlTask(this.form);
+                this.$emit('analysis-created');
                 this.switchToSelectMode();
             } catch (error: any) {
                 useNotification("negative", error?.message || "Component failed to create analysis.");

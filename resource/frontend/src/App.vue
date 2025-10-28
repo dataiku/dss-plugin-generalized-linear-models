@@ -26,6 +26,7 @@
                         <component
                             :is="tabInfo.contentComponent"
                             v-bind="tabInfo.contentProps"
+                            v-on="tabInfo.contentListeners"
                             @navigate-tab="goToTab"
                         />
                     </template>       
@@ -107,6 +108,9 @@ export default defineComponent({
                     contentComponent: "AnalysisSetup",
                     contentProps: {},
                     showEmptyState: false,
+                    contentListeners: {
+                        'analysis-created': this.handleAnalysisCreated
+                    },
                     emptyState: {
                         title: "Analysis Setup",
                         subtitle:
@@ -228,6 +232,9 @@ export default defineComponent({
         }
     },
     methods: {
+        handleAnalysisCreated() {
+            this.goToTab(1);
+        },
         goToTab(index: number) {
             WT1iser.tabChange({ tabIndex: index });
             const layout = this.$refs.layout as InstanceType<
