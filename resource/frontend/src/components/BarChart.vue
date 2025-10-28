@@ -6,12 +6,11 @@
       :init-options="{
           renderer: 'canvas',
       }"
-      style="height: 400px; width: 100%; min-width: 600px"
+      style="height: 400px; width: 100%;"
     />
   </template>
   
-  <script lang="ts">
-  import { defineComponent, computed, PropType } from "vue";
+<script lang="ts">
 import VChart from "vue-echarts";
 import { use } from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";

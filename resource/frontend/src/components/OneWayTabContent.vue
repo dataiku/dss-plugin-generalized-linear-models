@@ -28,6 +28,7 @@
         <div class="chart-row">
           <BarChart
             v-if="chartData.length>0"
+            class="chart-item"
             :xaxisLabels="chartXaxisLabels"
             :xaxisType="chartXaxisType"
             :barData="chartData.map(item => item.Value)"
@@ -40,6 +41,7 @@
             :levelOrder="levelOrder"
             />
           <BsTable v-if="selectedVariable.isInModel"
+            class="table-item"
             :title="selectedVariable.variable"
             :rows="relativities"
             :columns="tableColumns"
@@ -289,5 +291,17 @@ header {
   display: flex;
   align-items: flex-start;
   gap: 52px;
+  width: 100%;
 }
+
+.chart-item {
+  flex: 2;
+  min-width: 0;
+}
+
+.table-item {
+  flex: 1;
+  min-width: 0;
+}
+
 </style>
