@@ -296,7 +296,7 @@ header {
 
 .chart-item {
   flex: 2;
-  min-width: 0;
+  min-width: 300px;
 }
 
 .table-item {

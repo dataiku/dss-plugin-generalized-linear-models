@@ -159,7 +159,16 @@ export default defineComponent({
             }
         },
         async onVariableChange(value: VariablePoint) {
-            this.oneWayStore.selectVariable(value);
+            const store = useModelStore();
+            let foundVariable = this.oneWayStore.availableVariables.find(v => v === value);
+            if (foundVariable) {
+                this.oneWayStore.formOptions.selectedVariable = { ...foundVariable };
+            }
+            if (!this.oneWayStore.formOptions.selectedVariable || !store.activeModel?.id) {
+                this.oneWayStore.primaryChartData = [];
+                this.oneWayStore.comparisonChartData = [];
+                return;
+            }
         },
         async onClickOneWay() {
             this.oneWayStore.exportOneWayChart();
