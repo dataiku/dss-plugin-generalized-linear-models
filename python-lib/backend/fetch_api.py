@@ -72,22 +72,14 @@ def get_lift_data():
 
 @fetch_api.route("/relativities", methods=["POST"])
 def get_relativities():
-    import time
-    start = time.time()
     data_service = current_app.data_service
     result = data_service.get_relativities(request.get_json())
-    duration = time.time() - start
-    current_app.logger.info(f"/relativities took {duration:.3f} seconds")
     return jsonify(result)
 
 @fetch_api.route("/get_variable_level_stats", methods=["POST"])
 def get_variable_level_stats():
-    import time
-    start = time.time()
     data_service = current_app.data_service
     result = data_service.get_variable_level_stats(request.get_json())
-    duration = time.time() - start
-    current_app.logger.info(f"/get_variable_level_stats took {duration:.3f} seconds")
     return jsonify(result)
     
 @fetch_api.route("/get_model_metrics", methods=["POST"])
