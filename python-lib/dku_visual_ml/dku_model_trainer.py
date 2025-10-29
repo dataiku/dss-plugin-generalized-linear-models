@@ -60,14 +60,14 @@ class VisualMLModelTrainer(DataikuClientProject):
         
 
     def assign_train_test_policy(self):
-        logger.info(f"Assigning train test policy")   
-
+        logger.info(f"Assigning train test policy")
         if hasattr(self.visual_ml_config, "policy"):
-            if self.visual_ml_config.policy == "explicit_test_set":
+            if self.visual_ml_config.policy == "Explicit":
                 logger.info(f"Configuration specifies test set, assigning")   
                 settings = self.mltask.get_settings()
                 settings.split_params.set_split_explicit(
                     dku_dataset_selection_params, 
+                    dku_dataset_selection_params,
                     dataset_name=self.visual_ml_config.input_dataset,
                     test_dataset_name=self.visual_ml_config.test_dataset_string)
                 settings.save()
