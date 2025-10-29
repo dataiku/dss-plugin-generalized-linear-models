@@ -21,8 +21,8 @@ class DataikuClientProject:
         if split_params['ttPolicy'] == 'SPLIT_SINGLE_DATASET':
             test_set = ""
             split_policy = "random"
-        elif split_params['ttPolicy'] == 'EXPLICIT_TEST_SET':
-            test_set = "REPLACE_ME"
+        elif split_params['ttPolicy'] == 'EXPLICIT_FILTERING_TWO_DATASETS':
+            test_set = split_params['eftdTest']['datasetSmartName']
             split_policy = "explicit"
         else:
             test_set = ""
