@@ -262,6 +262,14 @@ export default defineComponent({
     font-weight: 600;
     line-height: 22px;
 }
+
+.q-field--dense .q-field__label {
+  top: 4px !important;
+  font-size: 14px !important;
+}
+.q-field--labeled.q-field--dense .q-field__native {
+    padding-top: 10px !important;
+}
 </style>
 
 <style lang="scss" scoped>
