@@ -264,7 +264,7 @@ export default defineComponent({
 }
 
 .q-field--dense .q-field__label {
-  top: 5px !important;
+  top: 4px !important;
   font-size: 14px !important;
 }
 .q-field--labeled.q-field--dense .q-field__native {
