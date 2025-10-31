@@ -69,6 +69,9 @@ export const useModelStore = defineStore("ModelStore", {
                 this.activeModel = null;
                 return;
             }
+            if (this.activeModel?.name === modelName) {
+                return;
+            }
             this.activeModel = model;
             WT1iser.selectModel();
             this.isLoading = true;

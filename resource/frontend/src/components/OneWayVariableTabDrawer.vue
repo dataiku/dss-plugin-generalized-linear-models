@@ -18,7 +18,7 @@
                         @update:modelValue="onVariableChange"
                     >
                         <template v-slot:selected-item="scope">
-                            <q-item v-if="scope.opt">
+                            <q-item class="selected-variable-item" v-if="scope.opt">
                             {{ oneWayStore.formOptions.selectedVariable?.variable }}
                             </q-item>
                         </template>
@@ -159,7 +159,16 @@ export default defineComponent({
             }
         },
         async onVariableChange(value: VariablePoint) {
-            this.oneWayStore.selectVariable(value);
+            const store = useModelStore();
+            let foundVariable = this.oneWayStore.availableVariables.find(v => v === value);
+            if (foundVariable) {
+                this.oneWayStore.formOptions.selectedVariable = { ...foundVariable };
+            }
+            if (!this.oneWayStore.formOptions.selectedVariable || !store.activeModel?.id) {
+                this.oneWayStore.primaryChartData = [];
+                this.oneWayStore.comparisonChartData = [];
+                return;
+            }
         },
         async onClickOneWay() {
             this.oneWayStore.exportOneWayChart();
@@ -223,11 +232,18 @@ export default defineComponent({
 .train-test-wrapper {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 12px;
 }
 
 .bs-primary-button {
     background-color:#2B66FF;
     color: white;
+}
+
+.selected-variable-item {
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 6px;
 }
 </style>
