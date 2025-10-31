@@ -3,13 +3,11 @@
     :model-value="store.selectedMlTask"
     :all-options="store.mlTaskOptions"
     option-value="mlTaskId"
-    @update:modelValue="value => store.selectMlTask(value)"
+    @update:modelValue="handleSelect"
     :disabled="disabled"
   >
     <template #selected-item>
-      <div v-if="store.selectedMlTask.mlTaskId">
-        {{ store.selectedMlTask.analysisName }} ({{ store.selectedMlTask.mlTaskId }})
-      </div>
+      <div v-if="store.selectedMlTask.mlTaskId">{{store.selectedMlTask.analysisName}} ({{store.selectedMlTask.mlTaskId}})</div>
       <div v-else class="text-grey">
         Select an analysis...
       </div>
@@ -55,18 +53,33 @@ export default defineComponent({
       default: false
     }
   },
-  setup() {
+  emits: ['analysis-selected'],
+  setup(props, { emit }) {
     const store = useAnalysisStore();
     function isTaskValid(mlTask: MlTask): boolean {
       return mlTask.isValid;
     }
-    return { store, isTaskValid };
+    function handleSelect(value: MlTask) {
+      if (!value) return; // Guard against null/undefined
+      store.selectMlTask(value); // This is what it did before
+      if (value.mlTaskId) {
+        emit('analysis-selected'); // This emits the event to the parent
+      }
+    }
+    return { store, isTaskValid, handleSelect };
   }
 });
 </script>
 
 <style scoped>
+
 .bs-select {
   min-width: 260px;
 }
+
+::v-deep(.bs-selection-content) {
+  max-width: 100% !important;
+  white-space: nowrap;
+}
+
 </style>

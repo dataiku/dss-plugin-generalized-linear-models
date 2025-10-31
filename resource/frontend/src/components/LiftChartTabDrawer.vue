@@ -90,11 +90,12 @@ export default defineComponent({
     margin-top: 12px;
 }
 
-.train-test-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
+ .train-test-wrapper {
+     display: flex;
+     align-items: center;
+     justify-content: space-between;
+     gap: 12px;
+ }
 
 .bs-primary-button {
     background-color:#2B66FF;
@@ -105,7 +106,7 @@ export default defineComponent({
     display: flex;
     justify-content: flex-end;
     width: 100%; 
-    padding: 20px;
+    padding: 16px 0;
     margin-bottom: 30px;
 }
 </style>

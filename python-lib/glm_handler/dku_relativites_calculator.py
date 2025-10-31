@@ -48,7 +48,12 @@ class RelativitiesCalculator:
             logger.error(f"Error initializing RelativitiesCalculator: {e}")
             self.train_set = None
             self.test_set = None
-        
+    
+    def _predict_from_df(self, df):
+        preprocessed_data = self.model_retriever.predictor.preprocess(df)
+        predictions_array = self.model_retriever.predictor._clf.predict(preprocessed_data[0])
+        return predictions_array
+
     def compute_base_values(self):
         logger.info("Computing base values on initiation.")
         params = self.model_retriever.predictor.params
@@ -102,7 +107,7 @@ class RelativitiesCalculator:
 
     def calculate_baseline_prediction(self, sample_train_row):
         logger.info("Calculating baseline prediction")
-        return self.model_retriever.predictor.predict(sample_train_row).iloc[0][0]
+        return self._predict_from_df(sample_train_row)[0]
 
     def construct_relativities_df(self):
         logger.info("constructing relativites DF")
@@ -129,6 +134,7 @@ class RelativitiesCalculator:
     def get_relativities_df(self):
         """
         Computes and returns the relativities DataFrame for the model.
+        (Optimized with batch prediction)
         Returns:
             pd.DataFrame: The relativities DataFrame.
         """
@@ -139,11 +145,13 @@ class RelativitiesCalculator:
         self.relativities = {'base': {'base': baseline_prediction}}
         used_features = self.model_retriever.get_used_features()
 
+        dfs_to_predict = []
+        features_and_values = [] # To map results back
+
         for feature in used_features:
             feature_type = self.model_retriever.features[feature]['type']
             base_value = self.base_values[feature]
-            self.relativities[feature] = {base_value: 1.0}
-            train_row_copy = sample_train_row.copy()
+            self.relativities[feature] = {}
 
             exposure_col = self.model_retriever.exposure_columns
             exposure_per_modality = self.train_set.groupby(feature)[exposure_col].sum()
@@ -153,8 +161,22 @@ class RelativitiesCalculator:
                 values_to_process.append(base_value)
 
             for value in values_to_process:
+                if value == base_value:
+                    self.relativities[feature][value] = 1.0
+                    continue
+                
+                train_row_copy = sample_train_row.copy()
                 train_row_copy[feature] = value
-                prediction = self.model_retriever.predictor.predict(train_row_copy).iloc[0][0]
+                dfs_to_predict.append(train_row_copy)
+                features_and_values.append((feature, value))
+
+        if dfs_to_predict:
+            logger.info(f"Predicting batch of {len(dfs_to_predict)} rows for relativities...")
+            batch_df = pd.concat(dfs_to_predict, ignore_index=True)
+            batch_predictions = self._predict_from_df(batch_df)
+            
+            for i, (feature, value) in enumerate(features_and_values):
+                prediction = batch_predictions[i]
                 relativity = prediction / baseline_prediction
                 self.relativities[feature][value] = relativity
 
@@ -165,6 +187,7 @@ class RelativitiesCalculator:
     def get_relativities_interactions_df(self):
         """
         Computes and returns the relativities DataFrame for the model.
+        (Optimized with batch prediction)
         Returns:
             pd.DataFrame: The relativities DataFrame.
         """
@@ -174,6 +197,9 @@ class RelativitiesCalculator:
 
         self.relativities_interaction = {}
         interactions = self.model_retriever.get_interactions()
+        
+        dfs_to_predict = []
+        features_and_values_list = [] # To map results back
 
         for interaction in interactions:
             interaction_first = interaction[0]
@@ -181,36 +207,48 @@ class RelativitiesCalculator:
             
             base_value_first = self.base_values[interaction_first]
             base_value_second = self.base_values[interaction_second]
-            try:
-                self.relativities_interaction[interaction_first][interaction_second] = {base_value_first: {base_value_second: 1.0}}
-            except KeyError:
-                self.relativities_interaction[interaction_first] = {interaction_second:  {base_value_first: {base_value_second: 1.0}}}
-            train_row_copy = sample_train_row.copy()
+            
+            # Initialize the nested dictionary structure
+            if interaction_first not in self.relativities_interaction:
+                self.relativities_interaction[interaction_first] = {}
+            if interaction_second not in self.relativities_interaction[interaction_first]:
+                self.relativities_interaction[interaction_first][interaction_second] = {}
+            if base_value_first not in self.relativities_interaction[interaction_first][interaction_second]:
+                 self.relativities_interaction[interaction_first][interaction_second][base_value_first] = {}
+            
+            # Set base relativity
+            self.relativities_interaction[interaction_first][interaction_second][base_value_first][base_value_second] = 1.0
             
             type_first = self.variable_types.get(interaction_first)
             type_second = self.variable_types.get(interaction_second)
 
-            if type_first == 'CATEGORICAL':
-                values_to_process_first = self.modalities[interaction_first]
-            else:
-                values_to_process_first = [base_value_first]
-
-            if type_second == 'CATEGORICAL':
-                values_to_process_second = self.modalities[interaction_second]
-            else: 
-                values_to_process_second = [base_value_second]
-                
+            values_to_process_first = self.modalities[interaction_first] if type_first == 'CATEGORICAL' else [base_value_first]
+            values_to_process_second = self.modalities[interaction_second] if type_second == 'CATEGORICAL' else [base_value_second]
             
             for value_first in values_to_process_first:
                 for value_second in values_to_process_second:
+                    if value_first == base_value_first and value_second == base_value_second:
+                        continue # Skip base case, already set to 1.0
+
+                    train_row_copy = sample_train_row.copy()
                     train_row_copy[interaction_first] = value_first
                     train_row_copy[interaction_second] = value_second
-                    prediction = self.model_retriever.predictor.predict(train_row_copy).iloc[0][0]
-                    relativity = prediction / baseline_prediction
-                    try:
-                        self.relativities_interaction[interaction_first][interaction_second][value_first][value_second] = relativity
-                    except KeyError:
-                        self.relativities_interaction[interaction_first][interaction_second][value_first] = {value_second: relativity}
+                    dfs_to_predict.append(train_row_copy)
+                    features_and_values_list.append((interaction_first, interaction_second, value_first, value_second))
+
+        # Predict on the entire batch at once
+        if dfs_to_predict:
+            logger.info(f"Predicting batch of {len(dfs_to_predict)} rows for interactions...")
+            batch_df = pd.concat(dfs_to_predict, ignore_index=True)
+            batch_predictions = self._predict_from_df(batch_df)
+            
+            # Map results back
+            for i, (f1, f2, v1, v2) in enumerate(features_and_values_list):
+                prediction = batch_predictions[i]
+                relativity = prediction / baseline_prediction
+                if v1 not in self.relativities_interaction[f1][f2]:
+                    self.relativities_interaction[f1][f2][v1] = {}
+                self.relativities_interaction[f1][f2][v1][v2] = relativity
 
         relativities_interaction_df = self.construct_relativities_interaction_df()
         logger.info("Relativities DataFrame computed")
@@ -245,7 +283,7 @@ class RelativitiesCalculator:
         else:
             raise ValueError("dataset_type must be either 'train' or 'test'")
 
-        predicted = self.model_retriever.predictor.predict(dataset)
+        predicted = self._predict_from_df(dataset)
         dataset['predicted'] = predicted
         dataset['weight'] = 1 if self.model_retriever.exposure_columns is None else dataset[self.model_retriever.exposure_columns]
 
@@ -311,12 +349,9 @@ class RelativitiesCalculator:
             if other_feature != feature:
                 feature_df[other_feature] = self.base_values[other_feature]
 
-        logger.debug("predictions")
-        logger.debug(feature_df)
-        predictions = self.model_retriever.predictor.predict(feature_df)
-        logger.debug(predictions)
+        predictions = self._predict_from_df(feature_df)
         base_data[feature] = pd.DataFrame({
-            f'base_{feature}': predictions['prediction'],
+            f'base_{feature}': predictions,
             feature: feature_df[feature]
         })
 

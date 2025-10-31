@@ -3,7 +3,7 @@
     <q-card flat bordered>
         <q-card-section>
             <BsLabel label="Select an Existing Analysis" className="section-title" />
-            <AnalysisSelector/>
+            <AnalysisSelector @analysis-selected="bubbleSelectionEvent"/>
             <div class="create-switch-container">
                 <BsButton 
                     v-if="mode === 'select'"
@@ -76,11 +76,13 @@
     </div>
 </template>
 
+
 <script lang="ts">
 import { BsButton, BsLabel, BsSelect } from 'quasar-ui-bs';
 import AnalysisSelector from './AnalysisSelector.vue';
 import { defineComponent } from 'vue';
 import { useAnalysisStore } from '../stores/analysisStore';
+import { useNotification } from '../composables/use-notification';
 import type { MlTask } from '../models';
 
 export default defineComponent({
@@ -91,6 +93,7 @@ export default defineComponent({
         BsButton
     },
     name: 'AnalysisSetup',
+    emits: ['analysis-created', 'analysis-selected'],
     data() {
         return {
             store: useAnalysisStore(),
@@ -115,6 +118,9 @@ export default defineComponent({
             this.mode = 'create';
             this.store.selectMlTask({} as MlTask);
         },
+        bubbleSelectionEvent() {
+            this.$emit('analysis-selected');
+        },
         switchToSelectMode() {
             this.mode = 'select';
             this.form = {
@@ -135,9 +141,10 @@ export default defineComponent({
             if (!this.isFormValid) return;
             try {
                 await this.store.createNewMlTask(this.form);
+                this.$emit('analysis-created');
                 this.switchToSelectMode();
-            } catch (error) {
-                console.error("Component failed to create analysis.");
+            } catch (error: any) {
+                useNotification("negative", error?.message || "Component failed to create analysis.");
             }
         },
         isTaskValid(mlTask: MlTask): boolean {

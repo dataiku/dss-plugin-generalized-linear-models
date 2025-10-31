@@ -1,7 +1,7 @@
 {
   "meta": {
-    "label": "GLM Analysis",
-    "description": "Analyze your GLM",
+    "label": "Visual GLM",
+    "description": "Build GLM models visually. This webapp provides a user-friendly way to create GLM models, define their parameters, select variables, define interactions, train models, visualize the results with GLM-specific visualization, and deploy the trained models",
     "icon": "icon-picture"
   },
   "baseType": "STANDARD",

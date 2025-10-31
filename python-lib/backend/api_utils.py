@@ -23,8 +23,12 @@ def format_models(global_dku_mltask):
         if is_conform:
             model_name = model_details.get_user_meta()['name']
             matches = re.findall(model_id_pattern, model_name)
-            date = [v['value'] for v in model_details.get_user_meta()['labels'] if v['key'] == 'model:date'][0]
-            models.append({"id": ml_id, "name": matches[0], "date": date, "project_key": project_key, "ml_task_id": ml_task_id, "analysis_id": analysis_id})
+            found_date = [v['value'] for v in model_details.get_user_meta()['labels'] if v['key'] == 'model:date']
+            if (len(found_date) > 0) and (len(matches) > 0):
+                date = found_date[0]
+                models.append({"id": ml_id, "name": matches[0], "date": date, "project_key": project_key, "ml_task_id": ml_task_id, "analysis_id": analysis_id})
+            else:
+                current_app.logger.info(f"model {ml_id} missing date or name info")
         else:
             logger.info(f"model {ml_id} is not conform")
     return models

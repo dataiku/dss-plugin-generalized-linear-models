@@ -1,5 +1,11 @@
 # Changelog
 
+## [Version 2.0.1] - Patch Release - 2025-11
+
+* Small UI improvements
+* Bugfix on explicit Train/Test
+* Performance improvement
+
 ## [Version 2.0.0] - New Feature Release - 2025-10
 
 * Visual Webapp to train GLMs and assess their fit

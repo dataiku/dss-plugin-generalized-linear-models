@@ -23,6 +23,7 @@ class MockDataService:
     def train_model(self, request_json: dict):
         logger.info("Local set up: No model training completed")
         time.sleep(2)
+        raise ValueError("Model training error: Simulated training error for testing purposes.")
         return {'message': 'Model training initiated successfully.'}
     
     def deploy_model(self, request_json: dict):
@@ -101,16 +102,6 @@ class MockDataService:
         logger.info("Exporting one way graphs")
         csv_data = variable_level_stats_df.to_csv(index=False).encode('utf-8')
         return csv_data
-    
-    # def get_excluded_columns(self):
-    #     exposure_column = "Exposure"
-    #     target_column = "ClaimAmount"
-        
-    #     cols_json = {
-    #         "target_column": target_column,
-    #         "exposure_column": exposure_column
-    #     }
-    #     return cols_json
     
     def get_dataset_columns(self, request_json: dict):
         dataset_name = "claim_train"
