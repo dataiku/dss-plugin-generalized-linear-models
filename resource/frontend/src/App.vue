@@ -12,7 +12,6 @@
                                     <AnalysisSelector class="header-analysis-selector" v-if="tabInfo.name !== 'Analysis Setup'" />
                                     <BsLabel v-if="tabInfo.displayTitleInHeader" :label="tabInfo.name" className="tab-title"></BsLabel>
                                 </div>
-                                <CustomDocumentation></CustomDocumentation>
                             </template>
                     </BsHeader>
                 <BsDrawer v-if="tabInfo.drawerComponent">
@@ -27,6 +26,7 @@
                         <component
                             :is="tabInfo.contentComponent"
                             v-bind="tabInfo.contentProps"
+                            v-on="tabInfo.contentListeners"
                             @navigate-tab="goToTab"
                         />
                     </template>       
@@ -108,6 +108,10 @@ export default defineComponent({
                     contentComponent: "AnalysisSetup",
                     contentProps: {},
                     showEmptyState: false,
+                    contentListeners: {
+                        'analysis-created': this.handleAnalysisCreated,
+                        'analysis-selected': this.handleAnalysisSelected
+                    },
                     emptyState: {
                         title: "Analysis Setup",
                         subtitle:
@@ -229,6 +233,12 @@ export default defineComponent({
         }
     },
     methods: {
+        handleAnalysisCreated() {
+            this.goToTab(1);
+        },
+        handleAnalysisSelected() {
+            this.goToTab(2);
+        },
         goToTab(index: number) {
             WT1iser.tabChange({ tabIndex: index });
             const layout = this.$refs.layout as InstanceType<
@@ -244,8 +254,21 @@ export default defineComponent({
 <style>
 
 .q-drawer--with-menu~.bs-drawer-container .bs-tab-title {
-    padding-top: 26px;
-    padding-bottom: 18px;
+    padding-top: 10px;
+    padding-bottom: 20px;
+    color: #2B66FF !important;
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: 22px;
+}
+
+.q-field--dense .q-field__label {
+  top: 4px !important;
+  font-size: 14px !important;
+}
+.q-field--labeled.q-field--dense .q-field__native {
+    padding-top: 10px !important;
 }
 </style>
 
@@ -289,13 +312,14 @@ header {
     font-weight: 600;
     line-height: 22px;
     position: fixed;
-    left: 90px;
+    left: 62px;
 }
 
 .header-components {
     display: flex;
     align-items: center;
     gap: 16px;
+    height: 36px;
 }
 
 .header-analysis-selector {

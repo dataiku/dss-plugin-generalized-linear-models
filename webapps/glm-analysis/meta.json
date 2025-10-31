@@ -1,7 +1,7 @@
 
 {
     "libraries": [],
-    "label": "GLM Analysis",
+    "label": "Visual GLM",
     "backendEnabled": true,
     "autoStartBackend": false
 }

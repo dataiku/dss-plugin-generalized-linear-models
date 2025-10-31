@@ -154,6 +154,7 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
         },
 
         async selectVariable(variableName: VariablePoint) {
+            console.log("Selecting variable:", variableName);
             const store = useModelStore();
             let foundVariable = this.availableVariables.find(v => v === variableName);
             if (foundVariable) {
