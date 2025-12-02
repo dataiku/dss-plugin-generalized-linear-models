@@ -6,8 +6,8 @@
         "description": "Train and deploy Generalized Linear Models",
         "author": "Dataiku",
         "icon": "icon-bullseye",
-        "category": "AI/ML",
-        "tags": ["Machine Learning","Visualization","Recipe","WebApp"],
+        "category": "None",
+        "tags": ["Machine Learning","Statistics","Analytics"],
         "url": "https://doc.dataiku.com/dss/latest/machine-learning/generalized-linear-models/index.html",
         "licenseInfo": "Apache Software License",
         "supportLevel": "NOT_SUPPORTED"
