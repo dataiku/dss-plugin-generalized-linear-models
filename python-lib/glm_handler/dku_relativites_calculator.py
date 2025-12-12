@@ -72,17 +72,23 @@ class RelativitiesCalculator:
 
     def extract_base_level(self, custom_code):
         """
-        Extracts Base Level from preprocessing custom code
+        Extracts Base Level from preprocessing custom code.
+        Supports string and numeric (int/float) values.
         """
         base_level = None
-        # pattern = r'self\.mode_column\s*=\s*["\']([^"\']+)["\']'
-        pattern = r'"base_level":\s*(?:"([^"]+)"|(\d+))'
+        # Match either a quoted string or a signed integer/float
+        pattern = r'"base_level":\s*(?:"([^"]+)"|([+-]?\d+(?:\.\d+)?))'
         match = re.search(pattern, custom_code)
         if match:
             if match.group(1) is not None:
                 base_level = match.group(1)
             elif match.group(2) is not None:
-                base_level = int(match.group(2))
+                # Convert numeric string to float to support decimals
+                num_str = match.group(2)
+                try:
+                    base_level = float(num_str)
+                except ValueError:
+                    base_level = None
         logger.debug(f"returning base_level {base_level}")
         return base_level
 
