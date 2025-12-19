@@ -14,5 +14,12 @@
     "font_awesome"
   ],
   "params": [
+    {
+        "name": "plugin_code_env",
+        "label": "Plugin Code Environment",
+        "description": "If the backend is not run by an admin, set the name of the plugin code env. Otherwise, leave empty.",
+        "type": "STRING",
+        "mandatory": false
+      }
   ]
 }
