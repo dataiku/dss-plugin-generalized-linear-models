@@ -2,7 +2,7 @@ import logging
 from typing import Any, Dict
 import dataiku
 import pandas as pd
-from dataiku.customrecipe import get_recipe_config
+from dataiku.customwebapp import get_webapp_config
 import os
 import pwd
 from typing import Optional
@@ -36,6 +36,16 @@ class DataikuApi:
     @property
     def plugin_code_env(self):
         plugin = self.client.get_plugin('generalized-linear-models')
-        return plugin.get_settings().get_raw()['codeEnvName']
+        webapp_config = get_webapp_config()
+        plugin_code_env = webapp_config.get("plugin_code_env", None)
+        if plugin_code_env:
+            return plugin_code_env
+        try:
+            return plugin.get_settings().get_raw()['codeEnvName']
+        except Exception as e:
+            if "unauthorizedexception" in str(e).lower():
+                raise Exception("Could not retrieve the plugin code environment name. Please run backend as admin or set the plugin_code_env in the webapp settings.")
+            else:
+                raise
 
 dataiku_api = DataikuApi()
