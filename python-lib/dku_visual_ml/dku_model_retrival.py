@@ -172,10 +172,21 @@ class VisualMLModelRetriver(DataikuClientProject):
 
     def _extract_base_level(self, feature_settings: Dict[str, Any]) -> Optional[str]:
         custom_handling_code = feature_settings.get('customHandlingCode', '')
-        pattern = r'["\']base_level["\']\s*:\s*(["\'])(.*?)\1'
+       # Match either a quoted string or a signed integer/float
+        pattern = r'"base_level":\s*(?:"([^"]+)"|([+-]?\d+(?:\.\d+)?))'
         match = re.search(pattern, custom_handling_code)
-        # If a match is found, the value is in the second captured group.
-        return match.group(2) if match else None
+        if match:
+            if match.group(1) is not None:
+                base_level = match.group(1)
+            elif match.group(2) is not None:
+                # Convert numeric string to float to support decimals
+                num_str = match.group(2)
+                try:
+                    base_level = float(num_str)
+                except ValueError:
+                    base_level = None
+        logger.debug(f"returning base_level {base_level}")
+        return base_level
     
     def _process_feature(self, feature: str, preprocessing: Dict[str, Any], 
                          exposure_columns: str, target_column: str) -> Dict[str, Any]:
