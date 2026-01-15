@@ -79,6 +79,7 @@ class RelativitiesCalculator:
         # Match either a quoted string or a signed integer/float
         pattern = r'"base_level":\s*(?:"([^"]+)"|([+-]?\d+(?:\.\d+)?))'
         match = re.search(pattern, custom_code)
+        base_level = None
         if match:
             if match.group(1) is not None:
                 base_level = match.group(1)
