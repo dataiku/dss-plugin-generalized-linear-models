@@ -1,5 +1,11 @@
 # Changelog
 
+## [Version 2.0.2] - Patch Release - 2026-01
+
+* Ability for non Admin to run the webapp
+* Size reduction of the compiled css
+* Bugfixes
+
 ## [Version 2.0.1] - Patch Release - 2025-11
 
 * Small UI improvements
