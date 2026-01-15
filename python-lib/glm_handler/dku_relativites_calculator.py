@@ -325,7 +325,15 @@ class RelativitiesCalculator:
                 if grouping_info is None:
                     copy_test_df['feature_bin'] = pd.qcut(copy_test_df[feature], q=max_modalities, duplicates='drop')
                     def weighted_mean(x):
-                        return np.average(x[feature], weights=x[exposure_col])
+                        weights = x[exposure_col].fillna(0)
+                        weight_sum = weights.sum()
+                        if weight_sum <= 0:
+                            logger.warning(
+                                "Zero-weight bin detected for %s; falling back to unweighted average.",
+                                feature
+                            )
+                            return x[feature].mean()
+                        return np.average(x[feature], weights=weights)
                     bin_means = copy_test_df.groupby('feature_bin').apply(weighted_mean)
                     bin_map = dict(zip(bin_means.index, bin_means.values))
                     # Map the bin containing the base_value to the base_value itself
