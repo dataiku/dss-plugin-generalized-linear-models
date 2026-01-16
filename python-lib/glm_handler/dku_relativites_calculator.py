@@ -72,17 +72,24 @@ class RelativitiesCalculator:
 
     def extract_base_level(self, custom_code):
         """
-        Extracts Base Level from preprocessing custom code
+        Extracts Base Level from preprocessing custom code.
+        Supports string and numeric (int/float) values.
         """
         base_level = None
-        # pattern = r'self\.mode_column\s*=\s*["\']([^"\']+)["\']'
-        pattern = r'"base_level":\s*(?:"([^"]+)"|(\d+))'
+        # Match either a quoted string or a signed integer/float
+        pattern = r'"base_level":\s*(?:"([^"]+)"|([+-]?\d+(?:\.\d+)?))'
         match = re.search(pattern, custom_code)
+        base_level = None
         if match:
             if match.group(1) is not None:
                 base_level = match.group(1)
             elif match.group(2) is not None:
-                base_level = int(match.group(2))
+                # Convert numeric string to float to support decimals
+                num_str = match.group(2)
+                try:
+                    base_level = float(num_str)
+                except ValueError:
+                    base_level = None
         logger.debug(f"returning base_level {base_level}")
         return base_level
 
@@ -318,7 +325,15 @@ class RelativitiesCalculator:
                 if grouping_info is None:
                     copy_test_df['feature_bin'] = pd.qcut(copy_test_df[feature], q=max_modalities, duplicates='drop')
                     def weighted_mean(x):
-                        return np.average(x[feature], weights=x[exposure_col])
+                        weights = x[exposure_col].fillna(0)
+                        weight_sum = weights.sum()
+                        if weight_sum <= 0:
+                            logger.warning(
+                                "Zero-weight bin detected for %s; falling back to unweighted average.",
+                                feature
+                            )
+                            return x[feature].mean()
+                        return np.average(x[feature], weights=weights)
                     bin_means = copy_test_df.groupby('feature_bin').apply(weighted_mean)
                     bin_map = dict(zip(bin_means.index, bin_means.values))
                     # Map the bin containing the base_value to the base_value itself
