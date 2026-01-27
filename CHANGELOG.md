@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 2.0.3] - Patch Release - 2026-01
+
+* Bugfix on binary classification
+
 ## [Version 2.0.2] - Patch Release - 2026-01
 
 * Ability for non Admin to run the webapp
