@@ -110,7 +110,7 @@ def test_regression_regularized():
     regression_model.fit(X, y)
     actual_intercept = regression_model.intercept_
     expected_intercept = 117.25972889136088
-    assert_almost_equal(actual_intercept, expected_intercept, decimal=10)
+    assert_almost_equal(actual_intercept, expected_intercept, decimal=8)
 
     actual_coeffs = regression_model.coef_.tolist()
     expected_coeffs = [-8.21616874e-02, -4.04677477e+00,  2.77749123e-01, -4.19380027e-01,
