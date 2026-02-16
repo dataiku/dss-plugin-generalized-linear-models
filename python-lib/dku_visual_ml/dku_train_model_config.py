@@ -41,6 +41,54 @@ class DKUVisualMLConfig:
         if variable_type:
             return variable_type
         else: raise ValueError(f"Variable type not set in the Visual ML configuration for {variable}")
+
+    @staticmethod
+    def _normalize_spline_definitions(definitions):
+        if not isinstance(definitions, list):
+            return []
+
+        normalized = []
+        for definition in definitions:
+            if not isinstance(definition, dict):
+                continue
+            if not {"min_value", "max_value", "degree"}.issubset(definition.keys()):
+                continue
+            try:
+                normalized.append({
+                    "min_value": float(definition["min_value"]),
+                    "max_value": float(definition["max_value"]),
+                    "degree": int(definition["degree"]),
+                })
+            except (TypeError, ValueError):
+                continue
+        return normalized
+
+    def get_feature_spline_definitions(self, variable):
+        feature_config = self.variables.get(variable, {})
+        return self._normalize_spline_definitions(feature_config.get("spline_definitions"))
+
+    @staticmethod
+    def build_numeric_custom_handling_code(base_level, spline_definitions):
+        custom_preamble = (
+            'from dataiku.base.model_plugin import prepare_for_plugin\n'
+            'prepare_for_plugin(\'generalized-linear-models\', \'generalized-linear-models_regression\')\n'
+        )
+
+        if spline_definitions:
+            if base_level is None:
+                raise ValueError("Spline definitions require a base_level for the variable")
+            return (
+                custom_preamble +
+                'from processors.processors import continuous_spline\n'
+                'processor = continuous_spline({"base_level": ' + repr(base_level) +
+                ', "definitions": ' + repr(spline_definitions) + '})\n'
+            )
+
+        return (
+            custom_preamble +
+            'from processors.processors import save_base\n'
+            'processor = save_base({"base_level": ' + repr(base_level) + '})\n'
+        )
         
     def get_included_variables(self):
         included_variables = []

@@ -156,12 +156,20 @@ class VisualMLModelTrainer(DataikuClientProject):
             
             fs = settings.get_feature_preprocessing(variable)
             variable_type = self.visual_ml_config.get_variable_type(variable)
-            base_level = self.visual_ml_config.variables[variable].get('base_level', None)
+            variable_config = self.visual_ml_config.variables.get(variable, {})
+            base_level = variable_config.get('base_level', None)
+            processing = str(variable_config.get('processing', 'CUSTOM')).upper()
+            spline_definitions = self.visual_ml_config.get_feature_spline_definitions(variable)
 
             if variable_type == 'categorical':
                 fs = self.update_to_categorical(fs, base_level)
             elif variable_type == 'numerical':
-                fs = self.update_to_numeric(fs, base_level)
+                fs = self.update_to_numeric(
+                    fs,
+                    base_level,
+                    processing=processing,
+                    spline_definitions=spline_definitions,
+                )
                 
             if include:
                 settings.use_feature(variable)
@@ -193,7 +201,7 @@ class VisualMLModelTrainer(DataikuClientProject):
         logger.debug(exposure_variable)
         settings.use_feature(exposure_variable)
         fs = settings.get_feature_preprocessing(exposure_variable)
-        fs = self.update_to_numeric(fs, None)
+        fs = self.update_to_numeric(fs, None, processing="CUSTOM", spline_definitions=[])
         settings.save()
         logger.debug("Successfully updated the Dataiku ML task settings for exposure variables")
     
@@ -362,13 +370,10 @@ class VisualMLModelTrainer(DataikuClientProject):
         settings.save()
         return
     
-    def update_to_numeric(self, fs, base_level):
+    def update_to_numeric(self, fs, base_level, processing="CUSTOM", spline_definitions=None):
     
         fs['generate_derivative'] = False
-        if base_level is None:
-            fs['numerical_handling'] = 'REGULAR'
-        else:
-            fs['numerical_handling'] = 'CUSTOM'
+        fs['numerical_handling'] = 'CUSTOM'
         fs['missing_handling'] = 'IMPUTE'
         fs['missing_impute_with'] = 'MEAN'
         fs['impute_constant_value'] = 0.0
@@ -380,14 +385,10 @@ class VisualMLModelTrainer(DataikuClientProject):
         fs['datetime_cyclical_periods'] = []
         fs['role'] = 'INPUT'
         fs['type'] = 'NUMERIC'
-        if base_level is None:
-            fs['customHandlingCode'] = ''
-        else:
-            fs['customHandlingCode'] = (
-            'from dataiku.base.model_plugin import prepare_for_plugin\n'
-            'prepare_for_plugin(\'generalized-linear-models\', \'generalized-linear-models_regression\')\n'
-            'from processors.processors import save_base\n'
-            'processor = save_base({"base_level": ' + str(base_level) + '})\n')
+        fs['customHandlingCode'] = self.visual_ml_config.build_numeric_custom_handling_code(
+            base_level=base_level,
+            spline_definitions=spline_definitions or [],
+        )
         fs['customProcessorWantsMatrix'] = True
         fs['sendToInput'] = 'main'
         return fs
