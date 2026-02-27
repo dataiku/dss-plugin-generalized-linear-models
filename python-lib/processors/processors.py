@@ -12,7 +12,6 @@ class rebase_mode():
         self.columns = set(self.modalities)
         self.columns = list(self.columns)
         self.columns.remove(self.base_level)
-        self.column_name = series.name
     def transform(self, series):
         to_replace={m: self.base_level for m in np.unique(series) if m not in self.modalities}
         new_series = series.replace(to_replace=to_replace)
@@ -67,7 +66,6 @@ class continuous_spline():
         self.spline_features = self.spline_features[:3]
         self.scaler = StandardScaler()
         self.feature_names = []
-        self.column_name = None
         
     def fit(self, series):
         """Fit the processor on training data
@@ -75,7 +73,6 @@ class continuous_spline():
         Args:
             series: pandas Series with continuous values
         """
-        self.column_name = series.name
         
         # Generate spline features on training data
         spline_features = self._generate_splines(series)
@@ -136,12 +133,12 @@ class continuous_spline():
                 # Generate polynomial features up to degree
                 for power in range(1, deg + 1):
                     feat_name = (
-                        f"{self.column_name}_f{feature_idx}_s{segment_idx}"
+                        f"spline_f{feature_idx}_s{segment_idx}"
                         f"_{min_v}_{max_v}_d{power}"
                     )
                     generated_features[feat_name] = ramp ** power
 
         if not generated_features:
-            generated_features[f"{self.column_name}_spline_default"] = np.zeros_like(x_col, dtype=float)
+            generated_features[f"spline_default"] = np.zeros_like(x_col, dtype=float)
         
         return pd.DataFrame(generated_features, index=series.index)
