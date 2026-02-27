@@ -201,7 +201,7 @@ class VisualMLModelTrainer(DataikuClientProject):
         logger.debug(exposure_variable)
         settings.use_feature(exposure_variable)
         fs = settings.get_feature_preprocessing(exposure_variable)
-        fs = self.update_to_numeric(fs, None, processing="CUSTOM", spline_features=[])
+        fs = self.update_to_numeric(fs, None, processing="REGULAR", spline_features=[])
         settings.save()
         logger.debug("Successfully updated the Dataiku ML task settings for exposure variables")
     
@@ -371,9 +371,11 @@ class VisualMLModelTrainer(DataikuClientProject):
         return
     
     def update_to_numeric(self, fs, base_level, processing="CUSTOM", spline_features=None):
-    
+        processing_mode = str(processing or "CUSTOM").upper()
+        use_custom_processing = processing_mode == "CUSTOM"
+
         fs['generate_derivative'] = False
-        fs['numerical_handling'] = 'CUSTOM'
+        fs['numerical_handling'] = 'CUSTOM' if use_custom_processing else 'REGULAR'
         fs['missing_handling'] = 'IMPUTE'
         fs['missing_impute_with'] = 'MEAN'
         fs['impute_constant_value'] = 0.0
@@ -385,10 +387,12 @@ class VisualMLModelTrainer(DataikuClientProject):
         fs['datetime_cyclical_periods'] = []
         fs['role'] = 'INPUT'
         fs['type'] = 'NUMERIC'
-        fs['customHandlingCode'] = self.visual_ml_config.build_numeric_custom_handling_code(
-            base_level=base_level,
-            spline_features=spline_features or [],
-        )
+        fs['customHandlingCode'] = ''
+        if use_custom_processing:
+            fs['customHandlingCode'] = self.visual_ml_config.build_numeric_custom_handling_code(
+                base_level=base_level,
+                spline_features=spline_features or [],
+            )
         fs['customProcessorWantsMatrix'] = True
         fs['sendToInput'] = 'main'
         return fs

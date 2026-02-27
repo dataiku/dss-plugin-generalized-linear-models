@@ -38,7 +38,6 @@ class save_base():
     def transform(self, series):
         return pd.DataFrame(series)
 
-
 class continuous_spline():
     """This processor creates piecewise spline features with standard scaling
     
@@ -113,12 +112,13 @@ class continuous_spline():
         """Generate raw spline features before scaling
         
         Args:
-            series: pandas Series with continuous values
+            series: pandas DataFrame/Series with continuous values
             
         Returns:
             pd.DataFrame with raw spline features
         """
-        x_col = series.values
+        # FIX: Flatten the values to ensure a strictly 1D array
+        x_col = np.ravel(series.values)
         generated_features = {}
         
         for feature_idx, segments in enumerate(self.spline_features, start=1):
@@ -139,6 +139,6 @@ class continuous_spline():
                     generated_features[feat_name] = ramp ** power
 
         if not generated_features:
-            generated_features[f"spline_default"] = np.zeros_like(x_col, dtype=float)
+            generated_features["spline_default"] = np.zeros_like(x_col, dtype=float)
         
         return pd.DataFrame(generated_features, index=series.index)

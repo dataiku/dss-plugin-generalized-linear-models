@@ -71,3 +71,18 @@ def test_update_to_numeric_requires_base_level_when_using_spline_features():
             processing="CUSTOM",
             spline_features=[[{"min_value": 16.0, "max_value": 25.0, "degree": 2}]],
         )
+
+
+def test_update_to_numeric_regular_processing_has_no_custom_code():
+    trainer = _make_trainer()
+    fs = {}
+
+    updated = trainer.update_to_numeric(
+        fs,
+        base_level=None,
+        processing="REGULAR",
+        spline_features=[],
+    )
+
+    assert updated["numerical_handling"] == "REGULAR"
+    assert updated["customHandlingCode"] == ""
