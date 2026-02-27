@@ -1,6 +1,7 @@
 import dataikuapi
 from logging_assist.logging import logger
 import re
+import ast
 from dku_visual_ml.dku_base import DataikuClientProject
 from dataiku.doctor.posttraining.model_information_handler import PredictionModelInformationHandler
 from typing import List, Dict, Any, Optional
@@ -171,6 +172,10 @@ class VisualMLModelRetriver(DataikuClientProject):
         }
 
     def _extract_base_level(self, feature_settings: Dict[str, Any]) -> Optional[str]:
+        spline_config = self._extract_continuous_spline_config(feature_settings)
+        if spline_config is not None and "base_level" in spline_config:
+            return spline_config.get("base_level")
+
         custom_handling_code = feature_settings.get('customHandlingCode', '')
        # Match either a quoted string or a signed integer/float
         pattern = r'"base_level":\s*(?:"([^"]+)"|([+-]?\d+(?:\.\d+)?))'
@@ -188,6 +193,69 @@ class VisualMLModelRetriver(DataikuClientProject):
                     base_level = None
         logger.debug(f"returning base_level {base_level}")
         return base_level
+
+    def _extract_continuous_spline_config(self, feature_settings: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        custom_handling_code = feature_settings.get('customHandlingCode', '')
+        if "continuous_spline" not in custom_handling_code:
+            return None
+
+        try:
+            parsed = ast.parse(custom_handling_code)
+        except SyntaxError:
+            return None
+
+        for node in ast.walk(parsed):
+            if not isinstance(node, ast.Assign):
+                continue
+            value = node.value
+            if not isinstance(value, ast.Call):
+                continue
+            if not isinstance(value.func, ast.Name) or value.func.id != "continuous_spline":
+                continue
+            if not value.args:
+                continue
+            try:
+                config_dict = ast.literal_eval(value.args[0])
+            except (ValueError, SyntaxError):
+                continue
+            if isinstance(config_dict, dict):
+                return config_dict
+        return None
+
+    def _extract_spline_features(self, feature_settings: Dict[str, Any]) -> List[List[Dict[str, Any]]]:
+        spline_config = self._extract_continuous_spline_config(feature_settings)
+        if not spline_config:
+            return []
+
+        raw_spline_features = spline_config.get("spline_features")
+        if raw_spline_features is None and spline_config.get("definitions") is not None:
+            # Backward compatibility with flat shape.
+            raw_spline_features = [spline_config.get("definitions")]
+
+        if not isinstance(raw_spline_features, list):
+            return []
+
+        spline_features = []
+        for feature in raw_spline_features:
+            if not isinstance(feature, list):
+                continue
+            segments = []
+            for segment in feature:
+                if not isinstance(segment, dict):
+                    continue
+                if not {"min_value", "max_value", "degree"}.issubset(segment.keys()):
+                    continue
+                try:
+                    segments.append({
+                        "min_value": float(segment["min_value"]),
+                        "max_value": float(segment["max_value"]),
+                        "degree": int(segment["degree"]),
+                    })
+                except (TypeError, ValueError):
+                    continue
+            if segments:
+                spline_features.append(segments)
+        return spline_features
     
     def _process_feature(self, feature: str, preprocessing: Dict[str, Any], 
                          exposure_columns: str, target_column: str) -> Dict[str, Any]:
@@ -195,6 +263,7 @@ class VisualMLModelRetriver(DataikuClientProject):
         feature_settings = preprocessing.get(feature, {})
         feature_dict = self._get_basic_feature_info(feature_settings)
         feature_dict["baseLevel"] = self._extract_base_level(feature_settings)
+        feature_dict["splineFeatures"] = self._extract_spline_features(feature_settings)
         
         if feature == exposure_columns:
             feature_dict["role"] = "Exposure"

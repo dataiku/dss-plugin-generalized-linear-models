@@ -44,22 +44,27 @@ class continuous_spline():
     """This processor creates piecewise spline features with standard scaling
     
     Config should contain:
-    - 'definitions': list of dicts with 'min_value', 'max_value', 'degree'
+    - 'spline_features': list of list of dicts with 'min_value', 'max_value', 'degree'
     
     Example config:
     {
-        "definitions": [
-            {"min_value": 16, "max_value": 25, "degree": 2},
-            {"min_value": 25, "max_value": 65, "degree": 0},
-            {"min_value": 65, "max_value": 100, "degree": 1}
+        "spline_features": [
+            [
+                {"min_value": 16, "max_value": 25, "degree": 2},
+                {"min_value": 25, "max_value": 100, "degree": 1}
+            ]
         ]
     }
     """
     def __init__(self, config):
         self.base_level = config["base_level"]
-        self.definitions = config.get("definitions", [])
-        # Sort definitions by min_value for consistency
-        self.definitions.sort(key=lambda x: x['min_value'])
+        self.spline_features = config.get("spline_features", [])
+        if not self.spline_features:
+            # Backward compatibility for historical config shape.
+            definitions = config.get("definitions", [])
+            if definitions:
+                self.spline_features = [definitions]
+        self.spline_features = self.spline_features[:3]
         self.scaler = StandardScaler()
         self.feature_names = []
         self.column_name = None
@@ -119,17 +124,24 @@ class continuous_spline():
         x_col = series.values
         generated_features = {}
         
-        for d in self.definitions:
-            min_v = d['min_value']
-            max_v = d['max_value']
-            deg = d['degree']
-            
-            # Base ramp: 0 below min, linear inside, constant above max
-            ramp = np.clip(x_col, min_v, max_v) - min_v
-            
-            # Generate polynomial features up to degree
-            for power in range(1, deg + 1):
-                feat_name = f"{self.column_name}_{min_v}_{max_v}_d{power}"
-                generated_features[feat_name] = ramp ** power
+        for feature_idx, segments in enumerate(self.spline_features, start=1):
+            for segment_idx, d in enumerate(segments, start=1):
+                min_v = d['min_value']
+                max_v = d['max_value']
+                deg = d['degree']
+
+                # Base ramp: 0 below min, linear inside, constant above max
+                ramp = np.clip(x_col, min_v, max_v) - min_v
+
+                # Generate polynomial features up to degree
+                for power in range(1, deg + 1):
+                    feat_name = (
+                        f"{self.column_name}_f{feature_idx}_s{segment_idx}"
+                        f"_{min_v}_{max_v}_d{power}"
+                    )
+                    generated_features[feat_name] = ramp ** power
+
+        if not generated_features:
+            generated_features[f"{self.column_name}_spline_default"] = np.zeros_like(x_col, dtype=float)
         
         return pd.DataFrame(generated_features, index=series.index)

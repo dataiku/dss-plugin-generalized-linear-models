@@ -43,45 +43,70 @@ class DKUVisualMLConfig:
         else: raise ValueError(f"Variable type not set in the Visual ML configuration for {variable}")
 
     @staticmethod
-    def _normalize_spline_definitions(definitions):
-        if not isinstance(definitions, list):
+    def _normalize_spline_segments(segments):
+        if not isinstance(segments, list):
             return []
 
         normalized = []
-        for definition in definitions:
-            if not isinstance(definition, dict):
+        for segment in segments:
+            if not isinstance(segment, dict):
                 continue
-            if not {"min_value", "max_value", "degree"}.issubset(definition.keys()):
+            if not {"min_value", "max_value", "degree"}.issubset(segment.keys()):
                 continue
             try:
-                normalized.append({
-                    "min_value": float(definition["min_value"]),
-                    "max_value": float(definition["max_value"]),
-                    "degree": int(definition["degree"]),
-                })
+                min_value = float(segment["min_value"])
+                max_value = float(segment["max_value"])
+                degree = int(segment["degree"])
             except (TypeError, ValueError):
                 continue
+            if min_value >= max_value:
+                continue
+            normalized.append({
+                "min_value": min_value,
+                "max_value": max_value,
+                "degree": degree,
+            })
         return normalized
 
-    def get_feature_spline_definitions(self, variable):
+    @classmethod
+    def _normalize_spline_features(cls, spline_features):
+        # Backward compatibility: previously a flat list of segment dicts was used.
+        if isinstance(spline_features, list) and spline_features and all(isinstance(x, dict) for x in spline_features):
+            normalized_segments = cls._normalize_spline_segments(spline_features)
+            return [normalized_segments] if normalized_segments else []
+
+        if not isinstance(spline_features, list):
+            return []
+
+        normalized_features = []
+        for feature in spline_features[:3]:
+            normalized_segments = cls._normalize_spline_segments(feature)
+            if normalized_segments:
+                normalized_features.append(normalized_segments)
+        return normalized_features
+
+    def get_feature_spline_features(self, variable):
         feature_config = self.variables.get(variable, {})
-        return self._normalize_spline_definitions(feature_config.get("spline_definitions"))
+        raw_spline_features = feature_config.get("spline_features")
+        if raw_spline_features is None:
+            raw_spline_features = feature_config.get("spline_definitions")
+        return self._normalize_spline_features(raw_spline_features)
 
     @staticmethod
-    def build_numeric_custom_handling_code(base_level, spline_definitions):
+    def build_numeric_custom_handling_code(base_level, spline_features):
         custom_preamble = (
             'from dataiku.base.model_plugin import prepare_for_plugin\n'
             'prepare_for_plugin(\'generalized-linear-models\', \'generalized-linear-models_regression\')\n'
         )
 
-        if spline_definitions:
+        if spline_features:
             if base_level is None:
-                raise ValueError("Spline definitions require a base_level for the variable")
+                raise ValueError("Spline features require a base_level for the variable")
             return (
                 custom_preamble +
                 'from processors.processors import continuous_spline\n'
                 'processor = continuous_spline({"base_level": ' + repr(base_level) +
-                ', "definitions": ' + repr(spline_definitions) + '})\n'
+                ', "spline_features": ' + repr(spline_features) + '})\n'
             )
 
         return (

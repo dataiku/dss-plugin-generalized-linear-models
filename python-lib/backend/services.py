@@ -104,7 +104,7 @@ class MockDataService:
         return csv_data
     
     def get_dataset_columns(self, request_json: dict):
-        dataset_name = "claim_train"
+        dataset_name = "claims_train"
         exposure_column = "exposure"
         
         current_app.logger.info(f"Training Dataset name selected is: {dataset_name}")

@@ -159,7 +159,7 @@ class VisualMLModelTrainer(DataikuClientProject):
             variable_config = self.visual_ml_config.variables.get(variable, {})
             base_level = variable_config.get('base_level', None)
             processing = str(variable_config.get('processing', 'CUSTOM')).upper()
-            spline_definitions = self.visual_ml_config.get_feature_spline_definitions(variable)
+            spline_features = self.visual_ml_config.get_feature_spline_features(variable)
 
             if variable_type == 'categorical':
                 fs = self.update_to_categorical(fs, base_level)
@@ -168,7 +168,7 @@ class VisualMLModelTrainer(DataikuClientProject):
                     fs,
                     base_level,
                     processing=processing,
-                    spline_definitions=spline_definitions,
+                    spline_features=spline_features,
                 )
                 
             if include:
@@ -201,7 +201,7 @@ class VisualMLModelTrainer(DataikuClientProject):
         logger.debug(exposure_variable)
         settings.use_feature(exposure_variable)
         fs = settings.get_feature_preprocessing(exposure_variable)
-        fs = self.update_to_numeric(fs, None, processing="CUSTOM", spline_definitions=[])
+        fs = self.update_to_numeric(fs, None, processing="CUSTOM", spline_features=[])
         settings.save()
         logger.debug("Successfully updated the Dataiku ML task settings for exposure variables")
     
@@ -370,7 +370,7 @@ class VisualMLModelTrainer(DataikuClientProject):
         settings.save()
         return
     
-    def update_to_numeric(self, fs, base_level, processing="CUSTOM", spline_definitions=None):
+    def update_to_numeric(self, fs, base_level, processing="CUSTOM", spline_features=None):
     
         fs['generate_derivative'] = False
         fs['numerical_handling'] = 'CUSTOM'
@@ -387,7 +387,7 @@ class VisualMLModelTrainer(DataikuClientProject):
         fs['type'] = 'NUMERIC'
         fs['customHandlingCode'] = self.visual_ml_config.build_numeric_custom_handling_code(
             base_level=base_level,
-            spline_definitions=spline_definitions or [],
+            spline_features=spline_features or [],
         )
         fs['customProcessorWantsMatrix'] = True
         fs['sendToInput'] = 'main'
