@@ -142,6 +142,11 @@ interface MLTaskParams {
             handling: string | null;
             chooseBaseLevel: boolean;
             baseLevel: string;
+            splineFeatures?: Array<Array<{
+                min_value: number;
+                max_value: number;
+                degree: number;
+            }>>;
         }
     };
     interactions: Array<{
@@ -214,4 +219,3 @@ export let API = {
     getVariablesForDataset: (dataset: DatasetName) => axios.post<VariableName[]>("/api/get_variables_for_dataset", dataset),
     createMlTask: (mlTaskConfiguration: MlTaskConfiguration) => axios.post<MlTask>("/api/create_ml_task", mlTaskConfiguration)
 }
-

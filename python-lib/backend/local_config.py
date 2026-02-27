@@ -11,7 +11,7 @@ DEFAULT_PROJECT_KEY = "SOL_CLAIM_MODELING"
 CONFIG = {
     # put your webapp desired config
     "default_project_key": DEFAULT_PROJECT_KEY,
-    "training_dataset_string": "claim_train",
+    "training_dataset_string": "claims_train",
     "exposure_column":"exposure"
 }
 
@@ -22,11 +22,11 @@ CONFIG = {
 def get_setup_for_dataiku_client():
     return {
         "default_project_key": CONFIG.get("default_project_key"),
-        "training_dataset_string": CONFIG.get("claim_train"),
+        "training_dataset_string": CONFIG.get("training_dataset_string"),
         "exposure_column": CONFIG.get("exposure")
     }
 
-DKU_CUSTOM_WEBAPP_CONFIG='{"saved_model_id": "U4TLlapA","training_dataset_string": "claim_train","code_env_string": "anotherValue"}'
+DKU_CUSTOM_WEBAPP_CONFIG='{"saved_model_id": "U4TLlapA","training_dataset_string": "claims_train","code_env_string": "anotherValue"}'
 
 
 dictConfig(

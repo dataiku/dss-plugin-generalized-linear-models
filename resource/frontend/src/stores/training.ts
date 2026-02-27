@@ -6,7 +6,7 @@ import type {
   ErrorPoint,
   ModelPoint
 } from '../models';
-import type { ColumnInput, Interaction, Column, APIResponse } from "../models";
+import type { ColumnInput, Interaction, Column, APIResponse, SplineFeature } from "../models";
 import { AxiosError, isAxiosError } from "axios";
 import { useModelStore } from "./webapp";
 import { useAnalysisStore } from "./analysisStore";
@@ -190,6 +190,37 @@ export const useTrainingStore = defineStore("TrainingStore", {
             this.errorMessage = 'Please select a target variable.';
             return false;
         }
+        for (const column of this.datasetColumns) {
+            if (!column.isIncluded || column.type !== "numerical") {
+                continue;
+            }
+            const splineFeatures = column.splineFeatures || [];
+            if (splineFeatures.length > 0 && (column.baseLevel === null || column.baseLevel === undefined || column.baseLevel === "")) {
+                this.errorMessage = `Base level is required for spline configuration on ${column.name}.`;
+                return false;
+            }
+            if (splineFeatures.length > 3) {
+                this.errorMessage = `At most 3 spline features are allowed for ${column.name}.`;
+                return false;
+            }
+            for (const feature of splineFeatures) {
+                if (!Array.isArray(feature) || feature.length === 0) {
+                    this.errorMessage = `Each spline feature must contain at least one segment for ${column.name}.`;
+                    return false;
+                }
+                for (const segment of feature) {
+                    if (
+                        !Number.isFinite(segment.min_value) ||
+                        !Number.isFinite(segment.max_value) ||
+                        !Number.isFinite(segment.degree) ||
+                        segment.min_value >= segment.max_value
+                    ) {
+                        this.errorMessage = `Invalid spline segment on ${column.name}.`;
+                        return false;
+                    }
+                }
+            }
+        }
         return true; // Validation passed
     },
     updateDatasetColumnsPreprocessing() {
@@ -316,7 +347,10 @@ export const useTrainingStore = defineStore("TrainingStore", {
                             type: param.type ? (param.type === 'NUMERIC' ? 'numerical' : 'categorical') : column.type,
                             preprocessing: param.handling ? (param.handling === 'DUMMIFY' ? 'Dummy Encode' : param.handling) : 'Dummy Encode',
                             options: options,
-                            baseLevel: param.baseLevel ? param.baseLevel : column.baseLevel
+                            baseLevel: param.baseLevel ? param.baseLevel : column.baseLevel,
+                            minValue: column.minValue,
+                            maxValue: column.maxValue,
+                            splineFeatures: (param.splineFeatures || []) as SplineFeature[]
                         };
                     });
 
@@ -339,7 +373,10 @@ export const useTrainingStore = defineStore("TrainingStore", {
                     type: column.type,
                     preprocessing: 'Dummy Encode',
                     options: column.options,
-                    baseLevel: column.baseLevel
+                    baseLevel: column.baseLevel,
+                    minValue: column.minValue ?? null,
+                    maxValue: column.maxValue ?? null,
+                    splineFeatures: []
                 }));
                 await this.fetchExcludedColumns();
             } catch (error) {
@@ -369,13 +406,14 @@ export const useTrainingStore = defineStore("TrainingStore", {
         };
 
         // Reduce function to construct Variables object    
-        const variableParameters = this.datasetColumns.reduce<AccType>((acc, { name, role, type, preprocessing, isIncluded, baseLevel }) => {
+        const variableParameters = this.datasetColumns.reduce<AccType>((acc, { name, role, type, preprocessing, isIncluded, baseLevel, splineFeatures }) => {
         acc[name] = {
             role: role,
             type: type.toLowerCase(),
-            processing: preprocessing == 'Dummy Encode' ? 'CUSTOM' : 'REGULAR',
+            processing: type.toLowerCase() === 'numerical' || preprocessing == 'Dummy Encode' ? 'CUSTOM' : 'REGULAR',
             included: isIncluded,
-            base_level: baseLevel
+            base_level: baseLevel,
+            spline_features: (type.toLowerCase() === 'numerical' && splineFeatures.length > 0) ? splineFeatures : undefined
         };
         return acc;
         }, {});

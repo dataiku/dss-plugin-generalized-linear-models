@@ -54,6 +54,8 @@ def calculate_base_levels(df, exposure_column=None):
             continue
     
         is_numeric = pd.api.types.is_numeric_dtype(df[col])
+        min_value = None
+        max_value = None
 
         if exposure_column and exposure_column in df.columns:
             # Exposure-based calculation
@@ -62,6 +64,10 @@ def calculate_base_levels(df, exposure_column=None):
             top_modalities = weighted_counts.sort_values(ascending=False).head(100)
             if is_numeric:
                 options = sorted([str(val) for val in top_modalities.index], key=float)
+                numeric_series = pd.to_numeric(df[col], errors='coerce').dropna()
+                if len(numeric_series) > 0:
+                    min_value = float(numeric_series.min())
+                    max_value = float(numeric_series.max())
             else:
                 options = sorted([str(val) for val in top_modalities.index], key=natural_sort_key)
             base_level = str(top_modalities.idxmax())
@@ -70,6 +76,10 @@ def calculate_base_levels(df, exposure_column=None):
             unique_vals = df[col].unique()
             if is_numeric:
                 options = sorted([str(val) for val in unique_vals], key=float)[:100]
+                numeric_series = pd.to_numeric(df[col], errors='coerce').dropna()
+                if len(numeric_series) > 0:
+                    min_value = float(numeric_series.min())
+                    max_value = float(numeric_series.max())
             else:
                 options = sorted([str(val) for val in unique_vals], key=natural_sort_key)[:100]
             base_level = str(df[col].mode().iloc[0])
@@ -78,7 +88,9 @@ def calculate_base_levels(df, exposure_column=None):
             'column': col,
             'options': options,
             'baseLevel': base_level,
-            'type': ('numerical' if is_numeric else 'categorical')
+            'type': ('numerical' if is_numeric else 'categorical'),
+            'minValue': min_value,
+            'maxValue': max_value
         })
     
     return cols_json

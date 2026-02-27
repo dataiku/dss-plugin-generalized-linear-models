@@ -12,6 +12,8 @@ export type ColumnInput = {
     baseLevel: string;
     options: Array<string>;
     type: string;
+    minValue?: number | null;
+    maxValue?: number | null;
 }
 
 export type LiftDataPoint = { 
@@ -110,6 +112,25 @@ export type AccType = {
     type: string;
     processing: string;
     included: boolean;
+    base_level: string | number | null;
+    spline_features?: SplineFeature[];
+    };
+}
+
+export type SplineSegment = {
+    min_value: number;
+    max_value: number;
+    degree: number;
+}
+
+export type SplineFeature = SplineSegment[];
+
+export type AccTypeLegacy = {
+    [key: string]: {
+    role: string;
+    type: string;
+    processing: string;
+    included: boolean;
     base_level: string;
     };
 }
@@ -152,6 +173,7 @@ export type APIResponse = {
                 type: string;
                 handling: string;
                 baseLevel?: string;
+                splineFeatures?: SplineFeature[];
             }
         };
         target_column: string;
@@ -172,8 +194,11 @@ export type Column = {
     role: string;
     type: string;
     preprocessing: string;
-    baseLevel: string;
+    baseLevel: string | number | null;
     options: Array<string>;
+    minValue?: number | null;
+    maxValue?: number | null;
+    splineFeatures: SplineFeature[];
 }
 
 

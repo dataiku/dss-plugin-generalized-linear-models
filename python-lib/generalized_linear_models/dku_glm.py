@@ -117,7 +117,7 @@ class BaseGLM(BaseEstimator, ClassifierMixin):
         elif user_link == 'power':
             return link.Power(self.power)
         elif user_link == 'inverse_power':
-            return link.InversePower(self.power)
+            return link.InversePower()
         elif user_link == 'inverse_squared':
             return link.InverseSquared()
         else:
