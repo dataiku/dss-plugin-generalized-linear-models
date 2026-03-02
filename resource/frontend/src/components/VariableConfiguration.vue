@@ -13,7 +13,19 @@
             <template #body="props">
                 <q-tr :props="props">
                     <q-td key="name" :props="props">
-                        {{ props.row.name }}
+                        <div class="variable-name-cell">
+                            <span>{{ props.row.name }}</span>
+                            <span
+                                v-if="getNumericFeatureCount(props.row) > 0"
+                                class="numeric-feature-count"
+                            >
+                                ({{ getNumericFeatureCount(props.row) }})
+                            </span>
+                            <span
+                                v-if="hasMergedLevels(props.row)"
+                                class="merged-levels-dot"
+                            />
+                        </div>
                     </q-td>
                     <q-td key="include" :props="props" class="center-cell">
                         <BsCheckbox v-model="props.row.isIncluded" />
@@ -153,6 +165,18 @@
         },
         canExpandCategorical(row: any) {
             return row.type === "categorical";
+        },
+        hasMergedLevels(row: any) {
+            if (row.type !== "categorical" || !Array.isArray(row.categoricalGroups)) {
+                return false;
+            }
+            return row.categoricalGroups.some((group: any[]) => Array.isArray(group) && group.length >= 2);
+        },
+        getNumericFeatureCount(row: any) {
+            if (row.type !== "numerical" || !Array.isArray(row.splineFeatures)) {
+                return 0;
+            }
+            return row.splineFeatures.length;
         },
         isExpanded(row: any) {
             if (row.type === "categorical") {
@@ -326,17 +350,37 @@
             this.ensureCategoricalGroups(row);
             row.categoricalGroups.splice(groupIdx, 1);
         },
+        normalizeCategoricalGroupValues(values: any[]) {
+            const normalized = (values || []).map((value: any) => String(value));
+            return Array.from(new Set(normalized));
+        },
+        areSameStringArrays(first: string[] = [], second: string[] = []) {
+            if (first.length !== second.length) {
+                return false;
+            }
+            return first.every((value, index) => value === second[index]);
+        },
         updateCategoricalGroup(row: any, groupIdx: number, modalities: string[]) {
             this.ensureCategoricalGroups(row);
-            const normalizedModalities = Array.from(new Set((modalities || []).map((value: any) => String(value))));
-            row.categoricalGroups[groupIdx] = normalizedModalities;
+            if (groupIdx < 0 || groupIdx >= row.categoricalGroups.length) {
+                return;
+            }
+            const normalizedModalities = this.normalizeCategoricalGroupValues(modalities || []);
+            const currentGroup = this.normalizeCategoricalGroupValues(row.categoricalGroups[groupIdx] || []);
+            if (!this.areSameStringArrays(currentGroup, normalizedModalities)) {
+                row.categoricalGroups[groupIdx] = normalizedModalities;
+            }
 
             const currentSet = new Set(normalizedModalities);
-            row.categoricalGroups = row.categoricalGroups.map((group: string[], idx: number) => {
+            row.categoricalGroups.forEach((group: string[], idx: number) => {
                 if (idx === groupIdx) {
-                    return group;
+                    return;
                 }
-                return (group || []).filter((modality) => !currentSet.has(String(modality)));
+                const normalizedGroup = this.normalizeCategoricalGroupValues(group || []);
+                const filteredGroup = normalizedGroup.filter((modality) => !currentSet.has(modality));
+                if (!this.areSameStringArrays(normalizedGroup, filteredGroup)) {
+                    row.categoricalGroups[idx] = filteredGroup;
+                }
             });
         },
     },
@@ -455,5 +499,24 @@ margin-bottom: 20px; /* Adjust this value as needed */
 .variable-config-table :deep(.q-table),
 .variable-config-table :deep(.q-table__middle) {
     width: 100%;
+}
+
+.variable-name-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.merged-levels-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: #2f62ff;
+    display: inline-block;
+}
+
+.numeric-feature-count {
+    color: #2f62ff;
+    font-weight: 600;
 }
 </style>

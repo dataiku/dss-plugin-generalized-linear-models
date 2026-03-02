@@ -42,6 +42,7 @@
                             dense
                             outlined
                             use-chips
+                            deletable-chips
                             multiple
                             :modelValue="group"
                             :all-options="groupOptions(groupIdx)"
@@ -50,10 +51,7 @@
                             @update:modelValue="value => $emit('update-group-modalities', { groupIdx, modalities: value })"
                         >
                             <template #selected-item="scope">
-                                <q-chip
-                                    dense
-                                    class="categorical-selected-chip"
-                                >
+                                <q-chip dense class="categorical-selected-chip">
                                     {{ scope.opt }}
                                     <q-icon
                                         name="close"
@@ -282,10 +280,17 @@ export default defineComponent({
     border: 0 !important;
 }
 
-.groups-table :deep(.q-field__native),
+.groups-table :deep(.q-field__native) {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #ffffff;
+    padding: 0 4px;
+}
+
 .groups-table :deep(.q-chip) {
     background: #ffffff;
-    padding:0;
+    margin: 2px 4px 2px 0;
 }
 
 .groups-table :deep(.q-field__append) {
@@ -336,13 +341,24 @@ export default defineComponent({
 
 .categorical-chip-remove-icon {
     margin-left: 4px;
-    color: #000000;
+    color: #000000 !important;
     font-size: 12px;
     line-height: 1;
-    background: transparent;
-    border: 0;
+    background: transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
     cursor: pointer;
 }
+
+.groups-table :deep(.q-chip .q-avatar),
+.groups-table :deep(.q-chip .q-avatar .q-icon),
+.groups-table :deep(.q-chip .q-chip__icon--remove) {
+    background: transparent !important;
+    color: #000000 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+
 
 .groups-table :deep(.q-field__native span) {
     display: inline-flex;
