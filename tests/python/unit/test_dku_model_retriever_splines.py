@@ -1,3 +1,7 @@
+import pytest
+
+pytest.importorskip("dataiku.doctor.posttraining.model_information_handler")
+
 from dku_visual_ml.dku_model_retrival import VisualMLModelRetriver
 
 
@@ -48,3 +52,16 @@ def test_extract_spline_features_returns_empty_for_non_spline_processor():
     }
 
     assert retriever._extract_spline_features(feature_settings) == []
+
+
+def test_extract_categorical_groups_from_rebase_mode_code():
+    retriever = _make_retriever()
+    feature_settings = {
+        "customHandlingCode": (
+            "from processors.processors import rebase_mode\n"
+            'processor = rebase_mode({"base_level": "A", "categorical_groups": '
+            '[["A", "B"], ["C", "D"]]})\n'
+        )
+    }
+
+    assert retriever._extract_categorical_groups(feature_settings) == [["A", "B"], ["C", "D"]]

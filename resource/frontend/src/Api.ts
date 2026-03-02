@@ -139,16 +139,17 @@ interface MLTaskParams {
         [key: string]: {
             role: string;
             type: string;
-            handling: string | null;
-            chooseBaseLevel: boolean;
-            baseLevel: string;
-            splineFeatures?: Array<Array<{
-                min_value: number;
-                max_value: number;
-                degree: number;
-            }>>;
-        }
-    };
+                handling: string | null;
+                chooseBaseLevel: boolean;
+                baseLevel: string;
+                splineFeatures?: Array<Array<{
+                    min_value: number;
+                    max_value: number;
+                    degree: number;
+                }>>;
+                categoricalGroups?: string[][];
+            }
+        };
     interactions: Array<{
         first: string;
         second: string;

@@ -1,6 +1,6 @@
 import pandas as pd
 
-from processors.processors import continuous_spline
+from processors.processors import continuous_spline, rebase_mode
 
 
 def test_continuous_spline_generates_columns_for_nested_features():
@@ -20,8 +20,8 @@ def test_continuous_spline_generates_columns_for_nested_features():
 
     assert transformed.shape[0] == 4
     assert transformed.shape[1] == 3
-    assert any(col.startswith("DriverAge_f1_s1_") for col in transformed.columns)
-    assert any(col.startswith("DriverAge_f2_s1_") for col in transformed.columns)
+    assert any(col.startswith("spline_f1_s1_") for col in transformed.columns)
+    assert any(col.startswith("spline_f2_s1_") for col in transformed.columns)
 
 
 def test_continuous_spline_backward_compat_with_flat_definitions():
@@ -37,3 +37,20 @@ def test_continuous_spline_backward_compat_with_flat_definitions():
     transformed = processor.transform(series)
 
     assert transformed.shape[1] == 1
+
+
+def test_rebase_mode_groups_modalities_and_drops_grouped_base():
+    series = pd.Series(["A", "B", "C", "D", "A"], name="Area")
+    processor = rebase_mode(
+        {
+            "base_level": "A",
+            "categorical_groups": [["A", "B"], ["C", "D"]],
+        }
+    )
+
+    processor.fit(series)
+    transformed = processor.transform(series)
+
+    assert "A|B" not in transformed.columns
+    assert "C|D" in transformed.columns
+    assert transformed.shape[0] == len(series)

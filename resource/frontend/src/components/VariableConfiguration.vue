@@ -37,20 +37,20 @@
                                 style="min-width: 150px;"
                             />
                             <BsButton
-                                v-if="canShowSplineArrow(props.row)"
+                                v-if="canShowAdvancedArrow(props.row)"
                                 class="arrow-btn"
-                                @click="toggleSplineRow(props.row.name)"
+                                @click="toggleAdvancedRow(props.row)"
                                 flat
                                 no-caps
                                 :ripple="false"
                             >
-                                <q-icon :name="isExpanded(props.row.name) ? 'keyboard_arrow_up' : 'keyboard_arrow_down'" size="18px" />
+                                <q-icon :name="isExpanded(props.row) ? 'keyboard_arrow_up' : 'keyboard_arrow_down'" size="18px" />
                             </BsButton>
                         </div>
                     </q-td>
                     <q-td key="clearAllCol" :props="props" />
                 </q-tr>
-                <q-tr v-if="canExpandSpline(props.row) && isExpanded(props.row.name)" class="spline-detail-row">
+                <q-tr v-if="canExpandSpline(props.row) && isExpanded(props.row)" class="spline-detail-row">
                     <q-td :colspan="props.cols.length">
                         <SplineDefinitionsPanel
                             :row="props.row"
@@ -60,6 +60,16 @@
                             @remove-knot="payload => removeKnot(props.row, payload.featureIdx, payload.knot)"
                             @update-feature-degree="payload => updateFeatureDegree(props.row, payload.featureIdx, payload.degree)"
                             @update-segment-degree="payload => updateSegmentDegree(props.row, payload.featureIdx, payload.segmentIdx, payload.degree)"
+                        />
+                    </q-td>
+                </q-tr>
+                <q-tr v-if="canExpandCategorical(props.row) && isExpanded(props.row)" class="spline-detail-row">
+                    <q-td :colspan="props.cols.length">
+                        <CategoricalDefinitionsPanel
+                            :row="props.row"
+                            @add-group="addCategoricalGroup(props.row)"
+                            @remove-group="groupIdx => removeCategoricalGroup(props.row, groupIdx)"
+                            @update-group-modalities="payload => updateCategoricalGroup(props.row, payload.groupIdx, payload.modalities)"
                         />
                     </q-td>
                 </q-tr>
@@ -75,6 +85,7 @@
     import { useTrainingStore } from "../stores/training";
     import GLMToggle from "./GLMToggle.vue";
     import SplineDefinitionsPanel from "./SplineDefinitionsPanel.vue";
+    import CategoricalDefinitionsPanel from "./CategoricalDefinitionsPanel.vue";
 
     const featureHandlingColumns: QTableColumn[] = [
     {
@@ -115,6 +126,7 @@
         BsButton,
         GLMToggle,
         SplineDefinitionsPanel,
+        CategoricalDefinitionsPanel,
     },
     props: [],
     data() {
@@ -122,6 +134,7 @@
             store: useTrainingStore(),
             columns: featureHandlingColumns,
             expandedSplineRows: {} as Record<string, boolean>,
+            expandedCategoricalRows: {} as Record<string, boolean>,
         };
     },
     computed:{
@@ -132,24 +145,41 @@
             },
     },
     methods: {
-        canShowSplineArrow(row: any) {
-            return row.type === "numerical";
+        canShowAdvancedArrow(row: any) {
+            return row.type === "numerical" || row.type === "categorical";
         },
         canExpandSpline(row: any) {
             return row.type === "numerical";
         },
-        isExpanded(rowName: string) {
-            return !!this.expandedSplineRows[rowName];
+        canExpandCategorical(row: any) {
+            return row.type === "categorical";
         },
-        toggleSplineRow(rowName: string) {
-            const row = this.store.datasetColumns.find((item: any) => item.name === rowName);
-            if (row && row.type === "numerical") {
-                this.ensureSplineFeatures(row);
-                if (!this.expandedSplineRows[rowName] && row.splineFeatures.length === 0) {
-                    row.splineFeatures.push([this.defaultSegment(row)]);
-                }
+        isExpanded(row: any) {
+            if (row.type === "categorical") {
+                return !!this.expandedCategoricalRows[row.name];
             }
-            this.expandedSplineRows[rowName] = !this.expandedSplineRows[rowName];
+            return !!this.expandedSplineRows[row.name];
+        },
+        toggleAdvancedRow(row: any) {
+            const rowName = row.name;
+            const selectedRow = this.store.datasetColumns.find((item: any) => item.name === rowName);
+            if (!selectedRow) {
+                return;
+            }
+            if (selectedRow.type === "numerical") {
+                this.ensureSplineFeatures(selectedRow);
+                if (!this.expandedSplineRows[rowName] && selectedRow.splineFeatures.length === 0) {
+                    selectedRow.splineFeatures.push([this.defaultSegment(selectedRow)]);
+                }
+                this.expandedSplineRows[rowName] = !this.expandedSplineRows[rowName];
+                delete this.expandedCategoricalRows[rowName];
+                return;
+            }
+            if (selectedRow.type === "categorical") {
+                this.ensureCategoricalGroups(selectedRow);
+                this.expandedCategoricalRows[rowName] = !this.expandedCategoricalRows[rowName];
+                delete this.expandedSplineRows[rowName];
+            }
         },
         getToggleValue(row: any) {
             return (row.type === 'categorical' ? 'Categorical' : 'Numerical');
@@ -184,6 +214,11 @@
         ensureSplineFeatures(row: any) {
             if (!Array.isArray(row.splineFeatures)) {
                 row.splineFeatures = [];
+            }
+        },
+        ensureCategoricalGroups(row: any) {
+            if (!Array.isArray(row.categoricalGroups)) {
+                row.categoricalGroups = [];
             }
         },
         getFeatureMasterDegree(feature: any[]) {
@@ -280,19 +315,53 @@
             }
             row.splineFeatures[featureIdx][segmentIdx].degree = Number.isFinite(degree) ? Number(degree) : 1;
         },
+        addCategoricalGroup(row: any) {
+            this.ensureCategoricalGroups(row);
+            if (row.categoricalGroups.length >= 5) {
+                return;
+            }
+            row.categoricalGroups.push([]);
+        },
+        removeCategoricalGroup(row: any, groupIdx: number) {
+            this.ensureCategoricalGroups(row);
+            row.categoricalGroups.splice(groupIdx, 1);
+        },
+        updateCategoricalGroup(row: any, groupIdx: number, modalities: string[]) {
+            this.ensureCategoricalGroups(row);
+            const normalizedModalities = Array.from(new Set((modalities || []).map((value: any) => String(value))));
+            row.categoricalGroups[groupIdx] = normalizedModalities;
+
+            const currentSet = new Set(normalizedModalities);
+            row.categoricalGroups = row.categoricalGroups.map((group: string[], idx: number) => {
+                if (idx === groupIdx) {
+                    return group;
+                }
+                return (group || []).filter((modality) => !currentSet.has(String(modality)));
+            });
+        },
     },
     watch: {
         "store.datasetColumns": {
             handler(newVal) {
                 this.store.updateDatasetColumnsPreprocessing();
-                const validNames = new Set(
+                const validNumericalNames = new Set(
                     this.store.datasetColumns
                         .filter((row: any) => row.type === "numerical")
                         .map((row: any) => row.name)
                 );
                 Object.keys(this.expandedSplineRows).forEach((name) => {
-                    if (!validNames.has(name)) {
+                    if (!validNumericalNames.has(name)) {
                         delete this.expandedSplineRows[name];
+                    }
+                });
+                const validCategoricalNames = new Set(
+                    this.store.datasetColumns
+                        .filter((row: any) => row.type === "categorical")
+                        .map((row: any) => row.name)
+                );
+                Object.keys(this.expandedCategoricalRows).forEach((name) => {
+                    if (!validCategoricalNames.has(name)) {
+                        delete this.expandedCategoricalRows[name];
                     }
                 });
             },
