@@ -40,7 +40,9 @@
                             @update:modelValue="value => $emit('update-feature-degree', { featureIdx, degree: Number(value) })"
                         />
                     </div>
-                    <BsButton class="close-btn" flat no-caps :ripple="false" @click="$emit('remove-feature', featureIdx)">x</BsButton>
+                    <BsButton class="close-btn" flat no-caps :ripple="false" @click="$emit('remove-feature', featureIdx)">
+                        <q-icon name="close" size="16px" />
+                    </BsButton>
                 </div>
                 <div class="knot-editor">
                     <input
@@ -67,7 +69,9 @@
                         class="knot-chip"
                     >
                         {{ knot }}
-                        <BsButton class="knot-remove-btn" flat no-caps :ripple="false" @click="$emit('remove-knot', { featureIdx, knot })">x</BsButton>
+                        <BsButton class="knot-remove-btn" flat no-caps :ripple="false" @click="$emit('remove-knot', { featureIdx, knot })">
+                            <q-icon name="close" size="12px" />
+                        </BsButton>
                     </span>
                 </div>
                 <table class="segment-table">
@@ -201,9 +205,9 @@ export default defineComponent({
 }
 
 .spline-label {
-    font-size: 12px;
+    font-size: 14px;
+    font-weight: 400;
     line-height: 1.1;
-    font-weight: 500;
     color: #212121;
 }
 
@@ -237,6 +241,8 @@ export default defineComponent({
     font-weight: 600;
     line-height: 1;
     letter-spacing: 0;
+    font-size: 16px;
+    font-weight: 400;
 }
 
 .create-feature-btn:disabled {
@@ -283,20 +289,19 @@ export default defineComponent({
     min-width: 0;
     flex: 1 1 auto;
     color: #171717;
-    font-size: 12px;
 }
 
 .feature-header-main > span:first-child {
-    font-size: 13px;
-    font-weight: 700;
+    font-size: 16px;
+    font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .degree-label {
-    font-weight: 500;
-    font-size: 12px;
+    font-weight: 400;
+    font-size: 16px;
 }
 
 .degree-select {
@@ -351,12 +356,12 @@ export default defineComponent({
 .knot-chip {
     display: inline-flex;
     align-items: center;
-    border: 1px solid var(--spline-chip-border);
+    border: 1px solid #3445CB;
     border-radius: 9999px;
     height: 24px;
     padding: 0 8px;
     gap: 4px;
-    background: transparent;
+    background: #ffffff;
     font-size: 10px;
     line-height: 1;
     color: #262626;
@@ -367,6 +372,7 @@ export default defineComponent({
     height: 12px;
     padding: 0;
     font-size: 10px;
+    font-weight: 100;
     line-height: 1;
     color: #202020;
 }
@@ -393,16 +399,12 @@ export default defineComponent({
 
 .segment-table th,
 .segment-table td {
-    border-right: 1px solid var(--spline-cell-border);
+    border-right: 0;
     border-bottom: 1px solid var(--spline-cell-border);
     padding: 8px 10px !important;
-    font-size: 11px;
+    font-size: 14px;
+    font-weight: 400;
     color: #252525;
-}
-
-.segment-table th:last-child,
-.segment-table td:last-child {
-    border-right: 0;
 }
 
 .segment-table tr:last-child td {
@@ -411,8 +413,12 @@ export default defineComponent({
 
 .segment-table th {
     background: #ffffff !important;
-    font-size: 11px;
-    font-weight: 700;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.segment-table th:first-child {
+    text-align: left;
 }
 
 .segment-table td {
@@ -469,56 +475,5 @@ export default defineComponent({
 .close-btn :deep(.q-focus-helper) {
     opacity: 0 !important;
     background: transparent !important;
-}
-
-@media (max-width: 1200px) {
-    .spline-label {
-        font-size: 14px;
-    }
-
-    .feature-count-value {
-        font-size: 12px;
-    }
-
-    .create-feature-btn {
-        min-height: 40px;
-        font-size: 13px;
-    }
-
-    .feature-card {
-        flex: 0 0 calc((100% - 12px) / 2);
-        max-width: calc((100% - 12px) / 2);
-    }
-}
-
-@media (max-width: 760px) {
-    .spline-header {
-        justify-content: flex-start;
-        gap: 14px;
-        flex-wrap: wrap;
-    }
-
-    .spline-header-meta {
-        gap: 12px;
-    }
-
-    .spline-label {
-        font-size: 15px;
-    }
-
-    .feature-count-value {
-        font-size: 12px;
-    }
-
-    .create-feature-btn,
-    .add-knot-btn {
-        font-size: 14px;
-        min-height: 36px;
-    }
-
-    .feature-card {
-        flex: 0 0 100%;
-        max-width: 100%;
-    }
 }
 </style>

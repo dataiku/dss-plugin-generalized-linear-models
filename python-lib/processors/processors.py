@@ -43,18 +43,26 @@ class rebase_mode():
         mapped_series = self._map_modalities(series)
         self.modalities = np.unique(mapped_series)
         self.columns = list(self.modalities)
+        # Always drop one reference level to avoid collinearity.
+        # If configured base is absent in fitted sample, fallback to first modality.
         if self.effective_base_level in self.columns:
-            self.columns.remove(self.effective_base_level)
+            self.dropped_level = self.effective_base_level
+        elif len(self.columns) > 0:
+            self.dropped_level = self.columns[0]
+        else:
+            self.dropped_level = self.effective_base_level
+
+        if self.dropped_level in self.columns:
+            self.columns.remove(self.dropped_level)
 
     def transform(self, series):
         mapped_series = self._map_modalities(series)
-        to_replace = {m: self.effective_base_level for m in np.unique(mapped_series) if m not in self.modalities}
+        to_replace = {m: self.dropped_level for m in np.unique(mapped_series) if m not in self.modalities}
         new_series = mapped_series.replace(to_replace=to_replace)
-        new_series = series.replace(to_replace=to_replace)
         # obtains the dummy encoded dataframe, but drops the dummy column with the mode identified
         df = pd.get_dummies(new_series.values)
-        if self.effective_base_level in df:
-            df = df.drop(self.effective_base_level, axis = 1)
+        if self.dropped_level in df:
+            df = df.drop(self.dropped_level, axis = 1)
         for c in self.columns:
             if c not in df.columns:
                 df[c] = 0

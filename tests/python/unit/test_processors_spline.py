@@ -54,3 +54,21 @@ def test_rebase_mode_groups_modalities_and_drops_grouped_base():
     assert "A|B" not in transformed.columns
     assert "C|D" in transformed.columns
     assert transformed.shape[0] == len(series)
+
+
+def test_rebase_mode_drops_fallback_level_when_base_absent():
+    fit_series = pd.Series(["B", "C", "D", "C"], name="Area")
+    transform_series = pd.Series(["B", "C", "D", "E"], name="Area")
+    processor = rebase_mode(
+        {
+            "base_level": "A",  # absent during fit
+            "categorical_groups": [["C", "D"]],
+        }
+    )
+
+    processor.fit(fit_series)
+    transformed = processor.transform(transform_series)
+
+    # One level is still dropped even when configured base is absent, avoiding full dummy rank.
+    unique_levels_after_mapping = set(["B", "C|D"])
+    assert transformed.shape[1] == len(unique_levels_after_mapping) - 1

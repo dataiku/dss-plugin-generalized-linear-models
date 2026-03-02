@@ -38,18 +38,28 @@
                         <div class="group-name-label">Group {{ groupIdx + 1 }}</div>
                     </td>
                     <td class="merged-cell">
-                        <q-select
+                        <BsSelect
                             dense
                             outlined
                             use-chips
+                            deletable-chips
                             multiple
-                            :model-value="group"
-                            :options="groupOptions(groupIdx)"
-                            options-dense
+                            :modelValue="group"
+                            :all-options="groupOptions(groupIdx)"
                             popup-content-class="categorical-options-popup"
-                            :placeholder="group.length === 0 ? 'Select two or more levels to form a group' : ''"
-                            @update:model-value="value => $emit('update-group-modalities', { groupIdx, modalities: value })"
+                            :placeHolder="group.length === 0 ? 'Select two or more levels to form a group' : ''"
+                            @update:modelValue="value => $emit('update-group-modalities', { groupIdx, modalities: value })"
                         >
+                            <template #selected-item="scope">
+                                <q-chip dense class="categorical-selected-chip">
+                                    {{ scope.opt }}
+                                    <q-icon
+                                        name="close"
+                                        class="categorical-chip-remove-icon"
+                                        @click.stop="scope.removeAtIndex(scope.index)"
+                                    />
+                                </q-chip>
+                            </template>
                             <template #option="props">
                                 <q-item
                                     v-bind="props.itemProps"
@@ -62,7 +72,7 @@
                                     </q-item-section>
                                 </q-item>
                             </template>
-                        </q-select>
+                        </BsSelect>
                     </td>
                     <td class="delete-cell">
                         <div class="delete-cell-content">
@@ -85,17 +95,18 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import { BsButton } from "quasar-ui-bs";
-import { QIcon, QItem, QItemSection, QSelect } from "quasar";
+import { BsButton, BsSelect } from "quasar-ui-bs";
+import { QChip, QIcon, QItem, QItemSection } from "quasar";
 
 export default defineComponent({
     name: "CategoricalDefinitionsPanel",
     components: {
         BsButton,
+        BsSelect,
+        QChip,
         QIcon,
         QItem,
         QItemSection,
-        QSelect,
     },
     props: {
         row: {
@@ -146,8 +157,8 @@ export default defineComponent({
 }
 
 .categorical-label {
-    font-size: 12px;
-    font-weight: 500;
+    font-size: 14px;
+    font-weight: 400;
 }
 
 .group-count-value {
@@ -158,7 +169,8 @@ export default defineComponent({
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 13px;
+    font-size: 14px;
+    font-weight: 400;
     background: #fff;
 }
 
@@ -172,8 +184,8 @@ export default defineComponent({
     border-radius: 4px;
     min-height: 34px;
     padding: 0 12px;
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 16px;
+    font-weight: 400;
 }
 
 .groups-table {
@@ -188,7 +200,8 @@ export default defineComponent({
 .groups-table td {
     border-bottom: 1px solid #a9acb4;
     padding: 12px 12px;
-    font-size: 12px;
+    font-size: 14px;
+    font-weight: 400;
     text-align: left;
     vertical-align: middle;
     background: #ffffff !important;
@@ -199,7 +212,7 @@ export default defineComponent({
 }
 
 .groups-table th {
-    font-weight: 700;
+    font-weight: 600;
 }
 
 .group-col {
@@ -267,9 +280,17 @@ export default defineComponent({
     border: 0 !important;
 }
 
-.groups-table :deep(.q-field__native),
+.groups-table :deep(.q-field__native) {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #ffffff;
+    padding: 0 4px;
+}
+
 .groups-table :deep(.q-chip) {
     background: #ffffff;
+    margin: 2px 4px 2px 0;
 }
 
 .groups-table :deep(.q-field__append) {
@@ -294,6 +315,50 @@ export default defineComponent({
     color: #1f2a44;
     font-size: 14px;
 }
+
+.categorical-selected-chip {
+    border: 1px solid #214ab5 !important;
+    border-radius: 9999px !important;
+    height: 24px;
+    min-height: 24px;
+    padding: 0 8px;
+    background: #ffffff !important;
+    color: #262626 !important;
+    font-size: 10px;
+    line-height: 1;
+    gap: 4px;
+}
+
+.categorical-selected-chip :deep(.q-chip__icon--remove) {
+    color: #202020 !important;
+    font-size: 10px !important;
+    background: transparent !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin-left: 2px !important;
+    opacity: 1 !important;
+}
+
+.categorical-chip-remove-icon {
+    margin-left: 4px;
+    color: #000000 !important;
+    font-size: 12px;
+    line-height: 1;
+    background: transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    cursor: pointer;
+}
+
+.groups-table :deep(.q-chip .q-avatar),
+.groups-table :deep(.q-chip .q-avatar .q-icon),
+.groups-table :deep(.q-chip .q-chip__icon--remove) {
+    background: transparent !important;
+    color: #000000 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+
 
 .groups-table :deep(.q-field__native span) {
     display: inline-flex;
