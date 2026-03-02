@@ -114,6 +114,7 @@ export type AccType = {
     included: boolean;
     base_level: string | number | null;
     spline_features?: SplineFeature[];
+    categorical_groups?: CategoricalGroup[];
     };
 }
 
@@ -124,6 +125,7 @@ export type SplineSegment = {
 }
 
 export type SplineFeature = SplineSegment[];
+export type CategoricalGroup = string[];
 
 export type AccTypeLegacy = {
     [key: string]: {
@@ -174,6 +176,7 @@ export type APIResponse = {
                 handling: string;
                 baseLevel?: string;
                 splineFeatures?: SplineFeature[];
+                categoricalGroups?: CategoricalGroup[];
             }
         };
         target_column: string;
@@ -199,6 +202,7 @@ export type Column = {
     minValue?: number | null;
     maxValue?: number | null;
     splineFeatures: SplineFeature[];
+    categoricalGroups: CategoricalGroup[];
 }
 
 

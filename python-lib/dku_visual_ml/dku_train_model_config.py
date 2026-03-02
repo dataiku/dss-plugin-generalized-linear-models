@@ -93,6 +93,38 @@ class DKUVisualMLConfig:
         return self._normalize_spline_features(raw_spline_features)
 
     @staticmethod
+    def _normalize_categorical_groups(raw_groups):
+        if not isinstance(raw_groups, list):
+            return []
+
+        normalized_groups = []
+        seen_modalities = set()
+        for raw_group in raw_groups[:5]:
+            if not isinstance(raw_group, list):
+                continue
+            normalized_group = []
+            for modality in raw_group:
+                modality_str = str(modality)
+                if modality_str in seen_modalities:
+                    continue
+                if modality_str in normalized_group:
+                    continue
+                normalized_group.append(modality_str)
+            if len(normalized_group) < 2:
+                continue
+            normalized_groups.append(normalized_group)
+            seen_modalities.update(normalized_group)
+
+        return normalized_groups
+
+    def get_feature_categorical_groups(self, variable):
+        feature_config = self.variables.get(variable, {})
+        raw_groups = feature_config.get("categorical_groups")
+        if raw_groups is None:
+            raw_groups = feature_config.get("categoricalGroups")
+        return self._normalize_categorical_groups(raw_groups)
+
+    @staticmethod
     def build_numeric_custom_handling_code(base_level, spline_features):
         custom_preamble = (
             'from dataiku.base.model_plugin import prepare_for_plugin\n'
@@ -113,6 +145,17 @@ class DKUVisualMLConfig:
             custom_preamble +
             'from processors.processors import save_base\n'
             'processor = save_base({"base_level": ' + repr(base_level) + '})\n'
+        )
+
+    @staticmethod
+    def build_categorical_custom_handling_code(base_level, categorical_groups):
+        normalized_groups = DKUVisualMLConfig._normalize_categorical_groups(categorical_groups)
+        return (
+            'from dataiku.base.model_plugin import prepare_for_plugin\n'
+            'prepare_for_plugin(\'generalized-linear-models\', \'generalized-linear-models_regression\')\n'
+            'from processors.processors import rebase_mode\n'
+            'processor = rebase_mode({"base_level": ' + repr(base_level) +
+            ', "categorical_groups": ' + repr(normalized_groups) + '})\n'
         )
         
     def get_included_variables(self):

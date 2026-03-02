@@ -160,9 +160,10 @@ class VisualMLModelTrainer(DataikuClientProject):
             base_level = variable_config.get('base_level', None)
             processing = str(variable_config.get('processing', 'CUSTOM')).upper()
             spline_features = self.visual_ml_config.get_feature_spline_features(variable)
+            categorical_groups = self.visual_ml_config.get_feature_categorical_groups(variable)
 
             if variable_type == 'categorical':
-                fs = self.update_to_categorical(fs, base_level)
+                fs = self.update_to_categorical(fs, base_level, categorical_groups)
             elif variable_type == 'numerical':
                 fs = self.update_to_numeric(
                     fs,
@@ -397,7 +398,7 @@ class VisualMLModelTrainer(DataikuClientProject):
         fs['sendToInput'] = 'main'
         return fs
     
-    def update_to_categorical(self, fs, base_level):
+    def update_to_categorical(self, fs, base_level, categorical_groups=None):
         
         fs['missing_impute_with']= 'MODE'
         fs['type']= 'CATEGORY'
@@ -427,11 +428,10 @@ class VisualMLModelTrainer(DataikuClientProject):
         fs['customHandlingCode'] = ''
         fs['customProcessorWantsMatrix'] = False
         fs['sendToInput'] = 'main'
-        fs['customHandlingCode'] = (
-            'from dataiku.base.model_plugin import prepare_for_plugin\n'
-            'prepare_for_plugin(\'generalized-linear-models\', \'generalized-linear-models_regression\')\n'
-            'from processors.processors import rebase_mode\n'
-            'processor = rebase_mode({"base_level": "' + str(base_level) + '"})\n')
+        fs['customHandlingCode'] = self.visual_ml_config.build_categorical_custom_handling_code(
+            base_level=base_level,
+            categorical_groups=categorical_groups or [],
+        )
         
         return fs      
 

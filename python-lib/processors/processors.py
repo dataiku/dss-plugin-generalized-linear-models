@@ -6,19 +6,55 @@ class rebase_mode():
     """This processor applies dummy vectorisation, but drops the dummy column with the mode. Only applies to categorical variables
     """
     def __init__(self, config):
-        self.base_level = config["base_level"]
+        self.base_level = str(config["base_level"])
+        self.categorical_groups = config.get("categorical_groups", [])
+        self.modality_to_group = self._build_modality_group_map(self.categorical_groups)
+        self.effective_base_level = self.modality_to_group.get(self.base_level, self.base_level)
+
+    @staticmethod
+    def _build_modality_group_map(categorical_groups):
+        mapping = {}
+        if not isinstance(categorical_groups, list):
+            return mapping
+        for group in categorical_groups:
+            if not isinstance(group, list):
+                continue
+            normalized_group = []
+            for modality in group:
+                modality_str = str(modality)
+                if modality_str in normalized_group:
+                    continue
+                normalized_group.append(modality_str)
+            if len(normalized_group) < 2:
+                continue
+            group_label = "|".join(sorted(normalized_group))
+            for modality in normalized_group:
+                if modality not in mapping:
+                    mapping[modality] = group_label
+        return mapping
+
+    def _map_modalities(self, series):
+        series = series.astype(str)
+        if not self.modality_to_group:
+            return series
+        return series.map(lambda value: self.modality_to_group.get(value, value))
+
     def fit(self, series):
-        self.modalities = np.unique(series)
-        self.columns = set(self.modalities)
-        self.columns = list(self.columns)
-        self.columns.remove(self.base_level)
+        mapped_series = self._map_modalities(series)
+        self.modalities = np.unique(mapped_series)
+        self.columns = list(self.modalities)
+        if self.effective_base_level in self.columns:
+            self.columns.remove(self.effective_base_level)
+
     def transform(self, series):
-        to_replace={m: self.base_level for m in np.unique(series) if m not in self.modalities}
+        mapped_series = self._map_modalities(series)
+        to_replace = {m: self.effective_base_level for m in np.unique(mapped_series) if m not in self.modalities}
+        new_series = mapped_series.replace(to_replace=to_replace)
         new_series = series.replace(to_replace=to_replace)
         # obtains the dummy encoded dataframe, but drops the dummy column with the mode identified
         df = pd.get_dummies(new_series.values)
-        if self.base_level in df:
-            df = df.drop(self.base_level, axis = 1)
+        if self.effective_base_level in df:
+            df = df.drop(self.effective_base_level, axis = 1)
         for c in self.columns:
             if c not in df.columns:
                 df[c] = 0

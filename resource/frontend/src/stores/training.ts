@@ -6,7 +6,7 @@ import type {
   ErrorPoint,
   ModelPoint
 } from '../models';
-import type { ColumnInput, Interaction, Column, APIResponse, SplineFeature } from "../models";
+import type { ColumnInput, Interaction, Column, APIResponse, SplineFeature, CategoricalGroup } from "../models";
 import { AxiosError, isAxiosError } from "axios";
 import { useModelStore } from "./webapp";
 import { useAnalysisStore } from "./analysisStore";
@@ -192,6 +192,29 @@ export const useTrainingStore = defineStore("TrainingStore", {
         }
         for (const column of this.datasetColumns) {
             if (!column.isIncluded || column.type !== "numerical") {
+                if (!column.isIncluded || column.type !== "categorical") {
+                    continue;
+                }
+                const categoricalGroups = column.categoricalGroups || [];
+                if (categoricalGroups.length > 5) {
+                    this.errorMessage = `At most 5 modality groups are allowed for ${column.name}.`;
+                    return false;
+                }
+                const seen = new Set<string>();
+                for (const group of categoricalGroups) {
+                    if (!Array.isArray(group) || group.length < 2) {
+                        this.errorMessage = `Each categorical group must contain at least 2 modalities for ${column.name}.`;
+                        return false;
+                    }
+                    for (const modality of group) {
+                        const key = String(modality);
+                        if (seen.has(key)) {
+                            this.errorMessage = `Each modality can belong to only one group for ${column.name}.`;
+                            return false;
+                        }
+                        seen.add(key);
+                    }
+                }
                 continue;
             }
             const splineFeatures = column.splineFeatures || [];
@@ -350,7 +373,8 @@ export const useTrainingStore = defineStore("TrainingStore", {
                             baseLevel: param.baseLevel ? param.baseLevel : column.baseLevel,
                             minValue: column.minValue,
                             maxValue: column.maxValue,
-                            splineFeatures: (param.splineFeatures || []) as SplineFeature[]
+                            splineFeatures: (param.splineFeatures || []) as SplineFeature[],
+                            categoricalGroups: (param.categoricalGroups || []) as CategoricalGroup[]
                         };
                     });
 
@@ -376,7 +400,8 @@ export const useTrainingStore = defineStore("TrainingStore", {
                     baseLevel: column.baseLevel,
                     minValue: column.minValue ?? null,
                     maxValue: column.maxValue ?? null,
-                    splineFeatures: []
+                    splineFeatures: [],
+                    categoricalGroups: []
                 }));
                 await this.fetchExcludedColumns();
             } catch (error) {
@@ -406,14 +431,15 @@ export const useTrainingStore = defineStore("TrainingStore", {
         };
 
         // Reduce function to construct Variables object    
-        const variableParameters = this.datasetColumns.reduce<AccType>((acc, { name, role, type, preprocessing, isIncluded, baseLevel, splineFeatures }) => {
+        const variableParameters = this.datasetColumns.reduce<AccType>((acc, { name, role, type, preprocessing, isIncluded, baseLevel, splineFeatures, categoricalGroups }) => {
         acc[name] = {
             role: role,
             type: type.toLowerCase(),
             processing: type.toLowerCase() === 'numerical' || preprocessing == 'Dummy Encode' ? 'CUSTOM' : 'REGULAR',
             included: isIncluded,
             base_level: baseLevel,
-            spline_features: (type.toLowerCase() === 'numerical' && splineFeatures.length > 0) ? splineFeatures : undefined
+            spline_features: (type.toLowerCase() === 'numerical' && splineFeatures.length > 0) ? splineFeatures : undefined,
+            categorical_groups: (type.toLowerCase() === 'categorical' && categoricalGroups.length > 0) ? categoricalGroups : undefined
         };
         return acc;
         }, {});

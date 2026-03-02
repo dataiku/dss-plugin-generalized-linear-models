@@ -256,6 +256,54 @@ class VisualMLModelRetriver(DataikuClientProject):
             if segments:
                 spline_features.append(segments)
         return spline_features
+
+    def _extract_categorical_groups(self, feature_settings: Dict[str, Any]) -> List[List[str]]:
+        custom_handling_code = feature_settings.get('customHandlingCode', '')
+        if "rebase_mode" not in custom_handling_code:
+            return []
+
+        try:
+            parsed = ast.parse(custom_handling_code)
+        except SyntaxError:
+            return []
+
+        for node in ast.walk(parsed):
+            if not isinstance(node, ast.Assign):
+                continue
+            value = node.value
+            if not isinstance(value, ast.Call):
+                continue
+            if not isinstance(value.func, ast.Name) or value.func.id != "rebase_mode":
+                continue
+            if not value.args:
+                continue
+            try:
+                config_dict = ast.literal_eval(value.args[0])
+            except (ValueError, SyntaxError):
+                continue
+            if not isinstance(config_dict, dict):
+                continue
+            raw_groups = config_dict.get("categorical_groups")
+            if not isinstance(raw_groups, list):
+                return []
+            normalized_groups = []
+            seen_modalities = set()
+            for raw_group in raw_groups:
+                if not isinstance(raw_group, list):
+                    continue
+                group = []
+                for modality in raw_group:
+                    modality_str = str(modality)
+                    if modality_str in seen_modalities or modality_str in group:
+                        continue
+                    group.append(modality_str)
+                if len(group) < 2:
+                    continue
+                normalized_groups.append(group)
+                seen_modalities.update(group)
+            return normalized_groups
+
+        return []
     
     def _process_feature(self, feature: str, preprocessing: Dict[str, Any], 
                          exposure_columns: str, target_column: str) -> Dict[str, Any]:
@@ -264,6 +312,7 @@ class VisualMLModelRetriver(DataikuClientProject):
         feature_dict = self._get_basic_feature_info(feature_settings)
         feature_dict["baseLevel"] = self._extract_base_level(feature_settings)
         feature_dict["splineFeatures"] = self._extract_spline_features(feature_settings)
+        feature_dict["categoricalGroups"] = self._extract_categorical_groups(feature_settings)
         
         if feature == exposure_columns:
             feature_dict["role"] = "Exposure"

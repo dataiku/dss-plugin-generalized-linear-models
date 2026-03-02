@@ -86,3 +86,18 @@ def test_update_to_numeric_regular_processing_has_no_custom_code():
 
     assert updated["numerical_handling"] == "REGULAR"
     assert updated["customHandlingCode"] == ""
+
+
+def test_update_to_categorical_includes_categorical_groups():
+    trainer = _make_trainer()
+    fs = {}
+
+    updated = trainer.update_to_categorical(
+        fs,
+        base_level="A",
+        categorical_groups=[["A", "B"], ["C", "D"]],
+    )
+
+    assert updated["category_handling"] == "CUSTOM"
+    assert "rebase_mode" in updated["customHandlingCode"]
+    assert '"categorical_groups": [[\'A\', \'B\'], [\'C\', \'D\']]' in updated["customHandlingCode"]
