@@ -234,25 +234,14 @@ class VisualMLModelTrainer(DataikuClientProject):
             per_feature = {}
         sample_weight_variable = self.visual_ml_config.get_sample_weight_variable()
 
-        def clear_existing_weight_roles():
-            for feature_name in per_feature.keys():
-                feature_settings = settings.get_feature_preprocessing(feature_name)
-                if feature_settings.get('role') == "WEIGHT":
-                    feature_settings['role'] = "REJECT"
-
         if not sample_weight_variable:
-            clear_existing_weight_roles()
             settings.set_weighting("NO_WEIGHTING")
             settings.save()
             logger.debug("Sample weighting disabled (NO_WEIGHTING)")
             return
         logger.debug(f"Sample weight variable configured: {sample_weight_variable}")
         # Ensure no stale WEIGHT role remains on another feature
-        clear_existing_weight_roles()
         settings.set_weighting("SAMPLE_WEIGHT", sample_weight_variable)
-        settings.use_feature(sample_weight_variable)
-        feature_settings = settings.get_feature_preprocessing(sample_weight_variable)
-        feature_settings['role'] = "WEIGHT"
         settings.save()
         logger.debug("Successfully updated sample weighting settings")
     
@@ -265,8 +254,8 @@ class VisualMLModelTrainer(DataikuClientProject):
         self.set_included_variables()
         self.set_offset_variables()
         self.set_exposure_variable()
-        self.set_sample_weight_variable()
         self.set_target_variable()
+        self.set_sample_weight_variable()
         
         logger.debug('***Updated settings are:***')
         settings = self.mltask.get_settings()
