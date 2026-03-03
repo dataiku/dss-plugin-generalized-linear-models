@@ -31,3 +31,41 @@ def test_check_no_weighting_rejects_unsupported_method():
 def test_check_no_weighting_rejects_sample_weight_without_column():
     checker = _checker_with_weight({"weightMethod": "SAMPLE_WEIGHT"})
     assert checker.check_no_weighting() is False
+
+
+def test_check_feature_handling_rejects_unsupported_role():
+    checker = ModelConformityChecker.__new__(ModelConformityChecker)
+    checker.model_details = type(
+        "Details",
+        (),
+        {
+            "details": {
+                "preprocessing": {
+                    "per_feature": {
+                        "x": {"role": "EXPOSURE", "type": "NUMERIC", "rescaling": "NONE"},
+                    }
+                }
+            }
+        },
+    )()
+
+    assert checker.check_feature_handling() is False
+
+
+def test_check_feature_handling_accepts_weight_role():
+    checker = ModelConformityChecker.__new__(ModelConformityChecker)
+    checker.model_details = type(
+        "Details",
+        (),
+        {
+            "details": {
+                "preprocessing": {
+                    "per_feature": {
+                        "w": {"role": "WEIGHT", "type": "NUMERIC", "rescaling": "NONE"},
+                    }
+                }
+            }
+        },
+    )()
+
+    assert checker.check_feature_handling() is True

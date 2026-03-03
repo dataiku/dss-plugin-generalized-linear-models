@@ -83,10 +83,15 @@ class ModelConformityChecker(DataikuClientProject):
         return True
 
     def check_feature_handling(self):
-        logger.info("Model Conformity Check: no weighting?")
+        logger.info("Model Conformity Check: feature handling and role validity")
         feature_handlings = self.model_details.details['preprocessing']['per_feature']
+        allowed_roles = {'INPUT', 'REJECT', 'TARGET', 'WEIGHT'}
         for feature, feature_handling in feature_handlings.items():
-            if feature_handling['role'] == 'INPUT':
+            role = feature_handling.get('role')
+            if role not in allowed_roles:
+                logger.info(f"FAILED: Model Conformity Check: unsupported role '{role}' for feature '{feature}'")
+                return False
+            if role == 'INPUT':
                 if feature_handling['type'] == 'CATEGORY':
                     if feature_handling['category_handling'] != 'CUSTOM':
                         logger.info("FAILED: Model Conformity Check: feature handling")

@@ -237,6 +237,9 @@ class VisualMLModelTrainer(DataikuClientProject):
             return
         logger.debug(f"Sample weight variable configured: {sample_weight_variable}")
         settings.set_weighting("SAMPLE_WEIGHT", sample_weight_variable)
+        settings.use_feature(sample_weight_variable)
+        feature_settings = settings.get_feature_preprocessing(sample_weight_variable)
+        feature_settings['role'] = "WEIGHT"
         settings.save()
         logger.debug("Successfully updated sample weighting settings")
     
