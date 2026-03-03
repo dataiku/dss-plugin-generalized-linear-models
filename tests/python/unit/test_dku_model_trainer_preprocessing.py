@@ -124,10 +124,24 @@ def test_set_sample_weight_variable_disables_weighting_when_missing():
     trainer = _make_trainer()
     trainer.visual_ml_config.sample_weight_column = None
     settings = Mock()
+    settings.get_raw.return_value = {
+        "preprocessing": {
+            "per_feature": {
+                "old_weight": {"role": "WEIGHT"},
+                "feature_a": {"role": "INPUT"},
+            }
+        }
+    }
+    by_feature = {
+        "old_weight": {"role": "WEIGHT"},
+        "feature_a": {"role": "INPUT"},
+    }
+    settings.get_feature_preprocessing.side_effect = lambda name: by_feature[name]
     trainer.mltask = Mock()
     trainer.mltask.get_settings.return_value = settings
 
     trainer.set_sample_weight_variable()
 
     settings.set_weighting.assert_called_once_with("NO_WEIGHTING")
+    assert by_feature["old_weight"]["role"] == "REJECT"
     settings.save.assert_called_once()
