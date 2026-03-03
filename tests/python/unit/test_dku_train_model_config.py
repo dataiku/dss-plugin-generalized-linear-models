@@ -157,3 +157,23 @@ def test_get_model_features_excludes_target_exposure_sample_weight_and_offsets()
     }
 
     assert config.get_model_features() == ["feature_1"]
+
+
+def test_get_excluded_features_excludes_only_model_features():
+    config = DKUVisualMLConfig()
+    config.target_column = "target"
+    config.exposure_column = "exposure"
+    config.sample_weight_column = "sample_weight"
+    config.offset_columns = ["offset_a", "offset_b"]
+    config.variables = {
+        "target": {"included": False},
+        "exposure": {"included": False},
+        "sample_weight": {"included": False},
+        "offset_a": {"included": False},
+        "offset_b": {"included": False},
+        "feature_1": {"included": True},
+        "feature_2": {"included": False},
+        "feature_3": {"included": False},
+    }
+
+    assert config.get_excluded_features() == ["feature_2", "feature_3"]

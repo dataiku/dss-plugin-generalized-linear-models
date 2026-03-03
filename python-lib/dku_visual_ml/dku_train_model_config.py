@@ -184,10 +184,17 @@ class DKUVisualMLConfig:
             return []
         
     def get_excluded_features(self):
+        protected_variables = {self.get_target_variable()}
+        if self.exposure_column:
+            protected_variables.add(self.exposure_column)
+        if self.sample_weight_column:
+            protected_variables.add(self.sample_weight_column)
+        protected_variables.update(self.offset_columns or [])
+
         excluded_variables = []
         for variable in self.variables:
             included = self.variables[variable].get('included')
-            if not included:
+            if not included and variable not in protected_variables:
                 excluded_variables.append(variable)
         return excluded_variables
 
