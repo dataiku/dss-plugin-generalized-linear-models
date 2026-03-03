@@ -85,7 +85,9 @@ class VisualMLModelTrainer(DataikuClientProject):
             logger.debug(f"feature role is {feature_role}")
             if feature_name != target_variable or (feature_role!="TARGET"):
                 settings.reject_feature(feature_name)
+        logger.debug(f"is something going on?")
         settings.save()
+        logger.debug(f"indeed")
         
         logger.info(f"Successfully disabled all variables from the ml task config other than {target_variable}") 
         return
