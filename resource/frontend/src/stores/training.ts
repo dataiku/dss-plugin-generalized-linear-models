@@ -21,7 +21,9 @@ export const useTrainingStore = defineStore("TrainingStore", {
         interactions: [] as Interaction[],
         selectedDatasetString: "",
         selectedTargetVariable: "",
-        selectedExposureVariable: "",
+        selectedExposureVariable: null as string | null,
+        selectedSampleWeightVariable: null as string | null,
+        selectedOffsetVariables: [] as string[],
         selectedDistributionFunctionString: 'Poisson' as string,
         selectedLinkFunctionString: 'Log' as string,
         selectedTheta: 1.0 as number,
@@ -134,6 +136,9 @@ export const useTrainingStore = defineStore("TrainingStore", {
         },
 
         setDistribution(newDistribution: string) {
+            if (this.selectedDistributionFunctionString === newDistribution) {
+                return;
+            }
             this.selectedDistributionFunctionString = newDistribution;
 
             const isCurrentLinkAllowed = this.allowedLinks.includes(this.selectedLinkFunctionString);
@@ -141,10 +146,116 @@ export const useTrainingStore = defineStore("TrainingStore", {
             if (!isCurrentLinkAllowed) {
                 this.selectedLinkFunctionString = this.allowedLinks[0];
             }
+            if (this.selectedLinkFunctionString !== "Log" && this.selectedExposureVariable !== null) {
+                this.selectedExposureVariable = null;
+            }
+            this.syncFixedColumnRoles();
         },
 
         setLinkFunction(newLink: string) {
+            if (this.selectedLinkFunctionString === newLink) {
+                return;
+            }
             this.selectedLinkFunctionString = newLink;
+            if (this.selectedLinkFunctionString !== "Log" && this.selectedExposureVariable !== null) {
+                this.selectedExposureVariable = null;
+            }
+            this.syncFixedColumnRoles();
+        },
+        setExposureVariable(newExposure: string | null) {
+            const normalizedExposure = newExposure || null;
+            let hasChanges = false;
+            if (this.selectedExposureVariable !== normalizedExposure) {
+                this.selectedExposureVariable = normalizedExposure;
+                hasChanges = true;
+            }
+            if (this.selectedExposureVariable && this.selectedSampleWeightVariable === this.selectedExposureVariable) {
+                this.selectedSampleWeightVariable = null;
+                hasChanges = true;
+            }
+            const filteredOffsets = this.selectedOffsetVariables.filter((value) => value !== this.selectedExposureVariable);
+            if (filteredOffsets.length !== this.selectedOffsetVariables.length) {
+                this.selectedOffsetVariables = filteredOffsets;
+                hasChanges = true;
+            }
+            if (hasChanges) {
+                this.syncFixedColumnRoles();
+            }
+        },
+        setSampleWeightVariable(newSampleWeight: string | null) {
+            const normalizedSampleWeight = newSampleWeight || null;
+            let hasChanges = false;
+            if (this.selectedSampleWeightVariable !== normalizedSampleWeight) {
+                this.selectedSampleWeightVariable = normalizedSampleWeight;
+                hasChanges = true;
+            }
+            if (this.selectedSampleWeightVariable && this.selectedExposureVariable === this.selectedSampleWeightVariable) {
+                this.selectedExposureVariable = null;
+                hasChanges = true;
+            }
+            const filteredOffsets = this.selectedOffsetVariables.filter((value) => value !== this.selectedSampleWeightVariable);
+            if (filteredOffsets.length !== this.selectedOffsetVariables.length) {
+                this.selectedOffsetVariables = filteredOffsets;
+                hasChanges = true;
+            }
+            if (hasChanges) {
+                this.syncFixedColumnRoles();
+            }
+        },
+        setOffsetVariables(newOffsets: string[]) {
+            const normalizedOffsets = Array.from(new Set((newOffsets || []).filter(Boolean))).filter(
+                (value) => value !== this.selectedExposureVariable && value !== this.selectedSampleWeightVariable
+            );
+            const hasSameLength = normalizedOffsets.length === this.selectedOffsetVariables.length;
+            const hasSameValues = hasSameLength && normalizedOffsets.every((value, index) => value === this.selectedOffsetVariables[index]);
+            if (hasSameValues) {
+                return;
+            }
+            this.selectedOffsetVariables = normalizedOffsets;
+            this.syncFixedColumnRoles();
+        },
+        syncFixedColumnRoles() {
+            this.datasetColumns.forEach((column) => {
+                if (column.name === this.selectedTargetVariable) {
+                    if (column.role !== "Target") {
+                        column.role = "Target";
+                    }
+                    return;
+                }
+                if (this.selectedLinkFunctionString === "Log" && column.name === this.selectedExposureVariable) {
+                    if (column.role !== "Exposure") {
+                        column.role = "Exposure";
+                    }
+                    if (!column.isIncluded) {
+                        column.isIncluded = true;
+                    }
+                    return;
+                }
+                if (column.name === this.selectedSampleWeightVariable) {
+                    if (column.role !== "SampleWeight") {
+                        column.role = "SampleWeight";
+                    }
+                    if (!column.isIncluded) {
+                        column.isIncluded = true;
+                    }
+                    return;
+                }
+                if ((this.selectedOffsetVariables || []).includes(column.name)) {
+                    if (column.role !== "Offset") {
+                        column.role = "Offset";
+                    }
+                    if (!column.isIncluded) {
+                        column.isIncluded = true;
+                    }
+                    return;
+                }
+                if (column.role === "Exposure" || column.role === "SampleWeight" || column.role === "Offset") {
+                    column.role = "REJECT";
+                    if (column.isIncluded) {
+                        column.isIncluded = false;
+                    }
+                }
+            });
         },
 
         updateInteractions(newInteractions: Array<string>) {
@@ -156,19 +267,46 @@ export const useTrainingStore = defineStore("TrainingStore", {
         },
         async fetchExcludedColumns() {
             const analysisStore = useAnalysisStore();
-            
-            this.selectedTargetVariable = analysisStore.selectedMlTask.targetColumn;
-            this.selectedExposureVariable = analysisStore.selectedMlTask.exposureColumn;
-            
-            this.datasetColumns.forEach(column => {
-                if (column.name === this.selectedTargetVariable) {
-                column.role = 'Target';
-                } else if (column.name === this.selectedExposureVariable) {
-                column.role = 'Exposure';
-                } else {
-                column.role = 'REJECT';
+
+            const availableColumns = new Set(this.datasetColumns.map((column) => column.name));
+            const defaultTarget = analysisStore.selectedMlTask.targetColumn || "";
+            const defaultExposure = analysisStore.selectedMlTask.exposureColumn || null;
+            const defaultSampleWeight = analysisStore.selectedMlTask.sampleWeightColumn || null;
+            const defaultOffsets = Array.isArray(analysisStore.selectedMlTask.offsetColumns)
+                ? analysisStore.selectedMlTask.offsetColumns.filter((name) => availableColumns.has(name))
+                : [];
+
+            if (!this.selectedTargetVariable || !availableColumns.has(this.selectedTargetVariable)) {
+                this.selectedTargetVariable = defaultTarget;
+            }
+
+            if (this.selectedLinkFunctionString === "Log") {
+                if (this.selectedExposureVariable && !availableColumns.has(this.selectedExposureVariable)) {
+                    this.selectedExposureVariable = null;
                 }
-            });
+                if (
+                    this.selectedExposureVariable === null &&
+                    defaultExposure &&
+                    availableColumns.has(defaultExposure) &&
+                    this.selectedSampleWeightVariable !== defaultExposure &&
+                    !this.selectedOffsetVariables.includes(defaultExposure)
+                ) {
+                    this.selectedExposureVariable = defaultExposure;
+                }
+            } else {
+                this.selectedExposureVariable = null;
+            }
+
+            if (this.selectedSampleWeightVariable && !availableColumns.has(this.selectedSampleWeightVariable)) {
+                this.selectedSampleWeightVariable = null;
+            }
+            if (this.selectedSampleWeightVariable === null && defaultSampleWeight && availableColumns.has(defaultSampleWeight)) {
+                this.selectedSampleWeightVariable = defaultSampleWeight;
+            }
+
+            const normalizedOffsets = (this.selectedOffsetVariables || []).filter((name) => availableColumns.has(name));
+            this.selectedOffsetVariables = normalizedOffsets.length > 0 ? normalizedOffsets : defaultOffsets;
+            this.syncFixedColumnRoles();
         },
     
     notifyError(msg: string) {
@@ -188,6 +326,20 @@ export const useTrainingStore = defineStore("TrainingStore", {
         }
         if (!this.selectedTargetVariable) {
             this.errorMessage = 'Please select a target variable.';
+            return false;
+        }
+        if (this.selectedLinkFunctionString === "Log" && !this.selectedExposureVariable) {
+            this.errorMessage = 'Please select an exposure variable for Log link.';
+            return false;
+        }
+        const usedFixedColumns = [
+            this.selectedTargetVariable,
+            this.selectedLinkFunctionString === "Log" ? this.selectedExposureVariable : null,
+            this.selectedSampleWeightVariable,
+            ...(this.selectedOffsetVariables || []),
+        ].filter((value): value is string => Boolean(value));
+        if (new Set(usedFixedColumns).size !== usedFixedColumns.length) {
+            this.errorMessage = 'Target, exposure, sample weight, and offset columns must be distinct.';
             return false;
         }
         for (const column of this.datasetColumns) {
@@ -300,8 +452,6 @@ export const useTrainingStore = defineStore("TrainingStore", {
             this.datasetColumns = []
             const store = useModelStore();
             try {
-                    const response = await API.getDatasetColumns({dataset: analysisStore.selectedMlTask.trainSet, exposure: analysisStore.selectedMlTask.exposureColumn});
-
                     const model = store.models.filter((v: ModelPoint) => v.name == model_value)[0];
 
                     const paramsResponse = await API.getLatestMLTaskParams(model)  as APIResponse;
@@ -325,31 +475,42 @@ export const useTrainingStore = defineStore("TrainingStore", {
                     this.selectedTheta = paramsResponse.data.theta ? paramsResponse.data.theta : 0;
                     this.selectedPower = paramsResponse.data.power ? paramsResponse.data.power : 0;
                     this.selectedVariancePower = paramsResponse.data.var_power ? paramsResponse.data.var_power : 0;
+                    this.selectedTargetVariable = paramsResponse.data.target_column || analysisStore.selectedMlTask.targetColumn || "";
+                    this.selectedExposureVariable = paramsResponse.data.exposure_column || null;
+                    this.selectedSampleWeightVariable = paramsResponse.data.sample_weight_column || null;
+                    this.selectedOffsetVariables = paramsResponse.data.offset_columns || [];
+
+                    const effectiveExposure = this.selectedLinkFunctionString === "Log"
+                        ? (this.selectedExposureVariable || null)
+                        : null;
+                    const response = await API.getDatasetColumns({
+                        dataset: analysisStore.selectedMlTask.trainSet,
+                        exposure: effectiveExposure,
+                        weightingColumn: this.selectedSampleWeightVariable || effectiveExposure || null,
+                    });
                     
                     this.datasetColumns = response.data.map((column: ColumnInput) => {
                         const columnName = column.column;
                         const options = column.options;
-                        const param = params[columnName];
+                        const param = params[columnName] || {} as any;
                         const isTargetColumn = columnName === paramsResponse.data.target_column;
-                        const isExposureColumn = columnName === paramsResponse.data.exposure_column;
-                        
-                        // Set the selected target variable if this column is the target column
-                        if (isTargetColumn) {
-                            this.selectedTargetVariable = columnName;
-                        }
-
-                        // Set the selected exposure variable if this column is the exposure column
-                        if (isExposureColumn) {
-                            this.selectedExposureVariable = columnName;
-                        }
+                        const isExposureColumn = this.selectedLinkFunctionString === "Log"
+                            && columnName === (paramsResponse.data.exposure_column || "");
+                        const isSampleWeightColumn = columnName === (paramsResponse.data.sample_weight_column || "");
+                        const isOffsetColumn = (paramsResponse.data.offset_columns || []).includes(columnName);
 
                         // Check if the column names match, excluding the specific column
+                    const fixedColumns = new Set([
+                        this.selectedLinkFunctionString === "Log" ? (this.selectedExposureVariable || "") : "",
+                        this.selectedSampleWeightVariable || "",
+                        ...this.selectedOffsetVariables,
+                    ]);
                     const missingColumns = paramsColumns
-                        .filter((col: string) => col !== this.selectedExposureVariable)
+                        .filter((col: string) => !fixedColumns.has(col))
                         .filter((col: string) => !responseColumns.includes(col));
 
                     const extraColumns = responseColumns
-                        .filter((col: string) => col !== this.selectedExposureVariable)
+                        .filter((col: string) => !fixedColumns.has(col))
                         .filter((col: string) => !paramsColumns.includes(col));
                     
                     if (missingColumns.length > 0 || extraColumns.length > 0) {
@@ -365,8 +526,14 @@ export const useTrainingStore = defineStore("TrainingStore", {
                     }
                         return {
                             name: columnName,
-                            isIncluded: isTargetColumn || isExposureColumn || param.role !== 'REJECT',
-                            role: isTargetColumn ? 'Target' : (isExposureColumn ? 'Exposure' : (param.role || 'REJECT')),
+                            isIncluded: isTargetColumn || isExposureColumn || isSampleWeightColumn || isOffsetColumn || param.role !== 'REJECT',
+                            role: isTargetColumn
+                                ? 'Target'
+                                : (isExposureColumn
+                                    ? 'Exposure'
+                                    : (isSampleWeightColumn
+                                        ? 'SampleWeight'
+                                        : (isOffsetColumn ? 'Offset' : (param.role || 'REJECT')))),
                             type: param.type ? (param.type === 'NUMERIC' ? 'numerical' : 'categorical') : column.type,
                             preprocessing: param.handling ? (param.handling === 'DUMMIFY' ? 'Dummy Encode' : param.handling) : 'Dummy Encode',
                             options: options,
@@ -377,6 +544,8 @@ export const useTrainingStore = defineStore("TrainingStore", {
                             categoricalGroups: (param.categoricalGroups || []) as CategoricalGroup[]
                         };
                     });
+                    this.syncFixedColumnRoles();
+                    this.updateDatasetColumnsPreprocessing();
 
                 } catch (error) {
                     console.error("Error fetching data:", error);
@@ -389,7 +558,16 @@ export const useTrainingStore = defineStore("TrainingStore", {
         else {
             try {
                 this.isLoading = true;
-                const response = await API.getDatasetColumns({dataset: analysisStore.selectedMlTask.trainSet, exposure: analysisStore.selectedMlTask.exposureColumn});
+                const defaultExposure = analysisStore.selectedMlTask.exposureColumn || null;
+                const defaultSampleWeight = analysisStore.selectedMlTask.sampleWeightColumn || null;
+                const effectiveExposure = this.selectedLinkFunctionString === "Log"
+                    ? (this.selectedExposureVariable || defaultExposure || null)
+                    : null;
+                const response = await API.getDatasetColumns({
+                    dataset: analysisStore.selectedMlTask.trainSet,
+                    exposure: effectiveExposure,
+                    weightingColumn: this.selectedSampleWeightVariable || defaultSampleWeight || effectiveExposure || null,
+                });
                 this.datasetColumns = response.data.map((column: ColumnInput) => ({
                     name: column.column,
                     isIncluded: false,
@@ -404,6 +582,8 @@ export const useTrainingStore = defineStore("TrainingStore", {
                     categoricalGroups: []
                 }));
                 await this.fetchExcludedColumns();
+                this.syncFixedColumnRoles();
+                this.updateDatasetColumnsPreprocessing();
             } catch (error) {
                 console.error('Error fetching datasets:', error);
                 this.datasetColumns = [];
@@ -453,8 +633,10 @@ export const useTrainingStore = defineStore("TrainingStore", {
             })),
             ml_task_id: analysisStore.selectedMlTask.mlTaskId,
             analysis_id: analysisStore.selectedMlTask.analysisId,
-            targetColumn: analysisStore.selectedMlTask.targetColumn,
-            exposureColumn: analysisStore.selectedMlTask.exposureColumn
+            targetColumn: this.selectedTargetVariable || analysisStore.selectedMlTask.targetColumn,
+            exposureColumn: this.selectedLinkFunctionString === "Log" ? this.selectedExposureVariable : null,
+            sampleWeightColumn: this.selectedSampleWeightVariable || null,
+            offsetColumns: this.selectedOffsetVariables || []
         };
         
         try {

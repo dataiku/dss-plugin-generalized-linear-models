@@ -83,7 +83,7 @@ class VisualMLModelTrainer(DataikuClientProject):
         for feature_name in settings.get_raw()['preprocessing']['per_feature'].keys():
             feature_role = settings.get_raw()['preprocessing']['per_feature'][feature_name].get('role')
             logger.debug(f"feature role is {feature_role}")
-            if feature_name != target_variable or (feature_role!="TARGET"):
+            if (feature_role!="TARGET") and (feature_role!="WEIGHT"):
                 settings.reject_feature(feature_name)
         settings.save()
         
@@ -198,6 +198,12 @@ class VisualMLModelTrainer(DataikuClientProject):
     def set_exposure_variable(self):
         logger.debug("Updating the Dataiku ML task settings for exposure variables")
         exposure_variable = self.visual_ml_config.get_exposure_variable()
+        if getattr(self.visual_ml_config, "link_function", None) != "log":
+            logger.debug("Exposure variable ignored because link function is not log")
+            return
+        if not exposure_variable:
+            logger.debug("No exposure variable configured")
+            return
         settings = self.mltask.get_settings()
         logger.debug(exposure_variable)
         settings.use_feature(exposure_variable)
@@ -205,6 +211,39 @@ class VisualMLModelTrainer(DataikuClientProject):
         fs = self.update_to_numeric(fs, None, processing="REGULAR", spline_features=[])
         settings.save()
         logger.debug("Successfully updated the Dataiku ML task settings for exposure variables")
+
+    def set_offset_variables(self):
+        logger.debug("Updating the Dataiku ML task settings for offset variables")
+        offset_variables = self.visual_ml_config.get_offset_variables()
+        if not offset_variables:
+            logger.debug("No offset variables configured")
+            return
+        settings = self.mltask.get_settings()
+        for offset_variable in offset_variables:
+            settings.use_feature(offset_variable)
+            fs = settings.get_feature_preprocessing(offset_variable)
+            fs = self.update_to_numeric(fs, None, processing="REGULAR", spline_features=[])
+        settings.save()
+        logger.debug("Successfully updated the Dataiku ML task settings for offset variables")
+
+    def set_sample_weight_variable(self):
+        logger.debug("Updating the Dataiku ML task settings for sample weight")
+        settings = self.mltask.get_settings()
+        per_feature = settings.get_raw().get('preprocessing', {}).get('per_feature', {})
+        if not isinstance(per_feature, dict):
+            per_feature = {}
+        sample_weight_variable = self.visual_ml_config.get_sample_weight_variable()
+
+        if not sample_weight_variable:
+            settings.set_weighting("NO_WEIGHTING")
+            settings.save()
+            logger.debug("Sample weighting disabled (NO_WEIGHTING)")
+            return
+        logger.debug(f"Sample weight variable configured: {sample_weight_variable}")
+        # Ensure no stale WEIGHT role remains on another feature
+        settings.set_weighting("SAMPLE_WEIGHT", sample_weight_variable)
+        settings.save()
+        logger.debug("Successfully updated sample weighting settings")
     
     def configure_variables(self):
         """
@@ -212,9 +251,12 @@ class VisualMLModelTrainer(DataikuClientProject):
         """
         logger.info("Setting the variables and preprocecssing for each variable")
         
+        self.set_sample_weight_variable()
         self.set_included_variables()
+        self.set_offset_variables()
         self.set_exposure_variable()
         self.set_target_variable()
+        
         
         logger.debug('***Updated settings are:***')
         settings = self.mltask.get_settings()
@@ -341,6 +383,16 @@ class VisualMLModelTrainer(DataikuClientProject):
         settings = self.mltask.get_settings()
         interaction_variables = self.visual_ml_config.get_interaction_variables()
         first_columns, second_columns = self.process_interaction_columns(interaction_variables)
+        exposure_variable = self.visual_ml_config.get_exposure_variable()
+        offset_columns = self.visual_ml_config.get_offset_variables()
+        link_function = getattr(self.visual_ml_config, "link_function", None)
+        use_exposure = bool(exposure_variable) and link_function == "log"
+        if use_exposure:
+            offset_mode = "OFFSETS/EXPOSURES"
+        elif len(offset_columns) > 0:
+            offset_mode = "OFFSETS"
+        else:
+            offset_mode = "BASIC"
         
         if hasattr(self.visual_ml_config, 'distribution_function'): # for training
             algo_settings = settings.get_algorithm_settings(
@@ -355,16 +407,19 @@ class VisualMLModelTrainer(DataikuClientProject):
                 "interaction_columns_second":second_columns,
                 "alpha": self.visual_ml_config.theta,
                 "power": self.visual_ml_config.power,
-                "var_power": self.visual_ml_config.variance_power
+                "var_power": self.visual_ml_config.variance_power,
+                "offset_mode": offset_mode,
+                "offset_columns": offset_columns,
+                "exposure_columns": ([exposure_variable] if use_exposure else []),
             })
         else: # for init
             algo_settings = settings.get_algorithm_settings(
                 'CustomPyPredAlgo_generalized-linear-models_generalized-linear-models_regression'
             )
             algo_settings['params'].update({
-                "offset_mode": "OFFSETS/EXPOSURES",
+                "offset_mode": "BASIC",
                 "offset_columns": [],
-                "exposure_columns": [self.visual_ml_config.exposure_column],
+                "exposure_columns": [],
                 "training_dataset": self.visual_ml_config.input_dataset,
             })
         

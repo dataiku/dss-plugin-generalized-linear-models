@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import Mock
 
 pytest.importorskip("dataiku")
 
@@ -101,3 +102,46 @@ def test_update_to_categorical_includes_categorical_groups():
     assert updated["category_handling"] == "CUSTOM"
     assert "rebase_mode" in updated["customHandlingCode"]
     assert '"categorical_groups": [[\'A\', \'B\'], [\'C\', \'D\']]' in updated["customHandlingCode"]
+
+
+def test_set_sample_weight_variable_sets_sample_weight_method():
+    trainer = _make_trainer()
+    trainer.visual_ml_config.sample_weight_column = "sample_w"
+    settings = Mock()
+    settings.get_feature_preprocessing.return_value = {}
+    trainer.mltask = Mock()
+    trainer.mltask.get_settings.return_value = settings
+
+    trainer.set_sample_weight_variable()
+
+    settings.set_weighting.assert_called_once_with("SAMPLE_WEIGHT", "sample_w")
+    settings.use_feature.assert_called_once_with("sample_w")
+    settings.get_feature_preprocessing.assert_called_once_with("sample_w")
+    settings.save.assert_called_once()
+
+
+def test_set_sample_weight_variable_disables_weighting_when_missing():
+    trainer = _make_trainer()
+    trainer.visual_ml_config.sample_weight_column = None
+    settings = Mock()
+    settings.get_raw.return_value = {
+        "preprocessing": {
+            "per_feature": {
+                "old_weight": {"role": "WEIGHT"},
+                "feature_a": {"role": "INPUT"},
+            }
+        }
+    }
+    by_feature = {
+        "old_weight": {"role": "WEIGHT"},
+        "feature_a": {"role": "INPUT"},
+    }
+    settings.get_feature_preprocessing.side_effect = lambda name: by_feature[name]
+    trainer.mltask = Mock()
+    trainer.mltask.get_settings.return_value = settings
+
+    trainer.set_sample_weight_variable()
+
+    settings.set_weighting.assert_called_once_with("NO_WEIGHTING")
+    assert by_feature["old_weight"]["role"] == "REJECT"
+    settings.save.assert_called_once()

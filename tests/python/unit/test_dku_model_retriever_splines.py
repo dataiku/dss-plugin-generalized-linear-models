@@ -65,3 +65,73 @@ def test_extract_categorical_groups_from_rebase_mode_code():
     }
 
     assert retriever._extract_categorical_groups(feature_settings) == [["A", "B"], ["C", "D"]]
+
+
+def test_get_exposure_columns_returns_none_when_not_configured():
+    retriever = _make_retriever()
+    retriever.algo_settings = {"params": {}}
+    retriever.exposure_columns = None
+
+    assert retriever.get_exposure_columns() is None
+
+
+def test_get_offset_columns_returns_empty_list_when_not_configured():
+    retriever = _make_retriever()
+    retriever.algo_settings = {"params": {}}
+
+    assert retriever.get_offset_columns() == []
+
+
+def test_get_sample_weight_column_reads_from_core_params():
+    retriever = _make_retriever()
+    retriever.model_details = type(
+        "Details",
+        (),
+        {
+            "details": {
+                "coreParams": {
+                    "weight": {
+                        "weightMethod": "SAMPLE_WEIGHT",
+                        "sampleWeightVariable": "sample_w",
+                    }
+                }
+            }
+        },
+    )()
+    retriever.task = None
+
+    assert retriever.get_sample_weight_column() == "sample_w"
+
+
+def test_get_sample_weight_column_falls_back_to_task_settings():
+    retriever = _make_retriever()
+    retriever.model_details = type("Details", (), {"details": {"coreParams": {}}})()
+    settings = type("Settings", (), {"get_raw": lambda self: {"weight": {"weightMethod": "SAMPLE_WEIGHT", "sampleWeightVariable": "sample_w"}}})()
+    retriever.task = type("Task", (), {"get_settings": lambda self: settings})()
+
+    assert retriever.get_sample_weight_column() == "sample_w"
+
+
+def test_get_sample_weight_column_returns_none_for_no_weighting():
+    retriever = _make_retriever()
+    retriever.model_details = type(
+        "Details",
+        (),
+        {"details": {"coreParams": {"weight": {"weightMethod": "NO_WEIGHTING"}}}},
+    )()
+    retriever.task = None
+
+    assert retriever.get_sample_weight_column() is None
+
+
+def test_get_sample_weight_column_raises_for_unsupported_weighting_method():
+    retriever = _make_retriever()
+    retriever.model_details = type(
+        "Details",
+        (),
+        {"details": {"coreParams": {"weight": {"weightMethod": "CLASS_WEIGHT"}}}},
+    )()
+    retriever.task = None
+
+    with pytest.raises(ValueError, match="Unsupported weighting method"):
+        retriever.get_sample_weight_column()

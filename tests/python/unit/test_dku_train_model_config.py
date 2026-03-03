@@ -122,3 +122,58 @@ def test_build_categorical_custom_handling_code_includes_groups():
     assert "from processors.processors import rebase_mode" in code
     assert '"base_level": \'A\'' in code
     assert '"categorical_groups": [[\'A\', \'B\'], [\'C\', \'D\']]' in code
+
+
+def test_update_model_parameters_parses_single_weight_exposure_and_offsets():
+    config = DKUVisualMLConfig()
+    config.update_model_parameters({
+        "targetColumn": "claim_count",
+        "exposureColumn": "exposure",
+        "sampleWeightColumn": "sample_w",
+        "offsetColumns": ["offset_a", "offset_b", "offset_a"],
+        "variables": {},
+    })
+
+    assert config.target_column == "claim_count"
+    assert config.exposure_column == "exposure"
+    assert config.sample_weight_column == "sample_w"
+    assert config.offset_columns == ["offset_a", "offset_b"]
+
+
+def test_get_model_features_excludes_target_exposure_sample_weight_and_offsets():
+    config = DKUVisualMLConfig()
+    config.target_column = "target"
+    config.exposure_column = "exposure"
+    config.sample_weight_column = "sample_weight"
+    config.offset_columns = ["offset_a", "offset_b"]
+    config.variables = {
+        "target": {"included": True},
+        "exposure": {"included": True},
+        "sample_weight": {"included": True},
+        "offset_a": {"included": True},
+        "offset_b": {"included": True},
+        "feature_1": {"included": True},
+        "feature_2": {"included": False},
+    }
+
+    assert config.get_model_features() == ["feature_1"]
+
+
+def test_get_excluded_features_excludes_only_model_features():
+    config = DKUVisualMLConfig()
+    config.target_column = "target"
+    config.exposure_column = "exposure"
+    config.sample_weight_column = "sample_weight"
+    config.offset_columns = ["offset_a", "offset_b"]
+    config.variables = {
+        "target": {"included": False},
+        "exposure": {"included": False},
+        "sample_weight": {"included": False},
+        "offset_a": {"included": False},
+        "offset_b": {"included": False},
+        "feature_1": {"included": True},
+        "feature_2": {"included": False},
+        "feature_3": {"included": False},
+    }
+
+    assert config.get_excluded_features() == ["feature_2", "feature_3"]

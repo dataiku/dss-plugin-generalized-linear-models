@@ -7,7 +7,13 @@ class DKUVisualMLConfig:
         
         logger.debug("Initalising a dku visual ML config with the existing web app settings")
         
-        self.prediction_type = "REGRESSION"        
+        self.prediction_type = "REGRESSION"
+        self.target_column = None
+        self.exposure_column = None
+        self.sample_weight_column = None
+        self.offset_columns = []
+        self.variables = {}
+        self.interaction_variables = []
         logger.debug("Successfully initalised a dku visual ML config with the existing web app settings")
         self.log_configuration()
     
@@ -26,6 +32,14 @@ class DKUVisualMLConfig:
     def get_exposure_variable(self):
         logger.debug("Getting exposure variable")
         return self.exposure_column
+
+    def get_sample_weight_variable(self):
+        logger.debug("Getting sample weight variable")
+        return self.sample_weight_column
+
+    def get_offset_variables(self):
+        logger.debug("Getting offset variables")
+        return self.offset_columns or []
     
     def get_interaction_variables(self):
         logger.debug("Getting interaction variables")
@@ -170,10 +184,17 @@ class DKUVisualMLConfig:
             return []
         
     def get_excluded_features(self):
+        protected_variables = {self.get_target_variable()}
+        if self.exposure_column:
+            protected_variables.add(self.exposure_column)
+        if self.sample_weight_column:
+            protected_variables.add(self.sample_weight_column)
+        protected_variables.update(self.offset_columns or [])
+
         excluded_variables = []
         for variable in self.variables:
             included = self.variables[variable].get('included')
-            if not included:
+            if not included and variable not in protected_variables:
                 excluded_variables.append(variable)
         return excluded_variables
 
@@ -182,8 +203,14 @@ class DKUVisualMLConfig:
         
         target_variable = self.get_target_variable()
         included_variables = self.get_included_variables()
+        protected_variables = {target_variable}
+        if self.exposure_column:
+            protected_variables.add(self.exposure_column)
+        if self.sample_weight_column:
+            protected_variables.add(self.sample_weight_column)
+        protected_variables.update(self.offset_columns or [])
         
-        model_features= [var for var in included_variables if var not in {target_variable, self.exposure_column}]
+        model_features = [var for var in included_variables if var not in protected_variables]
         
         if len(model_features)>0:
             return model_features
@@ -193,8 +220,15 @@ class DKUVisualMLConfig:
     def update_model_parameters(self, request_json):
         
         logger.debug("Initalising DKUVisualMLConfig ")
-        self.target_column = request_json.get('targetColumn')
-        self.exposure_column = request_json.get('exposureColumn')
+        self.target_column = request_json.get('targetColumn') or request_json.get('target_column')
+        self.exposure_column = request_json.get('exposureColumn') or request_json.get('exposure_column')
+        self.sample_weight_column = request_json.get('sampleWeightColumn') or request_json.get('sample_weight_column')
+        self.offset_columns = request_json.get('offsetColumns')
+        if self.offset_columns is None:
+            self.offset_columns = request_json.get('offset_columns')
+        if self.offset_columns is None:
+            self.offset_columns = []
+        self.offset_columns = list(dict.fromkeys(str(value) for value in self.offset_columns if value))
 
         if 'splitPolicy' in request_json: # when creating
             self.input_dataset = request_json.get('trainSet', "")
