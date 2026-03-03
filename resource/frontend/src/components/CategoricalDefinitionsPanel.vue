@@ -181,6 +181,7 @@ export default defineComponent({
 .create-group-btn {
     border: 1px solid #3a67f7;
     color: #3a67f7;
+    background-color: #FFFFFF;
     border-radius: 4px;
     min-height: 34px;
     padding: 0 12px;

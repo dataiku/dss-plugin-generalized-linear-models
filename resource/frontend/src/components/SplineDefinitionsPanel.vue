@@ -166,7 +166,7 @@ export default defineComponent({
 
 <style scoped>
 .spline-container {
-    --spline-card-bg: #f3f6ff;
+    --spline-card-bg: #F7F9FF;
     --spline-card-border: #e3e9ff;
     --spline-chip-border: #bcc8e8;
     --spline-cell-border: #d6d9e0;
@@ -234,6 +234,7 @@ export default defineComponent({
 .create-feature-btn {
     border: 1px solid var(--spline-primary);
     color: var(--spline-primary);
+    background-color: #FFFFFF;
     border-radius: 5px;
     min-height: 34px;
     padding: 0 14px;
@@ -269,7 +270,7 @@ export default defineComponent({
 }
 
 .feature-card:nth-child(2) {
-    background: #f7f9ff;
+    background: #EBF0FF;
 }
 
 .feature-card-header {
@@ -282,12 +283,11 @@ export default defineComponent({
 }
 
 .feature-header-main {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) max-content 72px;
+    display: flex;
     align-items: center;
-    column-gap: 6px;
+    gap: 8px;
     min-width: 0;
-    flex: 1 1 auto;
+    flex: 0 1 auto;
     color: #171717;
 }
 
@@ -297,6 +297,7 @@ export default defineComponent({
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    flex: 0 1 auto;
 }
 
 .degree-label {
@@ -337,6 +338,7 @@ export default defineComponent({
 .add-knot-btn {
     border: 1px solid var(--spline-primary);
     color: var(--spline-primary);
+    background-color: #FFFFFF;
     border-radius: 5px;
     min-height: 33px;
     padding: 0 12px;
@@ -419,6 +421,12 @@ export default defineComponent({
 
 .segment-table th:first-child {
     text-align: left;
+    width: calc(100% - 88px);
+}
+
+.segment-table th:last-child {
+    text-align: left;
+    width: 88px;
 }
 
 .segment-table td {
@@ -426,19 +434,20 @@ export default defineComponent({
 }
 
 .segment-table td:first-child {
-    width: 52%;
+    width: calc(100% - 88px);
 }
 
 .segment-table td:last-child {
-    text-align: center;
+    text-align: left;
     vertical-align: middle;
+    width: 88px;
 }
 
 .degree-select--segment {
     min-width: 68px;
     width: 68px;
     max-width: 68px;
-    margin: 0 auto;
+    margin: 0;
 }
 
 .degree-select :deep(.q-field__control) {
@@ -446,6 +455,27 @@ export default defineComponent({
     min-height: 28px;
     background: #ffffff !important;
     overflow: hidden;
+}
+
+.degree-select--feature :deep(.q-field__control) {
+    height: 33px !important;
+    min-height: 33px !important;
+}
+
+.degree-select--feature :deep(.q-field__native),
+.degree-select--feature :deep(.q-field__marginal),
+.degree-select--feature :deep(.q-field__append),
+.degree-select--feature :deep(.q-field__prepend) {
+    height: 33px !important;
+    min-height: 33px !important;
+    display: flex;
+    align-items: center;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+.degree-select--feature :deep(.bs-font-medium-2-normal) {
+    line-height: 33px !important;
 }
 
 .degree-select--segment :deep(.q-field__control) {
