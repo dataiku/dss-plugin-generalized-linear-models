@@ -83,7 +83,7 @@ class VisualMLModelTrainer(DataikuClientProject):
         for feature_name in settings.get_raw()['preprocessing']['per_feature'].keys():
             feature_role = settings.get_raw()['preprocessing']['per_feature'][feature_name].get('role')
             logger.debug(f"feature role is {feature_role}")
-            if feature_name != target_variable or (feature_role!="TARGET") or (feature_role!="WEIGHT"):
+            if (feature_role!="TARGET") and (feature_role!="WEIGHT"):
                 settings.reject_feature(feature_name)
         logger.debug(f"is something going on?")
         settings.save()
