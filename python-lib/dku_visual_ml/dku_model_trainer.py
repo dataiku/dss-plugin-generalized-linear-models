@@ -85,9 +85,7 @@ class VisualMLModelTrainer(DataikuClientProject):
             logger.debug(f"feature role is {feature_role}")
             if (feature_role!="TARGET") and (feature_role!="WEIGHT"):
                 settings.reject_feature(feature_name)
-        logger.debug(f"is something going on?")
         settings.save()
-        logger.debug(f"indeed")
         
         logger.info(f"Successfully disabled all variables from the ml task config other than {target_variable}") 
         return
@@ -253,11 +251,12 @@ class VisualMLModelTrainer(DataikuClientProject):
         """
         logger.info("Setting the variables and preprocecssing for each variable")
         
+        self.set_sample_weight_variable()
         self.set_included_variables()
         self.set_offset_variables()
         self.set_exposure_variable()
         self.set_target_variable()
-        self.set_sample_weight_variable()
+        
         
         logger.debug('***Updated settings are:***')
         settings = self.mltask.get_settings()
