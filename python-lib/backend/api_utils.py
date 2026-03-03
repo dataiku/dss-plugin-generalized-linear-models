@@ -44,45 +44,26 @@ def natural_sort_key(s):
     import re
     return [int(c) if c.isdigit() else c.lower() for c in re.split(r'(\d+)', str(s))]
 
-def calculate_base_levels(df, exposure_column=None):
+def calculate_base_levels(df):
     cols_json = []
     # Sort the columns using natural sorting
     sorted_columns = sorted(df.columns, key=natural_sort_key)
     
     for col in sorted_columns:
-        if col == exposure_column:
-            continue
-    
         is_numeric = pd.api.types.is_numeric_dtype(df[col])
         min_value = None
         max_value = None
 
-        if exposure_column and exposure_column in df.columns:
-            # Exposure-based calculation
-            weighted_counts = df.groupby(col)[exposure_column].sum()
-
-            top_modalities = weighted_counts.sort_values(ascending=False).head(100)
-            if is_numeric:
-                options = sorted([str(val) for val in top_modalities.index], key=float)
-                numeric_series = pd.to_numeric(df[col], errors='coerce').dropna()
-                if len(numeric_series) > 0:
-                    min_value = float(numeric_series.min())
-                    max_value = float(numeric_series.max())
-            else:
-                options = sorted([str(val) for val in top_modalities.index], key=natural_sort_key)
-            base_level = str(top_modalities.idxmax())
+        unique_vals = df[col].unique()
+        if is_numeric:
+            options = sorted([str(val) for val in unique_vals], key=float)[:100]
+            numeric_series = pd.to_numeric(df[col], errors='coerce').dropna()
+            if len(numeric_series) > 0:
+                min_value = float(numeric_series.min())
+                max_value = float(numeric_series.max())
         else:
-            # Original mode-based calculation
-            unique_vals = df[col].unique()
-            if is_numeric:
-                options = sorted([str(val) for val in unique_vals], key=float)[:100]
-                numeric_series = pd.to_numeric(df[col], errors='coerce').dropna()
-                if len(numeric_series) > 0:
-                    min_value = float(numeric_series.min())
-                    max_value = float(numeric_series.max())
-            else:
-                options = sorted([str(val) for val in unique_vals], key=natural_sort_key)[:100]
-            base_level = str(df[col].mode().iloc[0])
+            options = sorted([str(val) for val in unique_vals], key=natural_sort_key)[:100]
+        base_level = str(df[col].mode().iloc[0])
 
         cols_json.append({
             'column': col,

@@ -64,14 +64,6 @@
                 column.role != 'Target' && column.role != 'Exposure' && column.isIncluded == true)
             },
     },
-    watch: {
-        "store.datasetColumns": {
-            handler(newVal) {
-                this.store.updateDatasetColumnsPreprocessing();
-            },
-            deep: true
-        }
-    }
 })
 </script>   
 <style scoped>

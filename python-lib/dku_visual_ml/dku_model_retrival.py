@@ -35,7 +35,36 @@ class VisualMLModelRetriver(DataikuClientProject):
         logger.info(f"Model retriever intialised for model ID {full_model_id}")
               
     def get_offset_columns(self):
-        return self.algo_settings['params']['offset_columns']
+        params = self.algo_settings.get('params', {}) if self.algo_settings else {}
+        offset_columns = params.get('offset_columns') or []
+        return [column for column in offset_columns if column]
+
+    def get_sample_weight_column(self):
+        core_params = self.model_details.details.get('coreParams', {})
+        weight_details = core_params.get('weight', {})
+        if not isinstance(weight_details, dict) or not weight_details:
+            try:
+                settings = self.task.get_settings()
+                settings_raw = settings.get_raw() if settings else {}
+                weight_details = settings_raw.get('weight', {})
+            except Exception:
+                weight_details = {}
+        if not isinstance(weight_details, dict):
+            return None
+        weight_method = weight_details.get('weightMethod')
+        if not weight_method or weight_method == 'NO_WEIGHTING':
+            return None
+        if weight_method != 'SAMPLE_WEIGHT':
+            raise ValueError(
+                f"Unsupported weighting method '{weight_method}'. "
+                "Only 'NO_WEIGHTING' and 'SAMPLE_WEIGHT' are supported."
+            )
+        sample_weight_variable = weight_details.get('sampleWeightVariable')
+        if not sample_weight_variable:
+            raise ValueError(
+                "Weighting method is SAMPLE_WEIGHT but sampleWeightVariable is missing."
+            )
+        return sample_weight_variable
     
     def get_features(self):
         logger.info(f"Getting features for model ID {self.full_model_id}")
@@ -70,9 +99,16 @@ class VisualMLModelRetriver(DataikuClientProject):
     def _get_excluded_features(self):
         logger.debug(f"Excluding features exposure {self.exposure_columns}")
         logger.debug(f"Excluding features target {self.target_column}")
-        important_columns = []
-        important_columns += [self.offset_columns, self.exposure_columns, self.target_column]
-        
+        important_columns = set()
+        for offset_column in self.offset_columns or []:
+            important_columns.add(offset_column)
+        if self.exposure_columns:
+            important_columns.add(self.exposure_columns)
+        sample_weight = self.get_sample_weight_column()
+        if sample_weight:
+            important_columns.add(sample_weight)
+        if self.target_column:
+            important_columns.add(self.target_column)
         return important_columns
     
     def _get_included_features(self):
@@ -305,8 +341,9 @@ class VisualMLModelRetriver(DataikuClientProject):
 
         return []
     
-    def _process_feature(self, feature: str, preprocessing: Dict[str, Any], 
-                         exposure_columns: str, target_column: str) -> Dict[str, Any]:
+    def _process_feature(self, feature: str, preprocessing: Dict[str, Any],
+                         exposure_columns: Optional[str], target_column: str,
+                         offset_columns: List[str], sample_weight_column: Optional[str]) -> Dict[str, Any]:
         
         feature_settings = preprocessing.get(feature, {})
         feature_dict = self._get_basic_feature_info(feature_settings)
@@ -316,6 +353,10 @@ class VisualMLModelRetriver(DataikuClientProject):
         
         if feature == exposure_columns:
             feature_dict["role"] = "Exposure"
+        elif feature in offset_columns:
+            feature_dict["role"] = "Offset"
+        elif sample_weight_column and feature == sample_weight_column:
+            feature_dict["role"] = "SampleWeight"
         elif feature == target_column:
             feature_dict["role"] = "Target"
         
@@ -326,6 +367,8 @@ class VisualMLModelRetriver(DataikuClientProject):
         
         logger.info("Getting model feature dict")
         exposure_columns = self.get_exposure_columns()
+        offset_columns = self.get_offset_columns()
+        sample_weight_column = self.get_sample_weight_column()
         target_column = self.get_target_column()
         
         preprocessing = self.model_details.get_preprocessing_settings().get('per_feature')
@@ -333,7 +376,14 @@ class VisualMLModelRetriver(DataikuClientProject):
         
         features_dict = {}
         for feature in features:
-            feature_dict = self._process_feature(feature, preprocessing, exposure_columns, target_column)
+            feature_dict = self._process_feature(
+                feature,
+                preprocessing,
+                exposure_columns,
+                target_column,
+                offset_columns,
+                sample_weight_column,
+            )
             features_dict[feature] = feature_dict
                     
                 
@@ -342,15 +392,13 @@ class VisualMLModelRetriver(DataikuClientProject):
         return features_dict
     
     def get_exposure_columns(self):
-        try:
-            if self.exposure_columns:
-                return self.exposure_columns
-            else:
-                self.exposure_columns = self.algo_settings.get('params').get('exposure_columns')[0]
-                return self.exposure_columns
-        except:
-            self.exposure_columns = self.algo_settings.get('params').get('exposure_columns')[0]
-            return self.exposure_columns
+        params = self.algo_settings.get('params', {}) if self.algo_settings else {}
+        exposure_columns = params.get('exposure_columns') or []
+        if len(exposure_columns) >= 1:
+            self.exposure_columns = exposure_columns[0]
+        else:
+            self.exposure_columns = None
+        return self.exposure_columns
 
     def get_elastic_net_penalty(self):
         return self.algo_settings.get('params').get('penalty')[0]
@@ -394,6 +442,8 @@ class VisualMLModelRetriver(DataikuClientProject):
         setup_params = {
             "target_column": self.get_target_column(),
             "exposure_column":self.get_exposure_columns(),
+            "sample_weight_column": self.get_sample_weight_column(),
+            "offset_columns": self.get_offset_columns(),
             "distribution_function": self.get_distribution_function(),
             "link_function":self.get_link_function(),
             "elastic_net_penalty": self.get_elastic_net_penalty(),

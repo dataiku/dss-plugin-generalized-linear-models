@@ -33,14 +33,17 @@ class DataikuClientProject:
         if glm_algo_name not in enabled_algorithms:
             is_valid = False
             exposure_column = ""
+            offset_columns = []
         else:
             algorithm_settings = enabled_algorithm_settings[glm_algo_name]
-            exposure_columns = algorithm_settings['params']['exposure_columns']
-            if len(exposure_columns) == 1:
+            exposure_columns = algorithm_settings['params'].get('exposure_columns', [])
+            offset_columns = algorithm_settings['params'].get('offset_columns', [])
+            if len(exposure_columns) >= 1:
                 exposure_column = exposure_columns[0]
             else:
                 exposure_column = ""
-                is_valid = False
+        weight_settings = settings.get_raw().get("weight", {})
+        sample_weight_column = weight_settings.get("sampleWeightVariable") or ""
         target_variable = settings.get_raw()['targetVariable']
         ml_task_formatted = {"analysisName": ml_task_config['analysisName'],
                             "analysisId": ml_task_config['analysisId'],
@@ -50,6 +53,8 @@ class DataikuClientProject:
                             "splitPolicy": split_policy,
                             "isValid": is_valid,
                             "exposureColumn": exposure_column,
+                            "sampleWeightColumn": sample_weight_column,
+                            "offsetColumns": offset_columns,
                             "targetColumn": target_variable}
         return ml_task_formatted
 

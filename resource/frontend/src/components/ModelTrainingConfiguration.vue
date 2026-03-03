@@ -85,6 +85,63 @@
                 ></BsLabel>
                     <input v-if="trainingStore.selectedLinkFunctionString=='Power'" className="model-name-input" type="number" 
                     v-model.number="trainingStore.selectedPower"/>
+                <BsLabel
+                    label="Model Columns"
+                    className="section-title model-columns-title"
+                ></BsLabel>
+                <BsLabel
+                    v-if="trainingStore.selectedLinkFunctionString==='Log'"
+                    label="Exposure Column *"
+                    :isSubLabel="true"
+                    info-text="Exposure is only applied for Log link"
+                />
+                <BsSelect
+                    v-if="trainingStore.selectedLinkFunctionString==='Log'"
+                    clearable
+                    :modelValue="trainingStore.selectedExposureVariable"
+                    :all-options="exposureOptions"
+                    @update:modelValue="value => trainingStore.setExposureVariable(value)"
+                    style="min-width: 220px"
+                />
+                <BsLabel
+                    label="Sample Weight Column"
+                    :isSubLabel="true"
+                    info-text="Optional sample weights used for chart aggregations"
+                />
+                <BsSelect
+                    clearable
+                    :modelValue="trainingStore.selectedSampleWeightVariable"
+                    :all-options="sampleWeightOptions"
+                    @update:modelValue="value => trainingStore.setSampleWeightVariable(value)"
+                    style="min-width: 220px"
+                />
+                <BsLabel
+                    label="Offset Columns"
+                    :isSubLabel="true"
+                    info-text="Optional offsets applied in the model for any link"
+                />
+                <BsSelect
+                    use-chips
+                    deletable-chips
+                    multiple
+                    clearable
+                    :modelValue="trainingStore.selectedOffsetVariables"
+                    :all-options="offsetOptions"
+                    @update:modelValue="value => trainingStore.setOffsetVariables(value)"
+                    style="min-width: 280px"
+                >
+                    <template #selected-item="scope">
+                        <q-chip dense class="offset-chip">
+                            {{ scope.opt }}
+                            <q-icon
+                                name="close"
+                                size="12px"
+                                class="offset-chip-remove"
+                                @click.stop="scope.removeAtIndex(scope.index)"
+                            />
+                        </q-chip>
+                    </template>
+                </BsSelect>
                 
         </q-card-section>
         <q-card-section>
@@ -139,7 +196,7 @@
     import { defineComponent } from "vue";
     import EmptyState from './EmptyState.vue';
     import { BsTab, BsTabIcon, BsHeader, BsButton, BsDrawer, BsContent, BsTooltip, BsSlider, BsCard } from "quasar-ui-bs";
-    import { QRadio, QCard, QSeparator, QCardSection } from 'quasar';
+    import { QRadio, QCard, QSeparator, QCardSection, QChip, QIcon } from 'quasar';
     import VariableInteractions from './VariableInteractions.vue'
     import { useTrainingStore } from "../stores/training";
     import { useModelStore } from "../stores/webapp";
@@ -160,7 +217,9 @@
         BsCard,
         QCard, 
         QSeparator, 
-        QCardSection
+        QCardSection,
+        QChip,
+        QIcon
     
     },
     props: [],
@@ -183,6 +242,23 @@
     computed: {
         updateModels() {
             return this.trainingStore.updateModels;
+        },
+        fixedNumericColumns() {
+            return this.trainingStore.datasetColumns
+                .filter((column) => column.type === "numerical" && column.name !== this.trainingStore.selectedTargetVariable)
+                .map((column) => column.name);
+        },
+        exposureOptions() {
+            return this.fixedNumericColumns
+                .filter((name: string) => name !== this.trainingStore.selectedSampleWeightVariable && !this.trainingStore.selectedOffsetVariables.includes(name));
+        },
+        sampleWeightOptions() {
+            return this.fixedNumericColumns
+                .filter((name: string) => name !== this.trainingStore.selectedExposureVariable && !this.trainingStore.selectedOffsetVariables.includes(name));
+        },
+        offsetOptions() {
+            return this.fixedNumericColumns
+                .filter((name: string) => name !== this.trainingStore.selectedExposureVariable && name !== this.trainingStore.selectedSampleWeightVariable);
         }
     }
     })
@@ -279,6 +355,10 @@
         margin-bottom: 6px;
     }
 
+    .model-columns-title {
+        margin-top: 48px;
+    }
+
     .explanation {
         font-size: 12px;
     }
@@ -286,5 +366,20 @@
     .slider-input :deep(.q-slider) {
         width: 100% !important;
         max-width: 100% !important;
+    }
+
+    .offset-chip {
+        border: 1px solid #214ab5 !important;
+        border-radius: 9999px !important;
+        min-height: 22px;
+        padding: 0 8px;
+        background: #ffffff !important;
+        color: #262626 !important;
+        gap: 4px;
+    }
+
+    .offset-chip-remove {
+        color: #000000 !important;
+        cursor: pointer;
     }
     </style>

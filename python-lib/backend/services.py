@@ -104,13 +104,13 @@ class MockDataService:
         return csv_data
     
     def get_dataset_columns(self, request_json: dict):
+        request_json = request_json or {}
         dataset_name = "claims_train"
-        exposure_column = "exposure"
         
         current_app.logger.info(f"Training Dataset name selected is: {dataset_name}")
         
         df = dataiku.Dataset(dataset_name).get_dataframe(limit=100000)
-        cols_json = calculate_base_levels(df, exposure_column)
+        cols_json = calculate_base_levels(df)
 
         current_app.logger.info(f"Successfully retrieved column for dataset '{dataset_name}': {[col['column'] for col in cols_json]}")
 
@@ -495,13 +495,13 @@ class DataikuDataService:
     
     def get_dataset_columns(self, request_json):
         try:
+            request_json = request_json or {}
             dataset_name = request_json['dataset']
-            exposure_column = request_json['exposure']
             
             current_app.logger.info(f"Training Dataset name selected is: {dataset_name}")
             
             df = dataiku.Dataset(dataset_name).get_dataframe(limit=100000)
-            cols_json = calculate_base_levels(df, exposure_column)
+            cols_json = calculate_base_levels(df)
 
             current_app.logger.info(f"Successfully retrieved column for dataset '{dataset_name}': {[col['column'] for col in cols_json]}")
 

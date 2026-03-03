@@ -47,14 +47,7 @@
                 <BsLabel label="Target Variable *" :isSubLabel="true" />
                 <BsSelect
                     v-model="form.targetColumn"
-                    :all-options="store.variables.filter(v => v !== form.exposureColumn)"
-                    :disable="!form.trainSet"
-                />
-
-                <BsLabel label="Exposure Variable *" :isSubLabel="true" />
-                <BsSelect
-                    v-model="form.exposureColumn"
-                    :all-options="store.variables.filter(v => v !== form.targetColumn)"
+                    :all-options="store.variables"
                     :disable="!form.trainSet"
                 />
             </q-card-section>
@@ -104,13 +97,12 @@ export default defineComponent({
                 testSet: '',
                 splitPolicy: '',
                 targetColumn: '',
-                exposureColumn: '',
             }
         };
     },
     computed: {
         isFormValid(): boolean {
-            return !!(this.form.analysisName && this.form.trainSet && (this.form.testSet || this.form.splitPolicy=="Random") && this.form.splitPolicy && this.form.targetColumn && this.form.exposureColumn);
+            return !!(this.form.analysisName && this.form.trainSet && (this.form.testSet || this.form.splitPolicy=="Random") && this.form.splitPolicy && this.form.targetColumn);
         }
     },
     methods: {
@@ -129,12 +121,10 @@ export default defineComponent({
                 testSet: '',
                 splitPolicy: '',
                 targetColumn: '',
-                exposureColumn: '',
             };
         },
         handleDatasetChange(newDataset: string) {
             this.form.targetColumn = '';
-            this.form.exposureColumn = '';
             this.store.fetchVariablesForDataset(newDataset);
         },
         async handleCreateAnalysis() {

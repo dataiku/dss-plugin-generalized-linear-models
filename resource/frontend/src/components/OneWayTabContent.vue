@@ -40,7 +40,7 @@
             :chartTitle="selectedVariable.variable"
             :levelOrder="levelOrder"
             />
-          <BsTable v-if="selectedVariable.isInModel"
+          <BsTable v-if="selectedVariable?.isInModel"
             class="table-item"
             :title="selectedVariable.variable"
             :rows="relativities"
@@ -106,7 +106,7 @@ export default defineComponent({
       },
       selectedVariable: {
         type: Object as PropType<VariablePoint>,
-        required: true
+        default: () => ({ variable: "", isInModel: false, variableType: "" })
       },
       relativities: {
         type: Array<Object>,

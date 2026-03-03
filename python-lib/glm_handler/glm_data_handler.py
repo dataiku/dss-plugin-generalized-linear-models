@@ -30,7 +30,7 @@ class GlmDataHandler():
         data['bin'] = data['bin'].astype(int)
         return data
 
-    def sort_and_cumsum_exposure(self, data, exposure):
+    def sort_and_cumsum_exposure(self, data, cumsum_weight, ranking_exposure=None):
         """
         Sorts the data by prediction values in ascending order and calculates
         the cumulative sum of exposure, normalized by the total exposure.
@@ -42,11 +42,13 @@ class GlmDataHandler():
             pd.DataFrame: The input DataFrame with additional columns for the cumulative sum
                           and binning information based on exposure.
         """
-        print(f"Pandas version is {pd.__version__}")
-        print(f"data is type {type(data)}")
-        data['raw_predict'] = data['predicted'] / data[exposure]
+        if ranking_exposure and ranking_exposure in data.columns:
+            data['raw_predict'] = data['predicted'] / data[ranking_exposure]
+        else:
+            data['raw_predict'] = data['predicted']
         tempdata = data.sort_values(by='raw_predict', ascending=True)
-        tempdata['exposure_cumsum'] = tempdata[exposure].cumsum() / tempdata[exposure].sum()
+        cumsum_values = tempdata[cumsum_weight]
+        tempdata['exposure_cumsum'] = cumsum_values.cumsum() / cumsum_values.sum()
         return tempdata
     
     def aggregate_metrics_by_bin(self, data, exposure, target):

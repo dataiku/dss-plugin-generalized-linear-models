@@ -153,7 +153,9 @@
         filteredColumns() {
                 return this.store.datasetColumns.filter(column =>
                     column.role !== 'Target' &&
-                    column.role !== 'Exposure')
+                    column.role !== 'Exposure' &&
+                    column.role !== 'SampleWeight' &&
+                    column.role !== 'Offset')
             },
     },
     methods: {
@@ -210,6 +212,7 @@
         },
         setToggleValue(row: any, newValue: string) {
             row.type = (newValue === 'Categorical' ? 'categorical' : 'numerical');
+            this.store.updateDatasetColumnsPreprocessing();
         },
         defaultSegment(row: any) {
             const { minValue, maxValue } = this.getFeatureBounds(row);
@@ -386,8 +389,7 @@
     },
     watch: {
         "store.datasetColumns": {
-            handler(newVal) {
-                this.store.updateDatasetColumnsPreprocessing();
+            handler() {
                 const validNumericalNames = new Set(
                     this.store.datasetColumns
                         .filter((row: any) => row.type === "numerical")

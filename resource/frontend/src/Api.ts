@@ -127,7 +127,9 @@ interface ExcludedColumns {
 }
 interface MLTaskParams {
     target_column: string;
-    exposure_column: string;
+    exposure_column?: string | null;
+    sample_weight_column?: string | null;
+    offset_columns?: string[];
     distribution_function: string;
     link_function: string;
     elastic_net_penalty: number;
@@ -168,7 +170,9 @@ interface MlTask {
     splitPolicy: string;
     testSet: string;
     targetColumn: string;
-    exposureColumn: string;
+    exposureColumn?: string | null;
+    sampleWeightColumn?: string | null;
+    offsetColumns?: string[];
     isValid: boolean;
 }
 
@@ -178,7 +182,7 @@ interface MlTaskConfiguration {
     splitPolicy: string;
     testSet: string;
     targetColumn: string;
-    exposureColumn: string;
+    exposureColumn?: string | null;
 }
 
 interface MlTaskIds {
@@ -188,7 +192,8 @@ interface MlTaskIds {
 
 interface DatasetExposure {
     dataset: string;
-    exposure: string;
+    exposure?: string | null;
+    weightingColumn?: string | null;
 }
 
 export let API = {

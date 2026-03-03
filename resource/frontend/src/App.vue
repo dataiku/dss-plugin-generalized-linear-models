@@ -237,7 +237,7 @@ export default defineComponent({
             this.goToTab(1);
         },
         handleAnalysisSelected() {
-            this.goToTab(2);
+            this.goToTab(1);
         },
         goToTab(index: number) {
             WT1iser.tabChange({ tabIndex: index });
