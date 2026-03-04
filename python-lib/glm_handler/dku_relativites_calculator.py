@@ -456,7 +456,14 @@ class RelativitiesCalculator:
 
         bin_map = None
         if feature_type == 'CATEGORY':
-            copy_test_df[feature] = copy_test_df[feature].map(lambda v: self._map_categorical_value(feature, v))
+            mapping_start = time()
+            copy_test_df[feature] = self._map_categorical_series(feature, copy_test_df[feature])
+            logger.info(
+                "Categorical remap completed for %s in %.3fs (%s rows)",
+                feature,
+                time() - mapping_start,
+                len(copy_test_df)
+            )
             exposure_per_modality = modality_mass.groupby(copy_test_df[feature]).sum()
             top_modalities = exposure_per_modality.nlargest(max_modalities - 1).index
             copy_test_df[feature] = copy_test_df[feature].where(copy_test_df[feature].isin(top_modalities), other='Other')
