@@ -113,9 +113,14 @@ def get_model_relativities(full_model_id, model_cache, data_handler):
     variable_types = base_values_modalities_types['types']
     model_retriever = VisualMLModelRetriver(full_model_id)
     relativities_calculator = RelativitiesCalculator(data_handler, model_retriever, train_set, test_set, base_values=base_values, modalities=modalities, variable_types=variable_types)
-    relativities = relativities_calculator.get_relativities_df()
-    relativities_dict = relativities_calculator.relativities
-    return {'relativities': relativities, 'relativities_dict': relativities_dict}
+    relativities_raw = relativities_calculator.get_relativities_df(modeled_categorical=False)
+    relativities_modeled = getattr(relativities_calculator, "relativities_modeled_df", relativities_raw)
+    relativities_dict_raw = getattr(relativities_calculator, "relativities_raw", relativities_calculator.relativities)
+    return {
+        'relativities': relativities_modeled,
+        'relativities_raw': relativities_raw,
+        'relativities_dict': relativities_dict_raw
+    }
 
 def get_model_relativities_interaction(full_model_id, model_cache, data_handler):
     creation_args = {"data_handler": data_handler,

@@ -3,6 +3,7 @@ import numpy as np
 from logging_assist.logging import logger
 from time import time
 import re
+import ast
 
 class RelativitiesCalculator:
     """
@@ -54,6 +55,73 @@ class RelativitiesCalculator:
         predictions_array = self.model_retriever.predictor._clf.predict(preprocessed_data[0])
         return predictions_array
 
+    def _get_feature_preprocessing_params(self, feature):
+        params = getattr(self.model_retriever.predictor, "params", None)
+        if params is None:
+            return {}
+        preprocessing_params = getattr(params, "preprocessing_params", {}) or {}
+        per_feature = preprocessing_params.get("per_feature", {}) if isinstance(preprocessing_params, dict) else {}
+        return per_feature.get(feature, {}) if isinstance(per_feature, dict) else {}
+
+    def _get_categorical_groups(self, feature):
+        feature_params = self._get_feature_preprocessing_params(feature)
+        custom_code = feature_params.get("customHandlingCode", "")
+        if "rebase_mode" not in custom_code:
+            return []
+        try:
+            parsed = ast.parse(custom_code)
+        except SyntaxError:
+            return []
+        for node in ast.walk(parsed):
+            if not isinstance(node, ast.Assign):
+                continue
+            value = node.value
+            if not isinstance(value, ast.Call):
+                continue
+            if not isinstance(value.func, ast.Name) or value.func.id != "rebase_mode":
+                continue
+            if not value.args:
+                continue
+            try:
+                config_dict = ast.literal_eval(value.args[0])
+            except (ValueError, SyntaxError):
+                continue
+            raw_groups = config_dict.get("categorical_groups", []) if isinstance(config_dict, dict) else []
+            if not isinstance(raw_groups, list):
+                return []
+            normalized_groups = []
+            seen_modalities = set()
+            for raw_group in raw_groups:
+                if not isinstance(raw_group, list):
+                    continue
+                normalized_group = []
+                for modality in raw_group:
+                    modality_str = str(modality)
+                    if modality_str in seen_modalities or modality_str in normalized_group:
+                        continue
+                    normalized_group.append(modality_str)
+                if len(normalized_group) < 2:
+                    continue
+                normalized_groups.append(normalized_group)
+                seen_modalities.update(normalized_group)
+            return normalized_groups
+        return []
+
+    def get_categorical_group_mapping(self, feature):
+        groups = self._get_categorical_groups(feature)
+        mapping = {}
+        for group in groups:
+            label = "|".join(sorted(str(v) for v in group))
+            for modality in group:
+                mapping[str(modality)] = label
+        return mapping
+
+    def _map_categorical_value(self, feature, value):
+        if self.variable_types.get(feature) != "CATEGORY":
+            return value
+        mapping = self.get_categorical_group_mapping(feature)
+        return mapping.get(str(value), str(value))
+
     def _resolve_exposure_column(self, dataset):
         exposure_column = self.model_retriever.exposure_columns
         if exposure_column and exposure_column in dataset.columns:
@@ -91,9 +159,13 @@ class RelativitiesCalculator:
         preprocessing_features = params.preprocessing_params['per_feature']
 
         for feature, config in preprocessing_features.items():
-            self.base_values[feature] = self.extract_base_level(config['customHandlingCode'])
-            self.modalities[feature] = self.train_set[feature].unique()
+            raw_base_level = self.extract_base_level(config['customHandlingCode'])
             self.variable_types[feature] = config['type']
+            if self.variable_types[feature] == "CATEGORY":
+                self.base_values[feature] = self._map_categorical_value(feature, raw_base_level)
+            else:
+                self.base_values[feature] = raw_base_level
+            self.modalities[feature] = self.train_set[feature].unique()
 
         logger.info("Base values computed and modalities extracted.")
 
@@ -169,7 +241,24 @@ class RelativitiesCalculator:
                         'relativity': relativity}, ignore_index=True)
         return rel_df
     
-    def get_relativities_df(self):
+    def _build_modeled_relativities_df(self, raw_relativities_df):
+        if raw_relativities_df.empty:
+            return raw_relativities_df
+        modeled_rows = []
+        for feature, feature_df in raw_relativities_df.groupby("feature", dropna=False):
+            if feature in ("base",):
+                modeled_rows.extend(feature_df.to_dict("records"))
+                continue
+            if self.variable_types.get(feature) != "CATEGORY":
+                modeled_rows.extend(feature_df.to_dict("records"))
+                continue
+            feature_df = feature_df.copy()
+            feature_df["value"] = feature_df["value"].map(lambda v: self._map_categorical_value(feature, v))
+            feature_df = feature_df.groupby(["feature", "value"], as_index=False)["relativity"].mean()
+            modeled_rows.extend(feature_df.to_dict("records"))
+        return pd.DataFrame(modeled_rows, columns=["feature", "value", "relativity"])
+
+    def get_relativities_df(self, modeled_categorical=False):
         """
         Computes and returns the relativities DataFrame for the model.
         (Optimized with batch prediction)
@@ -193,8 +282,10 @@ class RelativitiesCalculator:
 
             modality_mass = self._get_modality_mass(self.train_set)
             exposure_per_modality = modality_mass.groupby(self.train_set[feature]).sum()
-            top_modalities = exposure_per_modality.nlargest(99).index.tolist()
-            values_to_process = top_modalities
+            if feature_type == "CATEGORY":
+                values_to_process = exposure_per_modality.index.tolist()
+            else:
+                values_to_process = exposure_per_modality.nlargest(99).index.tolist()
             if base_value not in values_to_process:
                 values_to_process.append(base_value)
 
@@ -218,9 +309,15 @@ class RelativitiesCalculator:
                 relativity = prediction / baseline_prediction
                 self.relativities[feature][value] = relativity
 
-        relativities_df = self.construct_relativities_df()
+        raw_relativities_df = self.construct_relativities_df()
+        self.relativities_raw = {
+            feature: dict(values) for feature, values in self.relativities.items()
+        }
+        self.relativities_modeled_df = self._build_modeled_relativities_df(raw_relativities_df)
         logger.info("Relativities DataFrame computed")
-        return relativities_df
+        if modeled_categorical:
+            return self.relativities_modeled_df.copy()
+        return raw_relativities_df
 
     def get_relativities_interactions_df(self):
         """
@@ -260,8 +357,21 @@ class RelativitiesCalculator:
             type_first = self.variable_types.get(interaction_first)
             type_second = self.variable_types.get(interaction_second)
 
-            values_to_process_first = self.modalities[interaction_first] if type_first == 'CATEGORICAL' else [base_value_first]
-            values_to_process_second = self.modalities[interaction_second] if type_second == 'CATEGORICAL' else [base_value_second]
+            if type_first == 'CATEGORY':
+                values_to_process_first = sorted({
+                    self._map_categorical_value(interaction_first, value)
+                    for value in self.modalities[interaction_first]
+                })
+            else:
+                values_to_process_first = [base_value_first]
+
+            if type_second == 'CATEGORY':
+                values_to_process_second = sorted({
+                    self._map_categorical_value(interaction_second, value)
+                    for value in self.modalities[interaction_second]
+                })
+            else:
+                values_to_process_second = [base_value_second]
             
             for value_first in values_to_process_first:
                 for value_second in values_to_process_second:
@@ -340,6 +450,7 @@ class RelativitiesCalculator:
 
         bin_map = None
         if feature_type == 'CATEGORY':
+            copy_test_df[feature] = copy_test_df[feature].map(lambda v: self._map_categorical_value(feature, v))
             exposure_per_modality = modality_mass.groupby(copy_test_df[feature]).sum()
             top_modalities = exposure_per_modality.nlargest(max_modalities - 1).index
             copy_test_df[feature] = copy_test_df[feature].where(copy_test_df[feature].isin(top_modalities), other='Other')
@@ -433,6 +544,7 @@ class RelativitiesCalculator:
         modality_mass = self._get_modality_mass(dataset)
         grouped_dataset = dataset.copy()
         if feature_type == 'CATEGORY':
+            grouped_dataset[variable] = grouped_dataset[variable].map(lambda v: self._map_categorical_value(variable, v))
             exposure_per_modality = modality_mass.groupby(grouped_dataset[variable]).sum()
             top_modalities = exposure_per_modality.nlargest(max_modalities - 1).index
             grouped_dataset[variable] = grouped_dataset[variable].where(grouped_dataset[variable].isin(top_modalities), other='Other')
