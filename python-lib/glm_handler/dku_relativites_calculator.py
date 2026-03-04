@@ -122,6 +122,10 @@ class RelativitiesCalculator:
         mapping = self.get_categorical_group_mapping(feature)
         return mapping.get(str(value), str(value))
 
+    @staticmethod
+    def _is_valid_value(value):
+        return value is not None and not pd.isna(value)
+
     def _resolve_exposure_column(self, dataset):
         exposure_column = self.model_retriever.exposure_columns
         if exposure_column and exposure_column in dataset.columns:
@@ -281,12 +285,14 @@ class RelativitiesCalculator:
             self.relativities[feature] = {}
 
             modality_mass = self._get_modality_mass(self.train_set)
-            exposure_per_modality = modality_mass.groupby(self.train_set[feature]).sum()
             if feature_type == "CATEGORY":
-                values_to_process = exposure_per_modality.index.tolist()
+                mapped_feature = self.train_set[feature].map(lambda value: self._map_categorical_value(feature, value))
+                mass_per_group = modality_mass.groupby(mapped_feature).sum()
+                values_to_process = mass_per_group.index.tolist()
             else:
+                exposure_per_modality = modality_mass.groupby(self.train_set[feature]).sum()
                 values_to_process = exposure_per_modality.nlargest(99).index.tolist()
-            if base_value not in values_to_process:
+            if self._is_valid_value(base_value) and base_value not in values_to_process:
                 values_to_process.append(base_value)
 
             for value in values_to_process:

@@ -42,8 +42,8 @@ export const useVariableLevelStatsStore = defineStore("variableLevelStats", {
             this.isLoading = true;
             try {
                 const store = useModelStore();
-                const model = store.models.filter( (v: ModelPoint) => v.name==modelName)[0];
-                store.activeModel = model;
+                const model = store.models.filter((v: ModelPoint) => v.name == modelName)[0];
+                await store.setActiveModel(modelName);
                 const response = await API.getVariableLevelStats(model);
 
                 this.modelStats = response.data.map((point: any) => ({
