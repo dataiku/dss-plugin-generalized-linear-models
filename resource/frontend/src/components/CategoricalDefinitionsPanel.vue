@@ -39,16 +39,17 @@
                     </td>
                     <td class="merged-cell">
                         <BsSelect
+                            class="merged-levels-select"
                             dense
                             outlined
                             use-chips
                             deletable-chips
                             multiple
-                            :modelValue="group"
+                            :modelValue="Array.isArray(group) && group.length > 0 ? group : null"
                             :all-options="groupOptions(groupIdx)"
                             popup-content-class="categorical-options-popup"
-                            :placeHolder="group.length === 0 ? 'Select two or more levels to form a group' : ''"
-                            @update:modelValue="value => $emit('update-group-modalities', { groupIdx, modalities: value })"
+                            placeHolder="Select two or more levels to form a group."
+                            @update:modelValue="value => $emit('update-group-modalities', { groupIdx, modalities: Array.isArray(value) ? value : [] })"
                         >
                             <template #selected-item="scope">
                                 <q-chip dense class="categorical-selected-chip">
@@ -253,6 +254,14 @@ export default defineComponent({
     margin-bottom: 4px;
 }
 
+.merged-levels-select {
+    width: 100%;
+}
+
+.merged-levels-select :deep(.q-field) {
+    width: 100%;
+}
+
 .group-name-label {
     justify-content: flex-start;
 }
@@ -349,6 +358,10 @@ export default defineComponent({
     border-radius: 0 !important;
     box-shadow: none !important;
     cursor: pointer;
+}
+
+:deep(.bs-selection-content) {
+    max-width: none !important;
 }
 
 .groups-table :deep(.q-chip .q-avatar),

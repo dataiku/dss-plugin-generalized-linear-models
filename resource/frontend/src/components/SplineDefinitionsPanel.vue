@@ -246,8 +246,14 @@ export default defineComponent({
     font-weight: 400;
 }
 
-.create-feature-btn:disabled {
+.create-feature-btn:disabled,
+.create-feature-btn.disabled,
+.create-feature-btn[disabled],
+.create-feature-btn[aria-disabled="true"] {
     opacity: 0.35;
+    border: 1px solid #b8bcc9 !important;
+    color: #b8bcc9 !important;
+    background-color: #ffffff !important;
 }
 
 .feature-grid {

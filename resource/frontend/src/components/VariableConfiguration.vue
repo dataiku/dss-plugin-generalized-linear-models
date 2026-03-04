@@ -203,6 +203,9 @@
             }
             if (selectedRow.type === "categorical") {
                 this.ensureCategoricalGroups(selectedRow);
+                if (!this.expandedCategoricalRows[rowName] && selectedRow.categoricalGroups.length === 0) {
+                    selectedRow.categoricalGroups.push([]);
+                }
                 this.expandedCategoricalRows[rowName] = !this.expandedCategoricalRows[rowName];
                 delete this.expandedSplineRows[rowName];
             }
