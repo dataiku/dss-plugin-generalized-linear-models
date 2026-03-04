@@ -4,6 +4,9 @@
             <div class="spline-header-meta">
                 <span class="spline-label">No. features</span>
                 <q-icon name="info" size="14px" class="spline-info-icon" />
+                <q-tooltip>
+                    Define up to 3 features containing up to 5 knots each. You can set a global degree for the whole feature, or specify unique degrees for each segment.
+                </q-tooltip>
                 <span class="feature-count-value">{{ row.splineFeatures.length }}</span>
             </div>
             <div class="spline-actions">
@@ -46,7 +49,7 @@
                 </div>
                 <div class="knot-editor">
                     <input
-                        class="knot-input"
+                        :class="['knot-input', { 'knot-input--error': !!knotErrors[featureIdx] }]"
                         type="number"
                         placeholder="Enter knot value"
                         :value="knotInputs[featureIdx] ?? ''"
@@ -57,10 +60,13 @@
                         flat
                         no-caps
                         :ripple="false"
-                        @click="emitAddKnot(featureIdx)"
+                        @click="emitAddKnot(featureIdx, feature)"
                     >
                         + Add knot
                     </BsButton>
+                </div>
+                <div v-if="knotErrors[featureIdx]" class="knot-error-message">
+                    {{ knotErrors[featureIdx] }}
                 </div>
                 <div class="knot-chips">
                     <span
@@ -109,7 +115,7 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import { BsButton, BsSelect } from "quasar-ui-bs";
-import { QIcon } from "quasar";
+import { QIcon, QTooltip } from "quasar";
 
 export default defineComponent({
     name: "SplineDefinitionsPanel",
@@ -117,6 +123,7 @@ export default defineComponent({
         BsButton,
         BsSelect,
         QIcon,
+        QTooltip,
     },
     props: {
         row: {
@@ -135,6 +142,7 @@ export default defineComponent({
     data() {
         return {
             knotInputs: {} as Record<number, string>,
+            knotErrors: {} as Record<number, string>,
             degreeOptions: [0, 1, 2, 3],
         };
     },
@@ -150,15 +158,36 @@ export default defineComponent({
         },
         setKnotInput(featureIdx: number, value: string) {
             this.knotInputs[featureIdx] = value ?? "";
+            delete this.knotErrors[featureIdx];
         },
-        emitAddKnot(featureIdx: number) {
+        featureRange(feature: any[]) {
+            if (!Array.isArray(feature) || feature.length === 0) {
+                return null;
+            }
+            const min = Number(feature[0]?.min_value);
+            const max = Number(feature[feature.length - 1]?.max_value);
+            if (!Number.isFinite(min) || !Number.isFinite(max) || min >= max) {
+                return null;
+            }
+            return { min, max };
+        },
+        emitAddKnot(featureIdx: number, feature: any[]) {
             const raw = this.knotInputs[featureIdx];
             const knot = Number(raw);
             if (!Number.isFinite(knot)) {
+                this.knotErrors[featureIdx] = "Invalid knot value.";
+                return;
+            }
+            const bounds = this.featureRange(feature);
+            if (!bounds || knot <= bounds.min || knot >= bounds.max) {
+                this.knotErrors[featureIdx] = bounds
+                    ? `Knot must be strictly between ${bounds.min} and ${bounds.max}.`
+                    : "Knot is outside the valid segment range.";
                 return;
             }
             this.$emit("add-knot", { featureIdx, knot });
             this.knotInputs[featureIdx] = "";
+            delete this.knotErrors[featureIdx];
         },
     },
 });
@@ -339,6 +368,19 @@ export default defineComponent({
 .knot-input:focus {
     outline: none;
     border-color: #8ea6ff;
+}
+
+.knot-input--error,
+.knot-input--error:focus {
+    border-color: #ce1228 !important;
+}
+
+.knot-error-message {
+    margin-top: -8px;
+    margin-bottom: 8px;
+    color: #ce1228;
+    font-size: 12px;
+    line-height: 1.2;
 }
 
 .add-knot-btn {

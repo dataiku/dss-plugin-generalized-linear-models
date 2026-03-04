@@ -4,6 +4,9 @@
             <div class="categorical-header-meta">
                 <span class="categorical-label">No. groups</span>
                 <q-icon name="info" size="14px" class="categorical-info-icon" />
+                <q-tooltip>
+                    A group can be formed by merging any two levels, with up to 20 levels per group.
+                </q-tooltip>
                 <span class="group-count-value">{{ row.categoricalGroups.length }}</span>
                 <q-icon v-if="hasIncompleteGroups" name="warning" size="16px" class="categorical-warning-icon" />
             </div>
@@ -47,6 +50,7 @@
                             multiple
                             :modelValue="Array.isArray(group) && group.length > 0 ? group : null"
                             :all-options="groupOptions(groupIdx)"
+                            :option-disable="opt => isOptionDisabledForGroup(group, opt)"
                             popup-content-class="categorical-options-popup"
                             placeHolder="Select two or more levels to form a group."
                             @update:modelValue="value => $emit('update-group-modalities', { groupIdx, modalities: Array.isArray(value) ? value : [] })"
@@ -74,6 +78,9 @@
                                 </q-item>
                             </template>
                         </BsSelect>
+                        <div v-if="groupValidationMessage(group)" class="group-validation-error">
+                            {{ groupValidationMessage(group) }}
+                        </div>
                     </td>
                     <td class="delete-cell">
                         <div class="delete-cell-content">
@@ -123,6 +130,24 @@ export default defineComponent({
         },
     },
     methods: {
+        isOptionDisabledForGroup(group: string[], option: string) {
+            const normalizedGroup = Array.isArray(group) ? group.map((value) => String(value)) : [];
+            return normalizedGroup.length >= 20 && !normalizedGroup.includes(String(option));
+        },
+        groupValidationMessage(group: string[]) {
+            const selectedCount = Array.isArray(group) ? group.length : 0;
+            const totalLevels = Array.isArray(this.row.options) ? this.row.options.length : 0;
+            if (selectedCount >= 20) {
+                return "Maximum levels (20) reached per group. To add a new level, remove a current level to replace it with the new one";
+            }
+            if (totalLevels > 0 && selectedCount === totalLevels) {
+                return "All levels cannot be added to one group";
+            }
+            if (selectedCount === 1) {
+                return "At least one more level must be merged to form a group";
+            }
+            return "";
+        },
         groupOptions(groupIdx: number) {
             const allOptions = Array.isArray(this.row.options) ? this.row.options.map((option: any) => String(option)) : [];
             const selectedInOtherGroups = new Set(
@@ -260,6 +285,13 @@ export default defineComponent({
 
 .merged-levels-select :deep(.q-field) {
     width: 100%;
+}
+
+.group-validation-error {
+    margin-top: 0;
+    color: #CE1228;
+    font-size: 14px;
+    line-height: 1.2;
 }
 
 .group-name-label {
