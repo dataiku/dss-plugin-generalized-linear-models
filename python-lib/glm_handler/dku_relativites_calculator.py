@@ -25,6 +25,7 @@ class RelativitiesCalculator:
         """
         self.data_handler = data_handler
         self.model_retriever = model_retriever
+        self._categorical_group_mapping_cache = {}
         try:
             if prepared_train_set is not None:
                 self.train_set = prepared_train_set
@@ -108,12 +109,15 @@ class RelativitiesCalculator:
         return []
 
     def get_categorical_group_mapping(self, feature):
+        if feature in self._categorical_group_mapping_cache:
+            return self._categorical_group_mapping_cache[feature]
         groups = self._get_categorical_groups(feature)
         mapping = {}
         for group in groups:
             label = "|".join(sorted(str(v) for v in group))
             for modality in group:
                 mapping[str(modality)] = label
+        self._categorical_group_mapping_cache[feature] = mapping
         return mapping
 
     def _map_categorical_value(self, feature, value):
@@ -121,6 +125,19 @@ class RelativitiesCalculator:
             return value
         mapping = self.get_categorical_group_mapping(feature)
         return mapping.get(str(value), str(value))
+
+    def _map_categorical_series(self, feature, series):
+        if self.variable_types.get(feature) != "CATEGORY":
+            return series
+        mapping = self.get_categorical_group_mapping(feature)
+        if not mapping:
+            return series
+        mapped_series = series.copy()
+        non_null_mask = mapped_series.notna()
+        original_values = mapped_series.loc[non_null_mask].astype(str)
+        remapped_values = original_values.map(mapping).fillna(original_values)
+        mapped_series.loc[non_null_mask] = remapped_values
+        return mapped_series
 
     @staticmethod
     def _is_valid_value(value):
@@ -257,7 +274,7 @@ class RelativitiesCalculator:
                 modeled_rows.extend(feature_df.to_dict("records"))
                 continue
             feature_df = feature_df.copy()
-            feature_df["value"] = feature_df["value"].map(lambda v: self._map_categorical_value(feature, v))
+            feature_df["value"] = self._map_categorical_series(feature, feature_df["value"])
             feature_df = feature_df.groupby(["feature", "value"], as_index=False)["relativity"].mean()
             modeled_rows.extend(feature_df.to_dict("records"))
         return pd.DataFrame(modeled_rows, columns=["feature", "value", "relativity"])
@@ -286,7 +303,7 @@ class RelativitiesCalculator:
 
             modality_mass = self._get_modality_mass(self.train_set)
             if feature_type == "CATEGORY":
-                mapped_feature = self.train_set[feature].map(lambda value: self._map_categorical_value(feature, value))
+                mapped_feature = self._map_categorical_series(feature, self.train_set[feature])
                 mass_per_group = modality_mass.groupby(mapped_feature).sum()
                 values_to_process = mass_per_group.index.tolist()
             else:
@@ -446,6 +463,7 @@ class RelativitiesCalculator:
     
     def compute_base_predictions_variable(self, test_set, used_features, feature, max_modalities=100, grouping_info=None):
         logger.info(f"Starting compute_base_predictions for {feature}")
+        start_time = time()
         base_data = {}
         copy_test_df = test_set.copy()
         modality_mass = self._get_modality_mass(copy_test_df)
@@ -516,7 +534,11 @@ class RelativitiesCalculator:
             feature: feature_df[feature]
         })
 
-        logger.info("Finished compute_base_predictions")
+        logger.info(
+            "Finished compute_base_predictions for %s in %.3fs",
+            feature,
+            time() - start_time
+        )
         return base_data, bin_map
     
     def get_formated_predicted_base(self):
@@ -557,7 +579,14 @@ class RelativitiesCalculator:
         modality_mass = self._get_modality_mass(dataset)
         grouped_dataset = dataset.copy()
         if feature_type == 'CATEGORY':
-            grouped_dataset[variable] = grouped_dataset[variable].map(lambda v: self._map_categorical_value(variable, v))
+            mapping_start = time()
+            grouped_dataset[variable] = self._map_categorical_series(variable, grouped_dataset[variable])
+            logger.info(
+                "Categorical remap in process_dataset_variable completed for %s in %.3fs (%s rows)",
+                variable,
+                time() - mapping_start,
+                len(grouped_dataset)
+            )
             exposure_per_modality = modality_mass.groupby(grouped_dataset[variable]).sum()
             top_modalities = exposure_per_modality.nlargest(max_modalities - 1).index
             grouped_dataset[variable] = grouped_dataset[variable].where(grouped_dataset[variable].isin(top_modalities), other='Other')
