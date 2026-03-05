@@ -227,7 +227,7 @@ class VariableLevelStatsFormatter:
                     variable_stats_rows.append({
                         "feature": feature,
                         "value": self.base_values.get(feature),
-                        "relativity": 1,
+                        "relativity": None,
                         "coef": coef_row["coef"],
                         "p_value": coef_row["p_value"],
                         "se": coef_row["se"],
@@ -242,7 +242,7 @@ class VariableLevelStatsFormatter:
                 variable_stats_rows.append({
                     "feature": feature,
                     "value": self.base_values.get(feature),
-                    "relativity": 1,
+                    "relativity": None,
                     "coef": 0,
                     "p_value": 1,
                     "se": 0,
@@ -271,7 +271,7 @@ class VariableLevelStatsFormatter:
                 variable_stats_rows.append({
                     "feature": feature,
                     "value": self._format_segment_term(parsed_term),
-                    "relativity": 1,
+                    "relativity": None,
                     "coef": coef_row["coef"],
                     "p_value": coef_row["p_value"],
                     "se": coef_row["se"],

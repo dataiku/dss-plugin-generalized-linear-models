@@ -301,11 +301,39 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
             return numerator / denominator;
         },
 
-        _applyRescaling(dataPoints: DataPoint[], baseValues: any[]): DataPoint[] {
-            if (!this.chartOptions.selectedVariable) return dataPoints;
+        _normalizeBaseValues(baseValues: any): Array<{ variable: string; base_level: unknown }> {
+            if (Array.isArray(baseValues)) {
+                console.debug("[OneWay] baseValues received as array", { count: baseValues.length });
+                return baseValues
+                    .filter(item => item && typeof item === 'object' && 'variable' in item)
+                    .map(item => ({ variable: String(item.variable), base_level: item.base_level }));
+            }
+            if (baseValues && typeof baseValues === 'object') {
+                console.debug("[OneWay] baseValues received as object map", { keys: Object.keys(baseValues) });
+                return Object.entries(baseValues).map(([variable, base_level]) => ({
+                    variable,
+                    base_level,
+                }));
+            }
+            console.warn("[OneWay] baseValues payload is neither array nor object", { type: typeof baseValues });
+            return [];
+        },
 
-            const baseCategory = baseValues.find(item => item.variable === this.chartOptions.selectedVariable!.variable);
-            if (!baseCategory) return dataPoints;
+        _applyRescaling(dataPoints: DataPoint[], baseValues: any): DataPoint[] {
+            if (!this.chartOptions.selectedVariable) return dataPoints;
+            if (!Array.isArray(dataPoints) || dataPoints.length === 0) return dataPoints;
+
+            const normalizedBaseValues = this._normalizeBaseValues(baseValues);
+            console.debug("[OneWay] applying base-level rescaling", {
+                variable: this.chartOptions.selectedVariable.variable,
+                points: dataPoints.length,
+                availableBaseValues: normalizedBaseValues.length,
+            });
+            const baseCategory = normalizedBaseValues.find(item => item.variable === this.chartOptions.selectedVariable!.variable);
+            if (!baseCategory) {
+                console.warn("[OneWay] no base value found for variable", this.chartOptions.selectedVariable.variable);
+                return dataPoints;
+            }
 
             const baseDataPoint = dataPoints.find(item => this._isBaseMatch(item.Category, baseCategory.base_level));
             if (!baseDataPoint) {
@@ -314,6 +342,7 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
                     this.chartOptions.selectedVariable.variable,
                     baseCategory.base_level
                 );
+                console.debug("[OneWay] sample categories", dataPoints.slice(0, 10).map(item => item.Category));
                 return dataPoints;
             }
 

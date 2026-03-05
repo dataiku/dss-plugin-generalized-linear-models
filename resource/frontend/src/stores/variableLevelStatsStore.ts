@@ -91,7 +91,10 @@ export const useVariableLevelStatsStore = defineStore("variableLevelStats", {
             window.URL.revokeObjectURL(url);
         },
 
-        _round(value: number): number {
+        _round(value: number | null | undefined): number | null {
+            if (value == null || Number.isNaN(value as number)) {
+                return null;
+            }
             return Math.round(value * 1000) / 1000;
         },
         _formatPValue(value: number): string {

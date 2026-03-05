@@ -472,7 +472,7 @@ class DataikuDataService:
             current_app.logger.info(df.columns)
             df.columns = ['variable', 'value', 'relativity', 'coefficient', 'p_value', 'standard_error', 'standard_error_pct', 'weight', 'weight_pct']
 
-            csv_data = df.to_csv(index=False).encode('utf-8')
+            csv_data = df.to_csv(index=False, na_rep='').encode('utf-8')
 
         except KeyError as e:
             current_app.logger.error(f"An error occurred: {str(e)}")
