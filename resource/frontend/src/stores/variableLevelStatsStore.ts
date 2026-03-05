@@ -42,8 +42,8 @@ export const useVariableLevelStatsStore = defineStore("variableLevelStats", {
             this.isLoading = true;
             try {
                 const store = useModelStore();
-                const model = store.models.filter((v: ModelPoint) => v.name == modelName)[0];
-                await store.setActiveModel(modelName);
+                const model = store.models.filter( (v: ModelPoint) => v.name==modelName)[0];
+                store.activeModel = model;
                 const response = await API.getVariableLevelStats(model);
 
                 this.modelStats = response.data.map((point: any) => ({
@@ -91,10 +91,7 @@ export const useVariableLevelStatsStore = defineStore("variableLevelStats", {
             window.URL.revokeObjectURL(url);
         },
 
-        _round(value: number | null | undefined): number | null {
-            if (value == null || Number.isNaN(value as number)) {
-                return null;
-            }
+        _round(value: number): number {
             return Math.round(value * 1000) / 1000;
         },
         _formatPValue(value: number): string {

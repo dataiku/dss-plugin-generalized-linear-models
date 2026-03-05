@@ -45,11 +45,6 @@
                     </span>
                   </q-td>
                 </template>
-                <template v-slot:body-cell-relativity="props">
-                  <q-td :props="props">
-                    {{ props.value == null ? '' : props.value }}
-                  </q-td>
-                </template>
                 <template v-slot:body-cell-standard_error_pct="props">
                   <q-td :props="props">
                     <span :class="{ 'table-value-highlight': props.row.standard_error_pct > standard_error_pct_threshold }">
