@@ -378,10 +378,27 @@ class DataikuDataService:
                             "model_cache": self.model_cache,
                             "full_model_id": model}
             relativities_dict = self.model_cache.get_or_create_cached_item(model, 'relativities', get_model_relativities, **creation_args)['relativities_dict']
+            base_values = self.model_cache.get_or_create_cached_item(model, 'base_values_modalities_types', get_model_base_values_modalities_types, **creation_args)['base_values']
             if not relativities_dict:
                 current_app.logger.error("error: Model Cache not found for {model} cache only has {model_cache.keys()}")
             
             current_app.logger.info(f"Relativities dict for model {model} is {relativities_dict}.")
+
+            def _to_float_or_none(value):
+                try:
+                    if value is None or pd.isna(value):
+                        return None
+                    return float(value)
+                except (TypeError, ValueError):
+                    return None
+
+            def _is_base_match(variable, value, tolerance=1e-9):
+                base_value = base_values.get(variable)
+                numeric_value = _to_float_or_none(value)
+                numeric_base = _to_float_or_none(base_value)
+                if numeric_value is not None and numeric_base is not None:
+                    return abs(numeric_value - numeric_base) <= tolerance
+                return str(value) == str(base_value)
             
             nb_col = (len(relativities_dict.keys()) - 1) * 3
             variables = [col for col in relativities_dict.keys() if col != "base"]
@@ -397,7 +414,10 @@ class DataikuDataService:
                 for variable in variables:
                     if i < len(variable_keys[variable]):
                         value = sorted(variable_keys[variable])[i]
-                        csv_output += "{},{},,".format(value, relativities_dict[variable][value])
+                        relativity = relativities_dict[variable][value]
+                        if _is_base_match(variable, value):
+                            relativity = 1.0
+                        csv_output += "{},{},,".format(value, relativity)
                     else:
                         csv_output += ",,,"
                 csv_output += "\n"
@@ -416,7 +436,20 @@ class DataikuDataService:
                     csv_output += ",,{}\n{}".format(",".join([str(v) for v in sorted_value_1]), feature_2)
                     sorted_value_2 = sorted(list(set(these_relativities['value_2'])))
                     for value_2 in sorted_value_2:
-                        csv_output += ",{},{}\n".format(str(value_2), ",".join([str(these_relativities[(these_relativities['value_1']==value_1) & (these_relativities['value_2']==value_2)]['relativity'].iloc[0]/relativities_dict[feature_1][value_1]/relativities_dict[feature_2][value_2]) for value_1 in sorted_value_1]))
+                        row_values = []
+                        for value_1 in sorted_value_1:
+                            relativity_value = (
+                                these_relativities[
+                                    (these_relativities['value_1'] == value_1) &
+                                    (these_relativities['value_2'] == value_2)
+                                ]['relativity'].iloc[0]
+                                / relativities_dict[feature_1][value_1]
+                                / relativities_dict[feature_2][value_2]
+                            )
+                            if _is_base_match(feature_1, value_1) and _is_base_match(feature_2, value_2):
+                                relativity_value = 1.0
+                            row_values.append(str(relativity_value))
+                        csv_output += ",{},{}\n".format(str(value_2), ",".join(row_values))
                     csv_output += "\n"                    
             
             csv_data = csv_output.encode('utf-8')

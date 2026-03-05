@@ -175,6 +175,23 @@ class RelativitiesCalculator:
     def _is_valid_value(value):
         return value is not None and not pd.isna(value)
 
+    @staticmethod
+    def _to_float_or_none(value):
+        try:
+            if value is None or pd.isna(value):
+                return None
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+
+    def _is_base_match(self, feature, value, tolerance=1e-9):
+        base_value = self.base_values.get(feature)
+        numeric_value = self._to_float_or_none(value)
+        numeric_base = self._to_float_or_none(base_value)
+        if numeric_value is not None and numeric_base is not None:
+            return abs(numeric_value - numeric_base) <= tolerance
+        return str(value) == str(base_value)
+
     def _resolve_exposure_column(self, dataset):
         exposure_column = self.model_retriever.exposure_columns
         if exposure_column and exposure_column in dataset.columns:
@@ -349,7 +366,7 @@ class RelativitiesCalculator:
                 values_to_process.append(base_value)
 
             for value in values_to_process:
-                if value == base_value:
+                if self._is_base_match(feature, value):
                     self.relativities[feature][value] = 1.0
                     continue
                 
@@ -367,6 +384,12 @@ class RelativitiesCalculator:
                 prediction = batch_predictions[i]
                 relativity = prediction / baseline_prediction
                 self.relativities[feature][value] = relativity
+
+        # Enforce exact base-level relativity after numeric comparisons with tolerance.
+        for feature in used_features:
+            for value in list(self.relativities.get(feature, {}).keys()):
+                if self._is_base_match(feature, value):
+                    self.relativities[feature][value] = 1.0
 
         raw_relativities_df = self.construct_relativities_df()
         self.relativities_raw = {
@@ -440,7 +463,7 @@ class RelativitiesCalculator:
             
             for value_first in values_to_process_first:
                 for value_second in values_to_process_second:
-                    if value_first == base_value_first and value_second == base_value_second:
+                    if self._is_base_match(interaction_first, value_first) and self._is_base_match(interaction_second, value_second):
                         continue # Skip base case, already set to 1.0
 
                     train_row_copy = sample_train_row.copy()
@@ -462,6 +485,14 @@ class RelativitiesCalculator:
                 if v1 not in self.relativities_interaction[f1][f2]:
                     self.relativities_interaction[f1][f2][v1] = {}
                 self.relativities_interaction[f1][f2][v1][v2] = relativity
+
+        # Enforce exact base/base interaction relativity.
+        for interaction in interactions:
+            feature_1, feature_2 = interaction
+            for value_1, nested_values in self.relativities_interaction.get(feature_1, {}).get(feature_2, {}).items():
+                for value_2 in list(nested_values.keys()):
+                    if self._is_base_match(feature_1, value_1) and self._is_base_match(feature_2, value_2):
+                        self.relativities_interaction[feature_1][feature_2][value_1][value_2] = 1.0
 
         relativities_interaction_df = self.construct_relativities_interaction_df()
         logger.info("Relativities DataFrame computed")
