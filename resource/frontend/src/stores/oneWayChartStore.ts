@@ -280,22 +280,50 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
             window.URL.revokeObjectURL(url);
         },
 
+        _toNumberOrNull(value: unknown): number | null {
+            const numericValue = Number(value);
+            return Number.isFinite(numericValue) ? numericValue : null;
+        },
+
+        _isBaseMatch(category: unknown, baseLevel: unknown, tolerance = 1e-9): boolean {
+            const categoryNumeric = this._toNumberOrNull(category);
+            const baseNumeric = this._toNumberOrNull(baseLevel);
+            if (categoryNumeric !== null && baseNumeric !== null) {
+                return Math.abs(categoryNumeric - baseNumeric) <= tolerance;
+            }
+            return String(category).trim() === String(baseLevel).trim();
+        },
+
+        _safeDivide(numerator: number, denominator: number): number {
+            if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || Math.abs(denominator) <= 1e-12) {
+                return numerator;
+            }
+            return numerator / denominator;
+        },
+
         _applyRescaling(dataPoints: DataPoint[], baseValues: any[]): DataPoint[] {
             if (!this.chartOptions.selectedVariable) return dataPoints;
 
             const baseCategory = baseValues.find(item => item.variable === this.chartOptions.selectedVariable!.variable);
             if (!baseCategory) return dataPoints;
 
-            const baseDataPoint = dataPoints.find(item => item.Category === baseCategory.base_level);
-            if (!baseDataPoint) return dataPoints;
+            const baseDataPoint = dataPoints.find(item => this._isBaseMatch(item.Category, baseCategory.base_level));
+            if (!baseDataPoint) {
+                console.warn(
+                    "Base-level rescaling skipped: base level not found in chart data.",
+                    this.chartOptions.selectedVariable.variable,
+                    baseCategory.base_level
+                );
+                return dataPoints;
+            }
 
             const { baseLevelPrediction, fittedAverage, observedAverage } = baseDataPoint;
 
             return dataPoints.map(item => ({
                 ...item,
-                baseLevelPrediction: item.baseLevelPrediction / baseLevelPrediction,
-                fittedAverage: item.fittedAverage / fittedAverage,
-                observedAverage: item.observedAverage / observedAverage,
+                baseLevelPrediction: this._safeDivide(item.baseLevelPrediction, baseLevelPrediction),
+                fittedAverage: this._safeDivide(item.fittedAverage, fittedAverage),
+                observedAverage: this._safeDivide(item.observedAverage, observedAverage),
             }));
         },
 

@@ -534,17 +534,62 @@ class DataikuDataService:
                             "full_model_id": full_model_id, 
                             "variable": variable}
             predicted_base = self.model_cache.get_or_create_cached_item(full_model_id, f'predicted_base_variable_{variable}', get_model_predicted_base, **creation_args)
-            predicted_base = predicted_base[predicted_base['dataset']==dataset]
+            predicted_base = predicted_base[predicted_base['dataset']==dataset].copy()
 
-            if rescale:
+            def _to_float_or_none(value):
+                try:
+                    if value is None or pd.isna(value):
+                        return None
+                    return float(value)
+                except (TypeError, ValueError):
+                    return None
+
+            def _is_base_match(value, base_level, tolerance=1e-9):
+                numeric_value = _to_float_or_none(value)
+                numeric_base = _to_float_or_none(base_level)
+                if numeric_value is not None and numeric_base is not None:
+                    return abs(numeric_value - numeric_base) <= tolerance
+                return str(value).strip() == str(base_level).strip()
+
+            def _safe_divide(series, denominator):
+                if denominator is None:
+                    return series
+                try:
+                    denom = float(denominator)
+                except (TypeError, ValueError):
+                    return series
+                if abs(denom) <= 1e-12:
+                    return series
+                return series / denom
+
+            if rescale == "Base level":
                 creation_args = {"data_handler": self.data_handler,
                             "model_cache": self.model_cache,
                             "full_model_id": full_model_id}
                 base_values = self.model_cache.get_or_create_cached_item(full_model_id, 'base_values_modalities_types', get_model_base_values_modalities_types, **creation_args)['base_values']
-                predicted_base_denominator = predicted_base[predicted_base['Category']==base_values[variable]].iloc[0]
-                predicted_base['observedAverage'] = predicted_base['observedAverage'] / predicted_base_denominator['observedAverage']
-                predicted_base['fittedAverage'] = predicted_base['fittedAverage'] / predicted_base_denominator['fittedAverage']
-                predicted_base['baseLevelPrediction'] = predicted_base['baseLevelPrediction'] / predicted_base_denominator['baseLevelPrediction']
+                base_level = base_values.get(variable)
+                base_rows = predicted_base[predicted_base['Category'].apply(lambda value: _is_base_match(value, base_level))]
+                if len(base_rows) == 0:
+                    current_app.logger.warning(
+                        "Base-level rescaling skipped for %s: base %s not found in predicted base categories.",
+                        variable,
+                        base_level
+                    )
+                else:
+                    predicted_base_denominator = base_rows.iloc[0]
+                    predicted_base['observedAverage'] = _safe_divide(predicted_base['observedAverage'], predicted_base_denominator['observedAverage'])
+                    predicted_base['fittedAverage'] = _safe_divide(predicted_base['fittedAverage'], predicted_base_denominator['fittedAverage'])
+                    predicted_base['baseLevelPrediction'] = _safe_divide(predicted_base['baseLevelPrediction'], predicted_base_denominator['baseLevelPrediction'])
+            elif rescale == "Ratio":
+                valid_observed = predicted_base['observedAverage'].replace(0, np.nan)
+                predicted_base['baseLevelPrediction'] = predicted_base['baseLevelPrediction'] / valid_observed
+                predicted_base['fittedAverage'] = predicted_base['fittedAverage'] / valid_observed
+                predicted_base['observedAverage'] = predicted_base['observedAverage'] / valid_observed
+                predicted_base = predicted_base.replace([np.inf, -np.inf], np.nan).fillna({
+                    'baseLevelPrediction': 0,
+                    'fittedAverage': 0,
+                    'observedAverage': 0
+                })
 
             csv_data = predicted_base.to_csv(index=False).encode('utf-8')
 
