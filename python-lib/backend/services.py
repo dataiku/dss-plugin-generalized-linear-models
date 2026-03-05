@@ -20,6 +20,13 @@ class MockDataService:
     """
     Dev backend service with dummy data
     """
+    def _get_mock_setup_params(self, full_model_id: str):
+        if full_model_id == "model_interaction":
+            return interaction_setup_params
+        if full_model_id == "model_2":
+            return dummy_setup_params_2
+        return dummy_setup_params
+
     def train_model(self, request_json: dict):
         current_app.logger.info("Local set up: No model training completed")
         time.sleep(2)
@@ -39,10 +46,7 @@ class MockDataService:
     def get_latest_mltask_params(self, request_json: dict):
         current_app.logger.info("Getting Latest ML task set up parameters")
         full_model_id = request_json["id"]
-        if full_model_id== "model_interaction":
-            setup_params = interaction_setup_params
-        else:
-            setup_params = random.choice([dummy_setup_params, dummy_setup_params_2])
+        setup_params = self._get_mock_setup_params(full_model_id)
         current_app.logger.info(f"Returning Params {setup_params}")
         return setup_params
     
@@ -104,16 +108,40 @@ class MockDataService:
         return csv_data
     
     def get_dataset_columns(self, request_json: dict):
-        request_json = request_json or {}
-        dataset_name = "claims_train"
-        
-        current_app.logger.info(f"Training Dataset name selected is: {dataset_name}")
-        
-        df = dataiku.Dataset(dataset_name).get_dataframe(limit=100000)
-        cols_json = calculate_base_levels(df)
+        # In mock mode, return columns aligned with mock model params (do not read a real DSS dataset).
+        params = dummy_setup_params.get("params", {})
+        cols_json = []
+        for col_name, col_params in params.items():
+            col_type = "categorical" if col_params.get("type") == "CATEGORY" else "numerical"
+            base_level = col_params.get("baseLevel")
+            options = []
+            if col_type == "categorical":
+                if base_level is not None:
+                    options = [str(base_level), "OtherA", "OtherB"]
+                else:
+                    options = ["A", "B", "C"]
+            else:
+                if base_level is not None:
+                    try:
+                        base_numeric = float(base_level)
+                        options = [str(base_numeric - 1), str(base_numeric), str(base_numeric + 1)]
+                    except (TypeError, ValueError):
+                        options = ["0", "1", "2"]
+                else:
+                    options = ["0", "1", "2"]
 
-        current_app.logger.info(f"Successfully retrieved column for dataset '{dataset_name}': {[col['column'] for col in cols_json]}")
+            cols_json.append({
+                "column": col_name,
+                "options": options,
+                "baseLevel": str(base_level) if base_level is not None else options[0],
+                "type": col_type,
+                "minValue": None,
+                "maxValue": None,
+            })
 
+        current_app.logger.info(
+            f"Successfully built mock columns: {[col['column'] for col in cols_json]}"
+        )
         return cols_json
 
     def get_project(self):

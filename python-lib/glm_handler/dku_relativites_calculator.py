@@ -123,20 +123,52 @@ class RelativitiesCalculator:
     def _map_categorical_value(self, feature, value):
         if self.variable_types.get(feature) != "CATEGORY":
             return value
+        return self._normalize_categorical_scalar(feature, value)
+
+    @staticmethod
+    def _is_null_like_categorical(value):
+        if value is None:
+            return True
+        try:
+            if pd.isna(value):
+                return True
+        except Exception:
+            pass
+        value_str = str(value).strip().lower()
+        return value_str in {"", "none", "nan", "<na>", "null"}
+
+    def _normalize_categorical_scalar(self, feature, value):
+        if self.variable_types.get(feature) != "CATEGORY":
+            return value
+        if self._is_null_like_categorical(value):
+            return np.nan
         mapping = self.get_categorical_group_mapping(feature)
-        return mapping.get(str(value), str(value))
+        value_str = str(value)
+        return mapping.get(value_str, value_str)
 
     def _map_categorical_series(self, feature, series):
         if self.variable_types.get(feature) != "CATEGORY":
             return series
         mapping = self.get_categorical_group_mapping(feature)
-        if not mapping:
-            return series
         mapped_series = series.copy()
         non_null_mask = mapped_series.notna()
-        original_values = mapped_series.loc[non_null_mask].astype(str)
-        remapped_values = original_values.map(mapping).fillna(original_values)
-        mapped_series.loc[non_null_mask] = remapped_values
+        if not non_null_mask.any():
+            return mapped_series
+
+        non_null_values = mapped_series.loc[non_null_mask].astype(str)
+        non_null_stripped = non_null_values.str.strip()
+        null_like_mask = non_null_stripped.str.lower().isin({"", "none", "nan", "<na>", "null"})
+
+        null_like_index = non_null_values.index[null_like_mask]
+        mapped_series.loc[null_like_index] = np.nan
+
+        valid_index = non_null_values.index[~null_like_mask]
+        valid_values = non_null_values.loc[valid_index]
+        if mapping:
+            remapped_values = valid_values.map(mapping).fillna(valid_values)
+        else:
+            remapped_values = valid_values
+        mapped_series.loc[valid_index] = remapped_values
         return mapped_series
 
     @staticmethod
@@ -275,6 +307,7 @@ class RelativitiesCalculator:
                 continue
             feature_df = feature_df.copy()
             feature_df["value"] = self._map_categorical_series(feature, feature_df["value"])
+            feature_df = feature_df[~feature_df["value"].map(self._is_null_like_categorical)]
             feature_df = feature_df.groupby(["feature", "value"], as_index=False)["relativity"].mean()
             modeled_rows.extend(feature_df.to_dict("records"))
         return pd.DataFrame(modeled_rows, columns=["feature", "value", "relativity"])
@@ -305,11 +338,14 @@ class RelativitiesCalculator:
             if feature_type == "CATEGORY":
                 mapped_feature = self._map_categorical_series(feature, self.train_set[feature])
                 mass_per_group = modality_mass.groupby(mapped_feature).sum()
-                values_to_process = mass_per_group.index.tolist()
+                values_to_process = [
+                    value for value in mass_per_group.index.tolist()
+                    if not self._is_null_like_categorical(value)
+                ]
             else:
                 exposure_per_modality = modality_mass.groupby(self.train_set[feature]).sum()
                 values_to_process = exposure_per_modality.nlargest(99).index.tolist()
-            if self._is_valid_value(base_value) and base_value not in values_to_process:
+            if self._is_valid_value(base_value) and (not self._is_null_like_categorical(base_value)) and base_value not in values_to_process:
                 values_to_process.append(base_value)
 
             for value in values_to_process:
@@ -381,18 +417,24 @@ class RelativitiesCalculator:
             type_second = self.variable_types.get(interaction_second)
 
             if type_first == 'CATEGORY':
-                values_to_process_first = sorted({
-                    self._map_categorical_value(interaction_first, value)
-                    for value in self.modalities[interaction_first]
-                })
+                values_to_process_first = sorted([
+                    value for value in {
+                        self._map_categorical_value(interaction_first, value)
+                        for value in self.modalities[interaction_first]
+                    }
+                    if not self._is_null_like_categorical(value)
+                ])
             else:
                 values_to_process_first = [base_value_first]
 
             if type_second == 'CATEGORY':
-                values_to_process_second = sorted({
-                    self._map_categorical_value(interaction_second, value)
-                    for value in self.modalities[interaction_second]
-                })
+                values_to_process_second = sorted([
+                    value for value in {
+                        self._map_categorical_value(interaction_second, value)
+                        for value in self.modalities[interaction_second]
+                    }
+                    if not self._is_null_like_categorical(value)
+                ])
             else:
                 values_to_process_second = [base_value_second]
             

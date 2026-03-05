@@ -457,10 +457,6 @@ export const useTrainingStore = defineStore("TrainingStore", {
                     const paramsResponse = await API.getLatestMLTaskParams(model)  as APIResponse;
 
                     const params = paramsResponse.data.params;
-
-                    const responseColumns = response.data.map((column: ColumnInput) => column.column);
-
-                    const paramsColumns = Object.keys(params);
                     
                     this.previousInteractions = paramsResponse.data.interactions 
                         ? paramsResponse.data.interactions.map(interaction => ({
@@ -488,18 +484,9 @@ export const useTrainingStore = defineStore("TrainingStore", {
                         exposure: effectiveExposure,
                         weightingColumn: this.selectedSampleWeightVariable || effectiveExposure || null,
                     });
-                    
-                    this.datasetColumns = response.data.map((column: ColumnInput) => {
-                        const columnName = column.column;
-                        const options = column.options;
-                        const param = params[columnName] || {} as any;
-                        const isTargetColumn = columnName === paramsResponse.data.target_column;
-                        const isExposureColumn = this.selectedLinkFunctionString === "Log"
-                            && columnName === (paramsResponse.data.exposure_column || "");
-                        const isSampleWeightColumn = columnName === (paramsResponse.data.sample_weight_column || "");
-                        const isOffsetColumn = (paramsResponse.data.offset_columns || []).includes(columnName);
+                    const responseColumns = response.data.map((column: ColumnInput) => column.column);
+                    const paramsColumns = Object.keys(params);
 
-                        // Check if the column names match, excluding the specific column
                     const fixedColumns = new Set([
                         this.selectedLinkFunctionString === "Log" ? (this.selectedExposureVariable || "") : "",
                         this.selectedSampleWeightVariable || "",
@@ -521,27 +508,42 @@ export const useTrainingStore = defineStore("TrainingStore", {
                         if (extraColumns.length > 0) {
                             errorMessage += `Extra columns: ${extraColumns.join(", ")}`;
                         }
-                        this.handleError(errorMessage);
-                        return;
+                        // Do not block loading in mock / schema-drift scenarios: keep compatible columns.
+                        console.warn(errorMessage);
                     }
+                    
+                    this.datasetColumns = response.data.map((column: ColumnInput) => {
+                        const columnName = column.column;
+                        const options = column.options;
+                        const param = params[columnName] || {} as any;
+                        const isColumnInModelParams = Object.prototype.hasOwnProperty.call(params, columnName);
+                        const isTargetColumn = columnName === paramsResponse.data.target_column;
+                        const isExposureColumn = this.selectedLinkFunctionString === "Log"
+                            && columnName === (paramsResponse.data.exposure_column || "");
+                        const isSampleWeightColumn = columnName === (paramsResponse.data.sample_weight_column || "");
+                        const isOffsetColumn = (paramsResponse.data.offset_columns || []).includes(columnName);
                         return {
                             name: columnName,
-                            isIncluded: isTargetColumn || isExposureColumn || isSampleWeightColumn || isOffsetColumn || param.role !== 'REJECT',
+                            isIncluded: isTargetColumn || isExposureColumn || isSampleWeightColumn || isOffsetColumn || (isColumnInModelParams && param.role !== 'REJECT'),
                             role: isTargetColumn
                                 ? 'Target'
                                 : (isExposureColumn
                                     ? 'Exposure'
                                     : (isSampleWeightColumn
                                         ? 'SampleWeight'
-                                        : (isOffsetColumn ? 'Offset' : (param.role || 'REJECT')))),
-                            type: param.type ? (param.type === 'NUMERIC' ? 'numerical' : 'categorical') : column.type,
-                            preprocessing: param.handling ? (param.handling === 'DUMMIFY' ? 'Dummy Encode' : param.handling) : 'Dummy Encode',
+                                        : (isOffsetColumn ? 'Offset' : (isColumnInModelParams ? (param.role || 'REJECT') : 'REJECT')))),
+                            type: (isColumnInModelParams && param.type)
+                                ? (param.type === 'NUMERIC' ? 'numerical' : 'categorical')
+                                : column.type,
+                            preprocessing: (isColumnInModelParams && param.handling)
+                                ? (param.handling === 'DUMMIFY' ? 'Dummy Encode' : param.handling)
+                                : 'Dummy Encode',
                             options: options,
-                            baseLevel: param.baseLevel ? param.baseLevel : column.baseLevel,
+                            baseLevel: (isColumnInModelParams && param.baseLevel) ? param.baseLevel : column.baseLevel,
                             minValue: column.minValue,
                             maxValue: column.maxValue,
-                            splineFeatures: (param.splineFeatures || []) as SplineFeature[],
-                            categoricalGroups: (param.categoricalGroups || []) as CategoricalGroup[]
+                            splineFeatures: ((isColumnInModelParams ? param.splineFeatures : undefined) || []) as SplineFeature[],
+                            categoricalGroups: ((isColumnInModelParams ? param.categoricalGroups : undefined) || []) as CategoricalGroup[]
                         };
                     });
                     this.syncFixedColumnRoles();

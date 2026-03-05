@@ -168,9 +168,10 @@ class VariableLevelStatsFormatter:
         for feature in categorical_features:
             mapping = self._get_group_mapping(feature)
             train_df = self.relativities_calculator.train_set.copy()
-            mapped_values = train_df[feature].map(lambda value: mapping.get(str(value), str(value)))
+            mapped_values = self.relativities_calculator._map_categorical_series(feature, train_df[feature])
             exposure_df = (
                 train_df.assign(_mapped_value=mapped_values)
+                .dropna(subset=["_mapped_value"])
                 .groupby("_mapped_value", as_index=False)["weight"]
                 .sum()
                 .rename(columns={"_mapped_value": "value", "weight": "exposure"})
@@ -181,7 +182,8 @@ class VariableLevelStatsFormatter:
 
             relativities_cat = relativities[relativities["feature"] == feature].copy()
             if not relativities_cat.empty:
-                relativities_cat["value"] = relativities_cat["value"].map(lambda value: mapping.get(str(value), str(value)))
+                relativities_cat["value"] = self.relativities_calculator._map_categorical_series(feature, relativities_cat["value"])
+                relativities_cat = relativities_cat.dropna(subset=["value"])
                 relativities_cat = relativities_cat.groupby(["feature", "value"], as_index=False)["relativity"].mean()
 
             coef_table_cat = main_effects[main_effects["variable"] == feature].copy()

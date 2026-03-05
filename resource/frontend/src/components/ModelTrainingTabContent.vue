@@ -55,13 +55,17 @@
     computed:{
         filteredColumns() {
                 return this.store.datasetColumns.filter(column =>
+                    column &&
                     column.role !== 'Target' &&
                     column.role !== 'Exposure')
             },
         selectedColumns() {
             console.log("Selected columns computed:", this.store.datasetColumns);
             return this.store.datasetColumns.filter(column =>
-                column.role != 'Target' && column.role != 'Exposure' && column.isIncluded == true)
+                column &&
+                column.role != 'Target' &&
+                column.role != 'Exposure' &&
+                column.isIncluded == true)
             },
     },
 })
