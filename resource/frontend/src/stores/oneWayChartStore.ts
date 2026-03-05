@@ -302,6 +302,16 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
         },
 
         _normalizeBaseValues(baseValues: any): Array<{ variable: string; base_level: unknown }> {
+            if (typeof baseValues === 'string') {
+                try {
+                    const parsedBaseValues = JSON.parse(baseValues);
+                    console.debug("[OneWay] baseValues received as JSON string", { parsedType: typeof parsedBaseValues });
+                    return this._normalizeBaseValues(parsedBaseValues);
+                } catch (error) {
+                    console.warn("[OneWay] baseValues string payload is not valid JSON");
+                    return [];
+                }
+            }
             if (Array.isArray(baseValues)) {
                 console.debug("[OneWay] baseValues received as array", { count: baseValues.length });
                 return baseValues
