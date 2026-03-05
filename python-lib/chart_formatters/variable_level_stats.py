@@ -236,7 +236,9 @@ class VariableLevelStatsFormatter:
                         "exposure_pct": 100,
                     })
                     base_row_added = True
-            if not base_row_added:
+            # Only add a synthetic base row when there are no spline segments.
+            # For spline-only features this row is not meaningful and should be hidden.
+            if not base_row_added and spline_effects.empty:
                 variable_stats_rows.append({
                     "feature": feature,
                     "value": self.base_values.get(feature),
