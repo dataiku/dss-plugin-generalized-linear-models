@@ -1,8 +1,12 @@
 import dataikuapi
 from logging_assist.logging import logger
-import re
 import ast
+import re
 from dku_visual_ml.dku_base import DataikuClientProject
+from dku_visual_ml.custom_code_parsing import (
+    extract_base_level_from_custom_handling_code,
+    extract_processor_config_from_custom_code,
+)
 from dataiku.doctor.posttraining.model_information_handler import PredictionModelInformationHandler
 from typing import List, Dict, Any, Optional
 
@@ -297,51 +301,31 @@ class VisualMLModelRetriver(DataikuClientProject):
 
     def _extract_categorical_groups(self, feature_settings: Dict[str, Any]) -> List[List[str]]:
         custom_handling_code = feature_settings.get('customHandlingCode', '')
-        if "rebase_mode" not in custom_handling_code:
+        _, config_dict = extract_processor_config_from_custom_code(custom_handling_code, ("rebase_mode",))
+        if not isinstance(config_dict, dict):
             return []
 
-        try:
-            parsed = ast.parse(custom_handling_code)
-        except SyntaxError:
+        raw_groups = config_dict.get("categorical_groups")
+        if not isinstance(raw_groups, list):
             return []
 
-        for node in ast.walk(parsed):
-            if not isinstance(node, ast.Assign):
+        normalized_groups = []
+        seen_modalities = set()
+        for raw_group in raw_groups:
+            if not isinstance(raw_group, list):
                 continue
-            value = node.value
-            if not isinstance(value, ast.Call):
-                continue
-            if not isinstance(value.func, ast.Name) or value.func.id != "rebase_mode":
-                continue
-            if not value.args:
-                continue
-            try:
-                config_dict = ast.literal_eval(value.args[0])
-            except (ValueError, SyntaxError):
-                continue
-            if not isinstance(config_dict, dict):
-                continue
-            raw_groups = config_dict.get("categorical_groups")
-            if not isinstance(raw_groups, list):
-                return []
-            normalized_groups = []
-            seen_modalities = set()
-            for raw_group in raw_groups:
-                if not isinstance(raw_group, list):
+            group = []
+            for modality in raw_group:
+                modality_str = str(modality)
+                if modality_str in seen_modalities or modality_str in group:
                     continue
-                group = []
-                for modality in raw_group:
-                    modality_str = str(modality)
-                    if modality_str in seen_modalities or modality_str in group:
-                        continue
-                    group.append(modality_str)
-                if len(group) < 2:
-                    continue
-                normalized_groups.append(group)
-                seen_modalities.update(group)
-            return normalized_groups
+                group.append(modality_str)
+            if len(group) < 2:
+                continue
+            normalized_groups.append(group)
+            seen_modalities.update(group)
 
-        return []
+        return normalized_groups
     
     def _process_feature(self, feature: str, preprocessing: Dict[str, Any],
                          exposure_columns: Optional[str], target_column: str,
