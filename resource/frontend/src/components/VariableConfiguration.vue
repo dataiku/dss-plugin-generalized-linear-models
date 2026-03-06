@@ -46,7 +46,7 @@
                                 :modelValue="props.row.baseLevel"
                                 :all-options="props.row.options"
                                 @update:modelValue="value => props.row.baseLevel = value"
-                                style="min-width: 150px;"
+                                style="width: 100%;"
                             />
                             <BsButton
                                 v-if="canShowAdvancedArrow(props.row)"
@@ -124,7 +124,9 @@
         name: 'baseLevel',
         align: 'left',
         label: 'Base Level',
-        field: 'baseLevel'
+        field: 'baseLevel',
+        style: 'width: 40%; min-width: 40%; max-width: 40%;',
+        headerStyle: 'width: 40%; min-width: 40%; max-width: 40%;'
     },
 ];
 
@@ -469,6 +471,13 @@ margin-bottom: 20px; /* Adjust this value as needed */
     align-items: center;
     justify-content: space-between;
     gap: 8px;
+    width: 100%;
+    min-width: 0;
+}
+
+.base-level-cell > *:first-child {
+    min-width: 0;
+    flex: 1;
 }
 
 .arrow-btn {
