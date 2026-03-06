@@ -221,15 +221,18 @@ def get_dummy_model_comparison_data():
     df['dataset']= [np.random.choice(choices) for _ in range(11)]
     return df
 
-dummy_variable_level_stats = pd.DataFrame({'variable': ['VehBrand', 'VehBrand', 'VehBrand', 'VehPower', 'VehPower'], 
-                       'value': ['B1', 'B10', 'B12', 'Diesel', 'Regular'], 
-                       'coefficient': [0, 0.5, 0.32, 0, 0.0234],
-                       'p_value': [0, 0.05, 0.302, 0.002, 0.0234],
-                       'standard_error': [0, 1.23, 1.74, 0, 0.9],
-                       'standard_error_pct': [0, 1.23, 1.74, 0, 0.9],
-                        'weight': [234, 87, 73, 122, 90], 
-                        'weight_pct': [60, 20, 20, 65, 35], 
-                        'relativity': [1, 1.23, 1.077, 1, 0.98]}).to_dict('records')
+dummy_variable_level_stats = pd.DataFrame({
+    'variable': ['VehBrand', 'VehBrand', 'VehBrand', 'DrivAge', 'DrivAge', 'DrivAge'],
+    'value': ['B11', 'B10', 'B12', 50.5, 'f1:s1:[16.0, 30.0]:d1', 'f1:s2:[30.0, 80.0]:d1'],
+    # Base rows now mirror real output semantics: non-meaningful metrics are null/NA.
+    'coefficient': [None, 0.50, 0.32, None, -0.014, 0.009],
+    'p_value': [None, 0.05, 0.302, None, 0.012, 0.087],
+    'standard_error': [None, 1.23, 1.74, None, 0.005, 0.004],
+    'standard_error_pct': [None, 246.0, 543.75, None, 35.7, 44.4],
+    'weight': [234, 87, 73, 500, 210, 290],
+    'weight_pct': [59.7, 22.2, 18.1, 100.0, 42.0, 58.0],
+    'relativity': [None, 1.23, 1.077, None, None, None]
+}).to_dict('records')
 
 data = {'Name': ['John', 'Alice', 'Bob'], 'Age': [30, 25, 35]}
 variable_level_stats_df = pd.DataFrame(data)

@@ -13,9 +13,9 @@ const VARIABLE_STATS_COLUMNS: QTableColumn[] = [
     { name: 'coefficient', align: 'right', label: 'Coefficient', field: 'coefficient', sortable: true },
     { name: 'p_value', align: 'right', label: 'P-value', field: 'p_value', sortable: true },
     { name: 'standard_error', align: 'right', label: 'Standard Error', field: 'standard_error', sortable: true },
-    { name: 'standard_error_pct', align: 'right', label: 'Standard Error %', field: 'standard_error_pct', sortable: true, format: (val) => `${val}%`},
+    { name: 'standard_error_pct', align: 'right', label: 'Standard Error %', field: 'standard_error_pct', sortable: true, format: (val) => (val == null ? '—' : `${val}%`)},
     { name: 'weight', align: 'right', label: 'Weight', field: 'weight', sortable: true },
-    { name: 'weight_pct', align: 'right', label: 'Weight %', field: 'weight_pct', sortable: true, format: (val) => `${val}%`},
+    { name: 'weight_pct', align: 'right', label: 'Weight %', field: 'weight_pct', sortable: true, format: (val) => (val == null ? '—' : `${val}%`)},
 ];
 
 export const useVariableLevelStatsStore = defineStore("variableLevelStats", {
@@ -45,8 +45,20 @@ export const useVariableLevelStatsStore = defineStore("variableLevelStats", {
                 const model = store.models.filter( (v: ModelPoint) => v.name==modelName)[0];
                 store.activeModel = model;
                 const response = await API.getVariableLevelStats(model);
+                const rows = Array.isArray(response.data)
+                    ? response.data
+                    : (Array.isArray((response.data as any)?.data) ? (response.data as any).data : null);
+                if (!rows) {
+                    console.error("Variable level stats payload shape", {
+                        type: typeof response.data,
+                        isArray: Array.isArray(response.data),
+                        keys: response.data && typeof response.data === "object" ? Object.keys(response.data as any) : null,
+                        preview: response.data,
+                    });
+                    throw new Error("Variable level stats response is not an array.");
+                }
 
-                this.modelStats = response.data.map((point: any) => ({
+                this.modelStats = rows.map((point: any) => ({
                     ...point,
                     coefficient: this._round(point.coefficient),
                     p_value: this._formatPValue(point.p_value),
@@ -91,15 +103,19 @@ export const useVariableLevelStatsStore = defineStore("variableLevelStats", {
             window.URL.revokeObjectURL(url);
         },
 
-        _round(value: number): number {
-            return Math.round(value * 1000) / 1000;
-        },
-        _formatPValue(value: number): string {
-            if (value == null) return '';
-            if (value < 0.001) {
-                return value.toExponential(2);
+        _round(value: number | null | undefined): number | null {
+            if (value == null || Number.isNaN(Number(value))) {
+                return null;
             }
-            return (Math.round(value * 1000) / 1000).toString();
+            return Math.round(Number(value) * 1000) / 1000;
+        },
+        _formatPValue(value: number | null | undefined): string | null {
+            if (value == null || Number.isNaN(Number(value))) return null;
+            const numericValue = Number(value);
+            if (numericValue < 0.001) {
+                return numericValue.toExponential(2);
+            }
+            return (Math.round(numericValue * 1000) / 1000).toString();
         },
 
         notifyError(message: string) {

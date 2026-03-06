@@ -76,7 +76,16 @@ class MockDataService:
     def get_variable_level_stats(self, request_json: dict):
         time.sleep(1)
         current_app.logger.info("Getting Variable Level Stats")
-        return dummy_variable_level_stats
+        stats_df = pd.DataFrame(dummy_variable_level_stats)
+        stats_df = stats_df.astype(object).where(pd.notnull(stats_df), None)
+        result = stats_df.to_dict('records')
+        current_app.logger.info(
+            "[VariableStats Mock] response_type=%s len=%s sample=%s",
+            type(result).__name__,
+            len(result) if hasattr(result, "__len__") else "n/a",
+            result[0] if isinstance(result, list) and len(result) > 0 else None,
+        )
+        return result
     
     def get_model_metrics(self, request_json: dict):
         return dummy_model_metrics
@@ -92,13 +101,13 @@ class MockDataService:
     
     def export_variable_level_stats(self, request_json: dict):
         # Convert DataFrame to CSV format
-        csv_data = dummy_variable_level_stats.to_csv(index=False).encode('utf-8')
+        csv_data = pd.DataFrame(dummy_variable_level_stats).to_csv(index=False).encode('utf-8')
 
         return csv_data
     
     def export_lift_chart(self, request_json: dict):
         # Convert DataFrame to CSV format
-        csv_data = dummy_variable_level_stats.to_csv(index=False).encode('utf-8')
+        csv_data = pd.DataFrame(dummy_variable_level_stats).to_csv(index=False).encode('utf-8')
 
         return csv_data
     
@@ -348,9 +357,17 @@ class DataikuDataService:
                             "full_model_id": full_model_id}
         variable_stats = self.model_cache.get_or_create_cached_item(full_model_id, 'variable_level_stats', get_model_variable_level_stats, **creation_args)
         
-        current_app.logger.info(variable_stats)
-        current_app.logger.info(variable_stats.columns)
-        return variable_stats.to_dict('records')
+        current_app.logger.info("[VariableStats Service] dataframe_shape=%s", variable_stats.shape if hasattr(variable_stats, "shape") else None)
+        current_app.logger.info("[VariableStats Service] dataframe_columns=%s", list(variable_stats.columns) if hasattr(variable_stats, "columns") else None)
+        variable_stats = variable_stats.astype(object).where(pd.notnull(variable_stats), None)
+        result = variable_stats.to_dict('records')
+        current_app.logger.info(
+            "[VariableStats Service] serialized_type=%s len=%s sample=%s",
+            type(result).__name__,
+            len(result) if hasattr(result, "__len__") else "n/a",
+            result[0] if isinstance(result, list) and len(result) > 0 else None,
+        )
+        return result
     
     def get_model_metrics(self, request_json: dict):
         

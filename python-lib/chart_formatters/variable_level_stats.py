@@ -228,10 +228,10 @@ class VariableLevelStatsFormatter:
                         "feature": feature,
                         "value": self.base_values.get(feature),
                         "relativity": None,
-                        "coef": coef_row["coef"],
-                        "p_value": coef_row["p_value"],
-                        "se": coef_row["se"],
-                        "se_pct": coef_row["se_pct"],
+                        "coef": None,
+                        "p_value": None,
+                        "se": None,
+                        "se_pct": None,
                         "exposure": total_weight,
                         "exposure_pct": 100,
                     })
@@ -243,10 +243,10 @@ class VariableLevelStatsFormatter:
                     "feature": feature,
                     "value": self.base_values.get(feature),
                     "relativity": None,
-                    "coef": 0,
-                    "p_value": 1,
-                    "se": 0,
-                    "se_pct": 0,
+                    "coef": None,
+                    "p_value": None,
+                    "se": None,
+                    "se_pct": None,
                     "exposure": total_weight,
                     "exposure_pct": 100,
                 })
@@ -471,6 +471,5 @@ class VariableLevelStatsFormatter:
     def _finalize_stats(self, variable_stats):
         logger.debug("Finalizing stats.")
         variable_stats.columns = ['variable', 'value', 'relativity', 'coefficient', 'p_value', 'standard_error', 'standard_error_pct', 'weight', 'weight_pct']
-        variable_stats.fillna(0, inplace=True)
-        variable_stats.replace([np.inf, -np.inf], 0, inplace=True)
+        variable_stats.replace([np.inf, -np.inf], np.nan, inplace=True)
         return variable_stats

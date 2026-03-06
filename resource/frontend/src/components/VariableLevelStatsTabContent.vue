@@ -38,17 +38,10 @@
               :columns="columns"
               :globalSearch="false"
               row-key="variable">
-                <template v-slot:body-cell-p_value="props">
+                <template v-slot:body-cell="props">
                   <q-td :props="props">
-                    <span :class="{ 'table-value-highlight': props.row.p_value > p_value_threshold }">
-                      {{ props.value }}
-                    </span>
-                  </q-td>
-                </template>
-                <template v-slot:body-cell-standard_error_pct="props">
-                  <q-td :props="props">
-                    <span :class="{ 'table-value-highlight': props.row.standard_error_pct > standard_error_pct_threshold }">
-                      {{ props.value }}
+                    <span :class="{ 'table-value-highlight': shouldHighlightCell(props) }">
+                      {{ formatCellValue(props.value) }}
                     </span>
                   </q-td>
                 </template>
@@ -126,7 +119,21 @@ export default defineComponent({
         },
         async exportVariableLevelStats() {
           this.variableStatsStore.exportVariableLevelStats();
-        }
+        },
+        formatCellValue(value: any) {
+          return value === null || value === undefined || value === '' ? '—' : value;
+        },
+        shouldHighlightCell(props: any) {
+          if (props.col?.name === 'p_value') {
+            const pValue = Number(props.row?.p_value);
+            return Number.isFinite(pValue) && pValue > this.p_value_threshold;
+          }
+          if (props.col?.name === 'standard_error_pct') {
+            const sePct = Number(props.row?.standard_error_pct);
+            return Number.isFinite(sePct) && sePct > this.standard_error_pct_threshold;
+          }
+          return false;
+        },
     },
 })
 </script>
