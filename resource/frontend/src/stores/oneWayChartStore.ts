@@ -380,6 +380,8 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
         _applyRescalingRatio(dataPoints: DataPoint[]): DataPoint[] {
             if (!this.chartOptions.selectedVariable) return dataPoints;
 
+            console.log("apply ratio")
+            console.log(dataPoints)
             return dataPoints.map(item => ({
                 ...item,
                 baseLevelPrediction: item.baseLevelPrediction / item.observedAverage,
