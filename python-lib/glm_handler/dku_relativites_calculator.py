@@ -2,8 +2,8 @@ import pandas as pd
 import numpy as np
 from logging_assist.logging import logger
 from time import time
-import re
 import ast
+from dku_visual_ml.custom_code_parsing import extract_base_level_from_custom_handling_code
 
 class RelativitiesCalculator:
     """
@@ -271,22 +271,13 @@ class RelativitiesCalculator:
             "[BaseValues Relativities] extract_base_level called custom_code_type=%s",
             type(custom_code).__name__,
         )
-        base_level = None
-        # Match either a quoted string or a signed integer/float
-        pattern = r'"base_level":\s*(?:"([^"]+)"|([+-]?\d+(?:\.\d+)?))'
-        match = re.search(pattern, custom_code)
-        base_level = None
-        if match:
-            if match.group(1) is not None:
-                base_level = match.group(1)
-            elif match.group(2) is not None:
-                # Convert numeric string to float to support decimals
-                num_str = match.group(2)
-                try:
-                    base_level = float(num_str)
-                except ValueError:
-                    base_level = None
-        logger.info(f"[BaseValues Relativities] extract_base_level returning base_level={base_level}")
+        base_level, processor_name, parsing_path = extract_base_level_from_custom_handling_code(custom_code)
+        logger.info(
+            "[BaseValues Relativities] extract_base_level returning base_level=%s processor_name=%s parsing_path=%s",
+            base_level,
+            processor_name,
+            parsing_path,
+        )
         return base_level
 
     def initialize_baseline(self):
