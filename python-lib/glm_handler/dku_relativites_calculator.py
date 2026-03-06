@@ -288,6 +288,13 @@ class RelativitiesCalculator:
         
         for feature in used_features:
             base_value = self.base_values[feature]
+            logger.info(
+                "[Baseline Debug] feature=%s base_value=%r base_type=%s variable_type=%s",
+                feature,
+                base_value,
+                type(base_value).__name__,
+                self.variable_types.get(feature),
+            )
             train_row[feature] = base_value
 
         if self.model_retriever.exposure_columns is not None:
@@ -301,6 +308,8 @@ class RelativitiesCalculator:
 
     def calculate_baseline_prediction(self, sample_train_row):
         logger.info("Calculating baseline prediction")
+        logger.info("[Baseline Debug] sample_train_row dtypes=%s", sample_train_row.dtypes.to_dict())
+        logger.info("[Baseline Debug] sample_train_row values=%s", sample_train_row.iloc[0].to_dict())
         return self._predict_from_df(sample_train_row)[0]
 
     def construct_relativities_df(self):

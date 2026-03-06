@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
+from logging_assist.logging import logger
 
 class rebase_mode():
     """This processor applies dummy vectorisation, but drops the dummy column with the mode. Only applies to categorical variables
@@ -163,6 +164,11 @@ class continuous_spline():
         """
         # FIX: Flatten the values to ensure a strictly 1D array
         x_col = np.ravel(series.values)
+        logger.info(
+            "[Spline Debug] input_dtype=%s sample_values=%s",
+            series.dtype if hasattr(series, "dtype") else type(series).__name__,
+            series.head(5).tolist() if hasattr(series, "head") else None,
+        )
         generated_features = {}
         
         for feature_idx, segments in enumerate(self.spline_features, start=1):
@@ -170,6 +176,16 @@ class continuous_spline():
                 min_v = d['min_value']
                 max_v = d['max_value']
                 deg = d['degree']
+                logger.info(
+                    "[Spline Debug] segment feature_idx=%s segment_idx=%s min_v=%r(%s) max_v=%r(%s) degree=%s",
+                    feature_idx,
+                    segment_idx,
+                    min_v,
+                    type(min_v).__name__,
+                    max_v,
+                    type(max_v).__name__,
+                    deg,
+                )
 
                 # Base ramp: 0 below min, linear inside, constant above max
                 ramp = np.clip(x_col, min_v, max_v) - min_v
