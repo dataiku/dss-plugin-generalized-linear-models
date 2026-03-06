@@ -83,10 +83,6 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
 
         async createChart() {
             this.isLoading = true;
-            console.log("[OneWay] createChart:start", {
-                formOptions: this.formOptions,
-                chartOptions: this.chartOptions,
-            });
             if (this.chartOptions.trainTest != this.formOptions.trainTest) {
                 if (this.formOptions.selectedVariable) {
                     await this.selectVariable(this.formOptions.selectedVariable);
@@ -98,9 +94,6 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
                 }
             }
             this.applyForm();
-            console.log("[OneWay] createChart:afterApplyForm", {
-                chartOptions: this.chartOptions,
-            });
             this.processAndFilterData();
             WT1iser.createOneWayChart({
                 chartDistribution: this.chartOptions.chartDistribution,
@@ -161,7 +154,6 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
         },
 
         async selectVariable(variableName: VariablePoint) {
-            console.log("Selecting variable:", variableName);
             const store = useModelStore();
             let foundVariable = this.availableVariables.find(v => v === variableName);
             if (foundVariable) {
@@ -203,17 +195,6 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
         
         processAndFilterData() {
             const store = useModelStore();
-            console.log("[OneWay] processAndFilterData:start", {
-                selectedVariable: this.chartOptions.selectedVariable?.variable,
-                chartRescaling: this.chartOptions.chartRescaling,
-                chartDistribution: this.chartOptions.chartDistribution,
-                primaryModelRawDataLength: this.primaryModelRawData.length,
-                comparisonModelRawDataLength: this.comparisonModelRawData.length,
-                baseValues1Type: Array.isArray(store.baseValues1) ? "array" : typeof store.baseValues1,
-                baseValues2Type: Array.isArray(store.baseValues2) ? "array" : typeof store.baseValues2,
-                baseValues1: store.baseValues1,
-                baseValues2: store.baseValues2,
-            });
             let filteredPrimary = this.primaryModelRawData;
             if (this.chartOptions.chartRescaling == "Base level") {
                 filteredPrimary = this._applyRescaling(this.primaryModelRawData, store.baseValues1);
@@ -224,10 +205,6 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
                 filteredPrimary = this._binData(filteredPrimary, this.chartOptions.nbBins);
             }
             this.primaryChartData = filteredPrimary;
-            console.log("[OneWay] processAndFilterData:primaryDone", {
-                primaryChartDataLength: this.primaryChartData.length,
-                sample: this.primaryChartData.slice(0, 3),
-            });
 
             if (this.comparisonModelRawData.length > 0) {
                 let filteredComparison = this.comparisonModelRawData;
@@ -240,13 +217,8 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
                 filteredComparison = this._binData(filteredComparison, this.chartOptions.nbBins);
             }
                 this.comparisonChartData = filteredComparison;
-                console.log("[OneWay] processAndFilterData:comparisonDone", {
-                    comparisonChartDataLength: this.comparisonChartData.length,
-                    sample: this.comparisonChartData.slice(0, 3),
-                });
             } else {
                 this.comparisonChartData =  [];
-                console.log("[OneWay] processAndFilterData:comparisonSkipped");
             }
 
             if (this.chartOptions.selectedVariable?.isInModel) {
@@ -270,10 +242,6 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
                     }
 
                     return relativity;
-                });
-                console.log("[OneWay] processAndFilterData:relativitiesDone", {
-                    relativitiesLength: Array.isArray(this.relativities) ? this.relativities.length : 0,
-                    relativitiesSample: Array.isArray(this.relativities) ? this.relativities.slice(0, 5) : this.relativities,
                 });
             }
         },
@@ -313,57 +281,24 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
 
         _applyRescaling(dataPoints: DataPoint[], baseValues: any[]): DataPoint[] {
             if (!this.chartOptions.selectedVariable) {
-                console.log("[OneWay] _applyRescaling: no selected variable, returning raw");
                 return dataPoints;
             }
 
-            console.log("[OneWay] _applyRescaling:start", {
-                variable: this.chartOptions.selectedVariable.variable,
-                dataPointsLength: dataPoints.length,
-                baseValuesType: Array.isArray(baseValues) ? "array" : typeof baseValues,
-                baseValues,
-            });
-
             if (!Array.isArray(baseValues)) {
-                console.log("[OneWay] _applyRescaling: baseValues is not an array, returning raw data", {
-                    baseValuesType: typeof baseValues,
-                    baseValues,
-                });
                 return dataPoints;
             }
 
             const baseCategory = baseValues.find(item => item.variable === this.chartOptions.selectedVariable!.variable);
             if (!baseCategory) {
-                console.log("[OneWay] _applyRescaling: no base category found, returning raw data", {
-                    variable: this.chartOptions.selectedVariable.variable,
-                    baseValues,
-                });
                 return dataPoints;
             }
 
             const baseDataPoint = dataPoints.find(item => item.Category === baseCategory.base_level);
             if (!baseDataPoint) {
-                console.log("[OneWay] _applyRescaling: base level not found in datapoints, returning raw data", {
-                    variable: this.chartOptions.selectedVariable.variable,
-                    baseLevel: baseCategory.base_level,
-                    availableCategories: dataPoints.map(item => item.Category),
-                });
                 return dataPoints;
             }
 
             const { baseLevelPrediction, fittedAverage, observedAverage } = baseDataPoint;
-            console.log("[OneWay] _applyRescaling: base point found", {
-                baseCategory,
-                baseDataPoint,
-            });
-
-            if (baseLevelPrediction === 0 || fittedAverage === 0 || observedAverage === 0) {
-                console.log("[OneWay] _applyRescaling: base point contains zero denominator", {
-                    baseLevelPrediction,
-                    fittedAverage,
-                    observedAverage,
-                });
-            }
 
             const rescaled = dataPoints.map(item => ({
                 ...item,
@@ -371,17 +306,11 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
                 fittedAverage: item.fittedAverage / fittedAverage,
                 observedAverage: item.observedAverage / observedAverage,
             }));
-            console.log("[OneWay] _applyRescaling:done", {
-                sample: rescaled.slice(0, 3),
-            });
             return rescaled;
         },
 
         _applyRescalingRatio(dataPoints: DataPoint[]): DataPoint[] {
             if (!this.chartOptions.selectedVariable) return dataPoints;
-
-            console.log("apply ratio")
-            console.log(dataPoints)
             return dataPoints.map(item => ({
                 ...item,
                 baseLevelPrediction: item.baseLevelPrediction / item.observedAverage,

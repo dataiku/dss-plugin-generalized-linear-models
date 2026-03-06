@@ -227,23 +227,10 @@ class RelativitiesCalculator:
         logger.info("Computing base values on initiation.")
         params = self.model_retriever.predictor.params
         preprocessing_features = params.preprocessing_params['per_feature']
-        logger.info(
-            "[BaseValues Relativities] preprocessing feature count=%s features=%s",
-            len(preprocessing_features),
-            list(preprocessing_features.keys()),
-        )
 
         for feature, config in preprocessing_features.items():
-            custom_code = config.get('customHandlingCode')
             raw_base_level = self.extract_base_level(config['customHandlingCode'])
             self.variable_types[feature] = config['type']
-            logger.info(
-                "[BaseValues Relativities] feature=%s type=%s raw_base_level=%s custom_code_excerpt=%s",
-                feature,
-                self.variable_types[feature],
-                raw_base_level,
-                (custom_code[:200] + "...") if isinstance(custom_code, str) and len(custom_code) > 200 else custom_code,
-            )
             if self.variable_types[feature] == "CATEGORY":
                 self.base_values[feature] = self._map_categorical_value(feature, raw_base_level)
             else:
@@ -252,14 +239,8 @@ class RelativitiesCalculator:
                 except (TypeError, ValueError):
                     self.base_values[feature] = raw_base_level
             self.modalities[feature] = self.train_set[feature].unique()
-            logger.info(
-                "[BaseValues Relativities] feature=%s mapped_base_level=%s modalities_count=%s",
-                feature,
-                self.base_values[feature],
-                len(self.modalities[feature]) if hasattr(self.modalities[feature], "__len__") else "n/a",
-            )
 
-        logger.info("[BaseValues Relativities] Base values computed and modalities extracted: %s", self.base_values)
+        logger.info("Base values computed and modalities extracted.")
 
     def get_base_values(self):
         logger.info(f"Getting base values")
@@ -270,16 +251,10 @@ class RelativitiesCalculator:
         Extracts Base Level from preprocessing custom code.
         Supports string and numeric (int/float) values.
         """
-        logger.info(
-            "[BaseValues Relativities] extract_base_level called custom_code_type=%s",
-            type(custom_code).__name__,
-        )
         base_level, processor_name, parsing_path = extract_base_level_from_custom_handling_code(custom_code)
-        logger.info(
-            "[BaseValues Relativities] extract_base_level returning base_level=%s processor_name=%s parsing_path=%s",
-            base_level,
-            processor_name,
-            parsing_path,
+        logger.debug(
+            "extract_base_level returning base_level=%s processor_name=%s parsing_path=%s",
+            base_level, processor_name, parsing_path
         )
         return base_level
 
@@ -291,13 +266,6 @@ class RelativitiesCalculator:
         
         for feature in used_features:
             base_value = self.base_values[feature]
-            logger.info(
-                "[Baseline Debug] feature=%s base_value=%r base_type=%s variable_type=%s",
-                feature,
-                base_value,
-                type(base_value).__name__,
-                self.variable_types.get(feature),
-            )
             train_row[feature] = base_value
 
         if self.model_retriever.exposure_columns is not None:
@@ -311,8 +279,6 @@ class RelativitiesCalculator:
 
     def calculate_baseline_prediction(self, sample_train_row):
         logger.info("Calculating baseline prediction")
-        logger.info("[Baseline Debug] sample_train_row dtypes=%s", sample_train_row.dtypes.to_dict())
-        logger.info("[Baseline Debug] sample_train_row values=%s", sample_train_row.iloc[0].to_dict())
         return self._predict_from_df(sample_train_row)[0]
 
     def construct_relativities_df(self):
@@ -604,43 +570,10 @@ class RelativitiesCalculator:
                     bin_map = dict(zip(bin_means.index, bin_means.values))
                     # Map the bin containing the base_value to the base_value itself
                     base_value = self.base_values.get(feature, None)
-                    logger.info(
-                        "[PredictedBase Debug] feature=%s base_value=%s base_value_type=%s unique_vals=%s max_modalities=%s bin_count=%s",
-                        feature,
-                        base_value,
-                        type(base_value).__name__,
-                        unique_vals,
-                        max_modalities,
-                        len(bin_map),
-                    )
                     if base_value is not None:
-                        for idx, bin_label in enumerate(bin_map):
-                            if idx >= 5:
-                                break
-                            left = bin_label.left if hasattr(bin_label, 'left') else None
-                            right = bin_label.right if hasattr(bin_label, 'right') else None
-                            logger.info(
-                                "[PredictedBase Debug] sample_bin feature=%s idx=%s left=%s left_type=%s right=%s right_type=%s",
-                                feature,
-                                idx,
-                                left,
-                                type(left).__name__ if left is not None else None,
-                                right,
-                                type(right).__name__ if right is not None else None,
-                            )
                         for bin_label in bin_map:
                             left = bin_label.left if hasattr(bin_label, 'left') else None
                             right = bin_label.right if hasattr(bin_label, 'right') else None
-                            logger.info(
-                                "[PredictedBase Debug] compare feature=%s left=%s(%s) base_value=%s(%s) right=%s(%s)",
-                                feature,
-                                left,
-                                type(left).__name__ if left is not None else None,
-                                base_value,
-                                type(base_value).__name__,
-                                right,
-                                type(right).__name__ if right is not None else None,
-                            )
                             if left is not None and right is not None and left < base_value <= right:
                                 bin_map[bin_label] = float(base_value)
                                 break

@@ -320,8 +320,6 @@ export const useTrainingStore = defineStore("TrainingStore", {
         this.errorMessage = ''; // Reset error message before validation
         if (!this.modelName) {
             this.errorMessage = 'Please enter a model name.';
-            console.log('Error Message:', this.errorMessage);
-
             return false;
         }
         if (!this.selectedTargetVariable) {
@@ -653,21 +651,14 @@ export const useTrainingStore = defineStore("TrainingStore", {
             const axiosError = error as AxiosError<ErrorPoint>;
             
             if (axiosError.response) {
-                console.log('Error response:', axiosError.response);
-                console.log('Error response data:', axiosError.response.data);
-                console.log('Error response status:', axiosError.response.status);
-                console.log('Error response headers:', axiosError.response.headers);
-
                 if (axiosError.response.data && 'error' in axiosError.response.data) {
                     this.errorMessage = axiosError.response.data.error;
                 } else {
                     this.errorMessage = `Server error: ${axiosError.response.status}`;
                 }
             } else if (axiosError.request) {
-                console.log('Error request:', axiosError.request);
                 this.errorMessage = 'No response received from the server. Please try again later.';
             } else {
-                console.log('Error message:', axiosError.message);
                 this.errorMessage = 'An unexpected error occurred while training the model.';
             }
         } else {

@@ -134,13 +134,6 @@
         },
         deep: true
         },
-        filteredColumns: {
-          handler(newVal) {
-            console.log("filteredColumns updated:", newVal);
-          },
-          immediate: true,
-          deep: true
-        }
     },
 
     created() {
