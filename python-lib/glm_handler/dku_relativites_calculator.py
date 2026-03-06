@@ -247,7 +247,7 @@ class RelativitiesCalculator:
             if self.variable_types[feature] == "CATEGORY":
                 self.base_values[feature] = self._map_categorical_value(feature, raw_base_level)
             else:
-                self.base_values[feature] = raw_base_level
+                self.base_values[feature] = float(raw_base_level)
             self.modalities[feature] = self.train_set[feature].unique()
             logger.info(
                 "[BaseValues Relativities] feature=%s mapped_base_level=%s modalities_count=%s",
