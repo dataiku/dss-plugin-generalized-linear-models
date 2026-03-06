@@ -162,7 +162,7 @@ class continuous_spline():
         Returns:
             pd.DataFrame with raw spline features
         """
-        x_col = np.ravel(series.values)
+        x_col = pd.to_numeric(np.ravel(series.values), errors='coerce').astype(float)
         generated_features = {}
         
         logger.info(series.head())
