@@ -5,7 +5,7 @@ fetch_api = Blueprint("fetch_api", __name__, url_prefix="/api")
 
 @fetch_api.errorhandler(Exception)
 def handle_fetch_api_exception(e):
-    current_app.logger.error(f"Error in fetch_api: {str(e)}")
+    current_app.logger.exception("Error in fetch_api")
     response = jsonify({"error": str(e)})
     response.status_code = 400
     return response

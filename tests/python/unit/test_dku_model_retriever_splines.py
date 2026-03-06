@@ -54,6 +54,18 @@ def test_extract_spline_features_returns_empty_for_non_spline_processor():
     assert retriever._extract_spline_features(feature_settings) == []
 
 
+def test_extract_base_level_from_save_base_single_quoted_string():
+    retriever = _make_retriever()
+    feature_settings = {
+        "customHandlingCode": (
+            "from processors.processors import save_base\n"
+            "processor = save_base({'base_level': 'BrandA'})\n"
+        )
+    }
+
+    assert retriever._extract_base_level(feature_settings) == "BrandA"
+
+
 def test_extract_categorical_groups_from_rebase_mode_code():
     retriever = _make_retriever()
     feature_settings = {

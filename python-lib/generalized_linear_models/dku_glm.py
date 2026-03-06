@@ -213,8 +213,11 @@ class BaseGLM(BaseEstimator, ClassifierMixin):
             offset_output = offsets
 
         if len(exposures) > 0:
+            exposures = np.asarray(exposures, dtype=float)
             if (exposures <= 0).any():
                 raise ValueError('Exposure columns contains some negative values. Please make sure that the exposure column is not rescaled in feature handling.')
+            
+            print(f"Exposure columns before log transformation: {exposures}")
             exposures = np.log(exposures)
             exposures = exposures.sum(axis=1)
             if offset_output is None:
@@ -389,8 +392,6 @@ class RegressionGLM(BaseGLM):
         """
         return self.predict_target(X)
     
-
-
 
 
 

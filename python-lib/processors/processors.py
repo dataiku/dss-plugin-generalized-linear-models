@@ -161,10 +161,9 @@ class continuous_spline():
         Returns:
             pd.DataFrame with raw spline features
         """
-        # FIX: Flatten the values to ensure a strictly 1D array
-        x_col = np.ravel(series.values)
+        x_col = pd.to_numeric(np.ravel(series.values), errors='coerce').astype(float)
         generated_features = {}
-        
+
         for feature_idx, segments in enumerate(self.spline_features, start=1):
             for segment_idx, d in enumerate(segments, start=1):
                 min_v = d['min_value']
