@@ -592,10 +592,43 @@ class RelativitiesCalculator:
                     bin_map = dict(zip(bin_means.index, bin_means.values))
                     # Map the bin containing the base_value to the base_value itself
                     base_value = self.base_values.get(feature, None)
+                    logger.info(
+                        "[PredictedBase Debug] feature=%s base_value=%s base_value_type=%s unique_vals=%s max_modalities=%s bin_count=%s",
+                        feature,
+                        base_value,
+                        type(base_value).__name__,
+                        unique_vals,
+                        max_modalities,
+                        len(bin_map),
+                    )
                     if base_value is not None:
+                        for idx, bin_label in enumerate(bin_map):
+                            if idx >= 5:
+                                break
+                            left = bin_label.left if hasattr(bin_label, 'left') else None
+                            right = bin_label.right if hasattr(bin_label, 'right') else None
+                            logger.info(
+                                "[PredictedBase Debug] sample_bin feature=%s idx=%s left=%s left_type=%s right=%s right_type=%s",
+                                feature,
+                                idx,
+                                left,
+                                type(left).__name__ if left is not None else None,
+                                right,
+                                type(right).__name__ if right is not None else None,
+                            )
                         for bin_label in bin_map:
                             left = bin_label.left if hasattr(bin_label, 'left') else None
                             right = bin_label.right if hasattr(bin_label, 'right') else None
+                            logger.info(
+                                "[PredictedBase Debug] compare feature=%s left=%s(%s) base_value=%s(%s) right=%s(%s)",
+                                feature,
+                                left,
+                                type(left).__name__ if left is not None else None,
+                                base_value,
+                                type(base_value).__name__,
+                                right,
+                                type(right).__name__ if right is not None else None,
+                            )
                             if left is not None and right is not None and left < base_value <= right:
                                 bin_map[bin_label] = float(base_value)
                                 break
