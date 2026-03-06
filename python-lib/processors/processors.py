@@ -162,23 +162,12 @@ class continuous_spline():
         Returns:
             pd.DataFrame with raw spline features
         """
-        # FIX: Flatten the values to ensure a strictly 1D array
         x_col = np.ravel(series.values)
-        input_dtype = getattr(series, "dtype", None)
-        if input_dtype is None and hasattr(series, "dtypes"):
-            input_dtype = series.dtypes
-        try:
-            sample_values = series.head(5)
-        except Exception:
-            sample_values = None
-        logger.info(
-            "[Spline Debug] input_type=%s input_dtype=%s sample_values=%s",
-            type(series).__name__,
-            input_dtype,
-            sample_values,
-        )
         generated_features = {}
         
+        logger.info(series.head())
+        logger.info(x_col)
+
         for feature_idx, segments in enumerate(self.spline_features, start=1):
             for segment_idx, d in enumerate(segments, start=1):
                 min_v = d['min_value']
