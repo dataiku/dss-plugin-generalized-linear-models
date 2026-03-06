@@ -213,9 +213,11 @@ class VisualMLModelRetriver(DataikuClientProject):
             return spline_config.get("base_level")
 
         custom_handling_code = feature_settings.get('customHandlingCode', '')
+        logger.debug(f"custom_handling_code: {custom_handling_code}")
        # Match either a quoted string or a signed integer/float
         pattern = r'"base_level":\s*(?:"([^"]+)"|([+-]?\d+(?:\.\d+)?))'
         match = re.search(pattern, custom_handling_code)
+        logger.debug(f"matches: {match}")
         base_level = None
         if match:
             if match.group(1) is not None:
