@@ -215,6 +215,8 @@ class BaseGLM(BaseEstimator, ClassifierMixin):
         if len(exposures) > 0:
             if (exposures <= 0).any():
                 raise ValueError('Exposure columns contains some negative values. Please make sure that the exposure column is not rescaled in feature handling.')
+            
+            print("Exposure columns before log transformation: %s", exposures)
             exposures = np.log(exposures)
             exposures = exposures.sum(axis=1)
             if offset_output is None:
