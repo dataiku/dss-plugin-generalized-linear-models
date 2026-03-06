@@ -61,7 +61,10 @@ def get_predicted_base():
 @fetch_api.route("/base_values", methods=["POST"])
 def get_base_values():
     data_service = current_app.data_service
-    result = data_service.get_base_values(request.get_json())
+    payload = request.get_json()
+    current_app.logger.info("[BaseValues API] /base_values payload=%s", payload)
+    result = data_service.get_base_values(payload)
+    current_app.logger.info("[BaseValues API] /base_values response_type=%s len=%s", type(result).__name__, len(result) if hasattr(result, "__len__") else "n/a")
     return jsonify(result)
 
 @fetch_api.route("/lift_data", methods=["POST"])

@@ -227,17 +227,36 @@ class RelativitiesCalculator:
         logger.info("Computing base values on initiation.")
         params = self.model_retriever.predictor.params
         preprocessing_features = params.preprocessing_params['per_feature']
+        logger.info(
+            "[BaseValues Relativities] preprocessing feature count=%s features=%s",
+            len(preprocessing_features),
+            list(preprocessing_features.keys()),
+        )
 
         for feature, config in preprocessing_features.items():
+            custom_code = config.get('customHandlingCode')
             raw_base_level = self.extract_base_level(config['customHandlingCode'])
             self.variable_types[feature] = config['type']
+            logger.info(
+                "[BaseValues Relativities] feature=%s type=%s raw_base_level=%s custom_code_excerpt=%s",
+                feature,
+                self.variable_types[feature],
+                raw_base_level,
+                (custom_code[:200] + "...") if isinstance(custom_code, str) and len(custom_code) > 200 else custom_code,
+            )
             if self.variable_types[feature] == "CATEGORY":
                 self.base_values[feature] = self._map_categorical_value(feature, raw_base_level)
             else:
                 self.base_values[feature] = raw_base_level
             self.modalities[feature] = self.train_set[feature].unique()
+            logger.info(
+                "[BaseValues Relativities] feature=%s mapped_base_level=%s modalities_count=%s",
+                feature,
+                self.base_values[feature],
+                len(self.modalities[feature]) if hasattr(self.modalities[feature], "__len__") else "n/a",
+            )
 
-        logger.info("Base values computed and modalities extracted.")
+        logger.info("[BaseValues Relativities] Base values computed and modalities extracted: %s", self.base_values)
 
     def get_base_values(self):
         logger.info(f"Getting base values")
@@ -248,6 +267,10 @@ class RelativitiesCalculator:
         Extracts Base Level from preprocessing custom code.
         Supports string and numeric (int/float) values.
         """
+        logger.info(
+            "[BaseValues Relativities] extract_base_level called custom_code_type=%s",
+            type(custom_code).__name__,
+        )
         base_level = None
         # Match either a quoted string or a signed integer/float
         pattern = r'"base_level":\s*(?:"([^"]+)"|([+-]?\d+(?:\.\d+)?))'
@@ -263,7 +286,7 @@ class RelativitiesCalculator:
                     base_level = float(num_str)
                 except ValueError:
                     base_level = None
-        logger.debug(f"returning base_level {base_level}")
+        logger.info(f"[BaseValues Relativities] extract_base_level returning base_level={base_level}")
         return base_level
 
     def initialize_baseline(self):

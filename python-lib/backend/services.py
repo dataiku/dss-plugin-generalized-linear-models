@@ -282,19 +282,24 @@ class DataikuDataService:
     def get_base_values(self, request_json: dict):
         full_model_id = request_json["id"]
         
-        current_app.logger.info(f"Request received for base_values for {full_model_id}")
+        current_app.logger.info("[BaseValues Service] Request received for model_id=%s payload=%s", full_model_id, request_json)
 
         creation_args = {"data_handler": self.data_handler,
                         "model_cache": self.model_cache,
                         "full_model_id": full_model_id}
-        base_values = self.model_cache.get_or_create_cached_item(full_model_id, 'base_values_modalities_types', get_model_base_values_modalities_types, **creation_args)['base_values']
+        cached = self.model_cache.get_or_create_cached_item(full_model_id, 'base_values_modalities_types', get_model_base_values_modalities_types, **creation_args)
+        current_app.logger.info(
+            "[BaseValues Service] cache_keys=%s base_values_type=%s",
+            list(cached.keys()) if isinstance(cached, dict) else type(cached).__name__,
+            type(cached.get('base_values')).__name__ if isinstance(cached, dict) and 'base_values' in cached else "n/a",
+        )
+        base_values = cached['base_values']
         
-        current_app.logger.info(base_values)
+        current_app.logger.info("[BaseValues Service] raw_base_values=%s", base_values)
 
         base_values = [{'variable': k, 'base_level': v} for k, v in base_values.items()]
 
-        current_app.logger.info("base_values")
-        current_app.logger.info(base_values)
+        current_app.logger.info("[BaseValues Service] serialized_base_values=%s", base_values)
         return base_values
     
     def get_lift_data(self, request_json: dict):

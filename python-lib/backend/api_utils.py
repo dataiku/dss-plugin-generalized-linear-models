@@ -89,14 +89,25 @@ def get_model_test_set(full_model_id, model_cache, data_handler):
     return test_set
 
 def get_model_base_values_modalities_types(full_model_id, model_cache, data_handler):
+    logger.info("[BaseValues API_UTILS] building base_values_modalities_types for model_id=%s", full_model_id)
     creation_args = {"data_handler": data_handler,
                      "model_cache": model_cache,
                     "full_model_id": full_model_id}
     train_set = model_cache.get_or_create_cached_item(full_model_id, 'train_set', get_model_train_set, **creation_args)
     test_set = model_cache.get_or_create_cached_item(full_model_id, 'test_set', get_model_test_set, **creation_args)
+    logger.info(
+        "[BaseValues API_UTILS] train_shape=%s test_shape=%s",
+        getattr(train_set, "shape", None),
+        getattr(test_set, "shape", None),
+    )
     model_retriever = VisualMLModelRetriver(full_model_id)
     relativities_calculator = RelativitiesCalculator(data_handler, model_retriever, train_set, test_set)
     base_values = relativities_calculator.get_base_values()
+    logger.info(
+        "[BaseValues API_UTILS] computed_base_values_type=%s keys=%s",
+        type(base_values).__name__,
+        list(base_values.keys()) if isinstance(base_values, dict) else "n/a",
+    )
     return {'base_values': base_values, 
             'modalities': relativities_calculator.modalities, 
             'types': relativities_calculator.variable_types}
