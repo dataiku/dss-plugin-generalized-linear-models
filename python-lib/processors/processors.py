@@ -164,10 +164,18 @@ class continuous_spline():
         """
         # FIX: Flatten the values to ensure a strictly 1D array
         x_col = np.ravel(series.values)
+        input_dtype = getattr(series, "dtype", None)
+        if input_dtype is None and hasattr(series, "dtypes"):
+            input_dtype = series.dtypes
+        try:
+            sample_values = series.head(5)
+        except Exception:
+            sample_values = None
         logger.info(
-            "[Spline Debug] input_dtype=%s sample_values=%s",
-            series.dtype if hasattr(series, "dtype") else type(series).__name__,
-            series.head(5).tolist() if hasattr(series, "head") else None,
+            "[Spline Debug] input_type=%s input_dtype=%s sample_values=%s",
+            type(series).__name__,
+            input_dtype,
+            sample_values,
         )
         generated_features = {}
         
