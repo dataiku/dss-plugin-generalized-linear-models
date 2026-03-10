@@ -36,7 +36,6 @@ def validate_feature_selection_method_none(feature_selection_method, context):
         raise ValueError(
             f"Feature reduction must be disabled for generalized-linear-models "
             f"(feature_selection_params.method must be '{FEATURE_SELECTION_METHOD_NONE}', got '{feature_selection_method}') "
-            f"[context={context}]"
         )
 
 

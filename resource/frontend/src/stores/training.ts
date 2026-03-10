@@ -19,6 +19,7 @@ export const useTrainingStore = defineStore("TrainingStore", {
         modelName: "",   
         errorMessage: "", 
         interactions: [] as Interaction[],
+        selectedPreviousModel: null as string | null,
         selectedDatasetString: "",
         selectedTargetVariable: "",
         selectedExposureVariable: null as string | null,
@@ -443,9 +444,10 @@ export const useTrainingStore = defineStore("TrainingStore", {
         }
         this.datasetColumns[index] = column;
     },  
-    async getDatasetColumns(model_value = null) {
+    async getDatasetColumns(model_value: string | null = null) {
         const analysisStore = useAnalysisStore();
         if (model_value) {
+            this.selectedPreviousModel = model_value;
             this.isLoading = true;
             this.datasetColumns = []
             const store = useModelStore();
@@ -554,6 +556,7 @@ export const useTrainingStore = defineStore("TrainingStore", {
 
         } 
         else {
+            this.selectedPreviousModel = null;
             try {
                 this.isLoading = true;
                 const defaultExposure = analysisStore.selectedMlTask.exposureColumn || null;
