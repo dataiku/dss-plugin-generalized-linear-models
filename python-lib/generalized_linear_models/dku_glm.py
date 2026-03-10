@@ -206,6 +206,19 @@ class BaseGLM(BaseEstimator, ClassifierMixin):
 
         return column_values, column_indices
 
+    def _validate_columns_exist(self, required_columns, column_kind):
+        if not required_columns:
+            return
+        missing_columns = [column for column in required_columns if column not in self.column_labels]
+        if not missing_columns:
+            return
+        missing_columns_str = ", ".join(missing_columns)
+        raise ValueError(
+            f"{column_kind.capitalize()} column(s) not found in processed features: [{missing_columns_str}]. "
+            "This may happen when feature reduction removed the column(s). "
+            "Disable feature reduction (method=NONE) and ensure these columns are kept in feature handling."
+        )
+
     def compute_aggregate_offset(self, offsets, exposures):
         offset_output = None
         if len(offsets) > 0:
@@ -324,10 +337,13 @@ class BaseGLM(BaseEstimator, ClassifierMixin):
         offsets = []
         exposures = []
         if self.offset_mode == 'OFFSETS':
+            self._validate_columns_exist(self.offset_columns, "offset")
             offsets, self.offset_indices = self.get_columns(X, self.offset_columns)
             if len(offsets) == 0:
                 raise ValueError('OFFSETS mode is selected but no offset column is defined')
         elif self.offset_mode == 'OFFSETS/EXPOSURES':
+            self._validate_columns_exist(self.offset_columns, "offset")
+            self._validate_columns_exist(self.exposure_columns, "exposure")
             offsets, self.offset_indices = self.get_columns(X, self.offset_columns)
             exposures, self.exposure_indices = self.get_columns(X, self.exposure_columns)
             if len(offsets) == 0 and len(exposures) == 0:
@@ -392,6 +408,5 @@ class RegressionGLM(BaseGLM):
         """
         return self.predict_target(X)
     
-
 
 
