@@ -8,6 +8,7 @@ import string
 from logging_assist.logging import logger
 from dku_visual_ml.custom_configurations import dku_dataset_selection_params
 from dku_visual_ml.dku_base import DataikuClientProject
+from commons import extract_feature_selection_method_from_raw_settings, validate_feature_selection_method_none
 from typing import List, Dict, Any
 
 
@@ -348,6 +349,7 @@ class VisualMLModelTrainer(DataikuClientProject):
         self.enable_glm_algorithm()
         settings_new = self.configure_variables()
         self.set_code_env_settings(code_env_string)
+        self.ensure_feature_selection_disabled()
         self.mltask.start_train(session_name=session_name)
         details = self.mltask.wait_train_complete()
         logging.info("Model training completed. Deploying the model.")
@@ -425,6 +427,11 @@ class VisualMLModelTrainer(DataikuClientProject):
         
         settings.save()
         return
+
+    def ensure_feature_selection_disabled(self):
+        settings = self.mltask.get_settings()
+        feature_selection_method = extract_feature_selection_method_from_raw_settings(settings.get_raw())
+        validate_feature_selection_method_none(feature_selection_method, context="webapp_train_model")
     
     def update_to_numeric(self, fs, base_level, processing="CUSTOM", spline_features=None):
         processing_mode = str(processing or "CUSTOM").upper()
