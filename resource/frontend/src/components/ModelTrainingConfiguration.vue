@@ -37,6 +37,8 @@
                     :isSubLabel="true">
                 </BsLabel>
                 <BsSelect
+                    clearable
+                    :modelValue="trainingStore.selectedPreviousModel"
                     :all-options="store.modelOptions"
                     @update:modelValue="value => trainingStore.getDatasetColumns(value)"
                     style="min-width: 250px">
