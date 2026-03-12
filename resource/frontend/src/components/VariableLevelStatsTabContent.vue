@@ -3,11 +3,17 @@
   <div class="top-row">
     <div class="model-selector">
       <BsLabel label="Select a model" info-text="Stats will be generated for this model" />
-      <BsSelect
+      <BsSelect class="vls-model-select"
           :model-value="store.activeModelName"
           :all-options="store.modelOptions"
           @update:modelValue="onModelChange"
-      />
+      >
+        <template #selected-item>
+          <div class="vls-model-select-value">
+            {{ store.activeModelName }}
+          </div>
+        </template>
+      </BsSelect>
       </div>
           <div class="export-buttons" v-if="variableLevelStatsData.length>0">
             <BsButton 
@@ -211,5 +217,38 @@ header {
       display: flex;
       justify-content: flex-start; /* Aligns to the left */
       width: 100%;
-    }
+}
+
+:deep(.vls-model-select) {
+  width: 320px;
+  min-width: 320px;
+  max-width: 320px;
+}
+
+:deep(.vls-model-select .q-field__native) {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+}
+
+:deep(.vls-model-select .q-field__control) {
+  min-height: 40px !important;
+}
+
+:deep(.vls-model-select .q-field__input) {
+  width: 0 !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.vls-model-select-value {
+  max-width: calc(100% - 28px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 </style>
