@@ -104,6 +104,7 @@ export const useModelStore = defineStore("ModelStore", {
             if (!model) return;
             
             this.comparedModel = model;
+            WT1iser.selectSecondModel();
             this.isLoading = true;
             try {
                 const [baseResponse, metricsResponse] = await Promise.all([
@@ -128,6 +129,7 @@ export const useModelStore = defineStore("ModelStore", {
         async exportModel(model: ModelPoint) {
             try {
                 const response = await API.exportModel(model);
+                WT1iser.downloadModel();
                 this._triggerDownload(response.data, `${model.name}.csv`);
             } catch (error) {
                 this.handleError(error);
