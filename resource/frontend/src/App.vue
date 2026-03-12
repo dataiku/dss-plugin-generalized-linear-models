@@ -321,6 +321,8 @@ header {
 }
 
 .header-analysis-selector {
+    flex: 0 0 620px;
+    max-width: 620px;
     padding-right: 16px;
 }
 
