@@ -457,9 +457,6 @@ export const useTrainingStore = defineStore("TrainingStore", {
                     const paramsResponse = await API.getLatestMLTaskParams(model)  as APIResponse;
 
                     const params = paramsResponse.data.params;
-
-                    const responseColumns = response.data.map((column: ColumnInput) => column.column);
-
                     const paramsColumns = Object.keys(params);
                     
                     this.previousInteractions = paramsResponse.data.interactions 
@@ -488,6 +485,7 @@ export const useTrainingStore = defineStore("TrainingStore", {
                         exposure: effectiveExposure,
                         weightingColumn: this.selectedSampleWeightVariable || effectiveExposure || null,
                     });
+                    const responseColumns = response.data.map((column: ColumnInput) => column.column);
                     
                     this.datasetColumns = response.data.map((column: ColumnInput) => {
                         const columnName = column.column;

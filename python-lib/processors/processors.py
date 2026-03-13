@@ -11,6 +11,42 @@ class rebase_mode():
         self.modality_to_group = self._build_modality_group_map(self.categorical_groups)
         self.effective_base_level = self.modality_to_group.get(self.base_level, self.base_level)
 
+    def _ensure_backward_compat_state(self):
+        """Normalize legacy serialized processor state from previous plugin versions."""
+        legacy_mode_column = getattr(self, "mode_column", None)
+
+        if not hasattr(self, "base_level") or self.base_level is None:
+            self.base_level = "" if legacy_mode_column is None else str(legacy_mode_column)
+        else:
+            self.base_level = str(self.base_level)
+
+        if not hasattr(self, "categorical_groups") or not isinstance(self.categorical_groups, list):
+            self.categorical_groups = []
+
+        if not hasattr(self, "modality_to_group") or not isinstance(self.modality_to_group, dict):
+            self.modality_to_group = self._build_modality_group_map(self.categorical_groups)
+
+        if not hasattr(self, "effective_base_level") or self.effective_base_level is None:
+            self.effective_base_level = self.modality_to_group.get(self.base_level, self.base_level)
+
+        if not hasattr(self, "dropped_level") or self.dropped_level is None:
+            if legacy_mode_column is not None:
+                self.dropped_level = legacy_mode_column
+            else:
+                self.dropped_level = self.effective_base_level
+
+        if not hasattr(self, "modalities") or self.modalities is None:
+            self.modalities = np.array([], dtype=object)
+
+        if not hasattr(self, "columns") or self.columns is None:
+            self.columns = []
+        elif not isinstance(self.columns, list):
+            self.columns = list(self.columns)
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self._ensure_backward_compat_state()
+
     @staticmethod
     def _build_modality_group_map(categorical_groups):
         mapping = {}
@@ -34,12 +70,14 @@ class rebase_mode():
         return mapping
 
     def _map_modalities(self, series):
+        self._ensure_backward_compat_state()
         series = series.astype(str)
         if not self.modality_to_group:
             return series
         return series.map(lambda value: self.modality_to_group.get(value, value))
 
     def fit(self, series):
+        self._ensure_backward_compat_state()
         mapped_series = self._map_modalities(series)
         self.modalities = np.unique(mapped_series)
         self.columns = list(self.modalities)
@@ -56,6 +94,7 @@ class rebase_mode():
             self.columns.remove(self.dropped_level)
 
     def transform(self, series):
+        self._ensure_backward_compat_state()
         mapped_series = self._map_modalities(series)
         to_replace = {m: self.dropped_level for m in np.unique(mapped_series) if m not in self.modalities}
         new_series = mapped_series.replace(to_replace=to_replace)
@@ -76,10 +115,23 @@ class save_base():
         self.base_level = config["base_level"]
         self.modalities = None  # Initialize modalities here
 
+    def _ensure_backward_compat_state(self):
+        legacy_mode_column = getattr(self, "mode_column", None)
+        if not hasattr(self, "base_level") or self.base_level is None:
+            self.base_level = legacy_mode_column
+        if not hasattr(self, "modalities"):
+            self.modalities = None
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self._ensure_backward_compat_state()
+
     def fit(self, series):
+        self._ensure_backward_compat_state()
         self.modalities = np.unique(series)
 
     def transform(self, series):
+        self._ensure_backward_compat_state()
         return pd.DataFrame(series)
 
 class continuous_spline():
