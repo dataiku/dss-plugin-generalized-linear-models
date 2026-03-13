@@ -323,12 +323,15 @@ class VisualMLModelTrainer(DataikuClientProject):
         return latest_model_id
     
     def check_failure_get_error_message(self, latest_model_id):
-        
-        status = self.mltask.get_trained_model_details(latest_model_id).details.get('trainInfo').get('state')
-        try:
-            message = self.mltask.get_trained_model_details(latest_model_id).details.get('trainInfo').get('failure').get('message', None)
-        except:
-            message = None
+        model_details = self.mltask.get_trained_model_details(latest_model_id).details
+        train_info = model_details.get('trainInfo', {}) if isinstance(model_details, dict) else {}
+        status = train_info.get('state')
+        failure = train_info.get('failure')
+        message = None
+        if isinstance(failure, dict):
+            message = failure.get('message')
+        elif failure:
+            message = str(failure)
         return status, message
     
     
@@ -355,14 +358,23 @@ class VisualMLModelTrainer(DataikuClientProject):
         logging.info("Model training completed. Deploying the model.")
         
         latest_model_id = self.get_latest_model()
+        if not latest_model_id:
+            return {"status": "FAILED"}, "Model training error: no trained model was produced by DSS."
+
         status, error_message = self.check_failure_get_error_message(latest_model_id)
-        
-        if status == "FAILED":
+        normalized_status = (status or "").upper()
+
+        if normalized_status != "DONE":
+            if not error_message:
+                error_message = (
+                    f"Training session ended with state '{status}' "
+                    f"for model_id={latest_model_id}."
+                )
             if error_message == "Failed to train : <class 'numpy.linalg.LinAlgError'> : Matrix is singular.":
-                error_message = error_message + "Check colinearity of variables added to the model"
-            return None, error_message
-        else:
-            return None, error_message
+                error_message = error_message + " Check colinearity of variables added to the model"
+            return {"status": normalized_status or "FAILED", "model_id": latest_model_id}, error_message
+
+        return {"status": "DONE", "model_id": latest_model_id}, None
     
     def process_interaction_columns(self, interaction_columns):
         print(f"interaction columns are {interaction_columns}")

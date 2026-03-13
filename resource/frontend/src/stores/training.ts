@@ -646,6 +646,7 @@ export const useTrainingStore = defineStore("TrainingStore", {
                 elasticNetPenalty: this.selectedElasticNetPenalty,
                 l1Ratio: this.selectedL1Ratio
             });
+            this.updateModels = !this.updateModels;
             // Handle successful submission here
         } catch (error) {
         if (isAxiosError(error)) {
@@ -668,7 +669,6 @@ export const useTrainingStore = defineStore("TrainingStore", {
 
         this.notifyError(this.errorMessage);
     } finally {
-        this.updateModels = !this.updateModels;
         this.isLoading = false;
     }
     }

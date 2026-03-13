@@ -201,12 +201,16 @@ class DataikuDataService:
         current_app.logger.debug(f"Model error message is {error_message}")
         current_app.logger.debug(f"Model details are {model_details}")
         
-        if not error_message:
+        training_status = (model_details or {}).get("status")
+        if training_status == "DONE" and not error_message:
             current_app.logger.info("Model trained and cache updated")
             return {'message': 'Model training completed successfully.'}
-        else:
-            current_app.logger.debug(f"Model training error: {error_message}")
-            raise ValueError(f"Model training error: {error_message}")
+
+        if not error_message:
+            error_message = f"Training ended with status '{training_status or 'UNKNOWN'}'."
+
+        current_app.logger.debug(f"Model training error: {error_message}")
+        raise ValueError(f"Model training error: {error_message}")
     
     def deploy_model(self, request_json: dict):
         current_app.logger.info(f"Initalising Model Deployment with request {request_json}")
