@@ -40,7 +40,7 @@
                             :modelValue="featureMasterDegree(feature)"
                             :all-options="degreeOptions"
                             input-style="display: none;"
-                            @update:modelValue="value => $emit('update-feature-degree', { featureIdx, degree: Number(value) })"
+                            @update:modelValue="value => onFeatureDegreeChange(featureIdx, value)"
                         />
                     </div>
                     <BsButton class="close-btn" flat no-caps :ripple="false" @click="$emit('remove-feature', featureIdx)">
@@ -156,7 +156,17 @@ export default defineComponent({
             );
             const firstDegree = degrees[0];
             const areAllEqual = degrees.every((degree: number) => degree === firstDegree);
-            return areAllEqual ? firstDegree : null;
+            return areAllEqual ? firstDegree : undefined;
+        },
+        onFeatureDegreeChange(featureIdx: number, value: any) {
+            if (value === null || value === undefined || value === "") {
+                return;
+            }
+            const degree = Number(value);
+            if (!Number.isFinite(degree) || !this.degreeOptions.includes(degree)) {
+                return;
+            }
+            this.$emit("update-feature-degree", { featureIdx, degree });
         },
         featureKnots(feature: any[]) {
             if (!Array.isArray(feature) || feature.length <= 1) {
