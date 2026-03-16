@@ -80,14 +80,7 @@ def get_relativities():
 def get_variable_level_stats():
     data_service = current_app.data_service
     payload = request.get_json()
-    current_app.logger.info("[VariableStats API] payload=%s", payload)
     result = data_service.get_variable_level_stats(payload)
-    current_app.logger.info(
-        "[VariableStats API] response_type=%s len=%s keys=%s",
-        type(result).__name__,
-        len(result) if hasattr(result, "__len__") else "n/a",
-        list(result.keys()) if isinstance(result, dict) else "n/a",
-    )
     return jsonify(result)
     
 @fetch_api.route("/get_model_metrics", methods=["POST"])
