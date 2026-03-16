@@ -94,14 +94,39 @@ export default {
         type: String,
         required: true,
         default: 'None'
-      }
+      },
+    showBaseLevelPrediction: {
+      type: Boolean,
+      required: false,
+      default: true
+    },
+    legendSelection: {
+      type: Object,
+      required: false,
+      default: () => ({})
+    }
   },
+  emits: ['update:legendSelection'],
   data() {
     return {
       chartOption: undefined as undefined | any,
     }
   },
   methods: {
+    onLegendSelectChanged(params: any) {
+      if (params && params.selected && typeof params.selected === "object") {
+        this.$emit('update:legendSelection', { ...params.selected });
+      }
+    },
+    bindLegendListener() {
+      const chartComp = this.$refs.chart as any;
+      const chart = chartComp?.chart;
+      if (!chart) {
+        return;
+      }
+      chart.off('legendselectchanged', this.onLegendSelectChanged);
+      chart.on('legendselectchanged', this.onLegendSelectChanged);
+    },
     createChartData() {
       // 1. Combine all data points into a single array of objects to sort them together, with robust null/undefined checks.
       let combinedData = (this.xaxisLabels || []).map((label, index) => ({
@@ -185,6 +210,13 @@ export default {
         },
       ];
 
+      if (!this.showBaseLevelPrediction) {
+        const baseSeriesIdx = series.findIndex((s) => s.name === "Base Level Prediction");
+        if (baseSeriesIdx >= 0) {
+          series.splice(baseSeriesIdx, 1);
+        }
+      }
+
       // Only add model 2 lines if they have at least one non-null, non-undefined value
       const hasFitted2 = Array.isArray(sortedFittedAverageLine2) && sortedFittedAverageLine2.some(v => v !== null && v !== undefined);
       const hasBase2 = Array.isArray(sortedBaseLevelPredictionLine2) && sortedBaseLevelPredictionLine2.some(v => v !== null && v !== undefined);
@@ -210,8 +242,26 @@ export default {
           data: sortedBaseLevelPredictionLine2, // Use sorted data
         });
       }
+      if (!this.showBaseLevelPrediction) {
+        const baseSeries2Idx = series.findIndex((s) => s.name === "Base Level Prediction 2");
+        if (baseSeries2Idx >= 0) {
+          series.splice(baseSeries2Idx, 1);
+        }
+      }
 
       // 5. Define the final chart option object, with legend only for present series.
+      const availableLegendEntries = series.reduce((acc: Record<string, boolean>, s: any) => {
+        acc[s.name] = true;
+        return acc;
+      }, {});
+      const persistedSelection = Object.entries(this.legendSelection || {}).reduce((acc: Record<string, boolean>, [name, value]) => {
+        if (Object.prototype.hasOwnProperty.call(availableLegendEntries, name)) {
+          acc[name] = Boolean(value);
+        }
+        return acc;
+      }, {});
+      const selectedLegendState = { ...availableLegendEntries, ...persistedSelection };
+
       this.chartOption = {
       xAxis: [{
         type: "category",
@@ -256,7 +306,8 @@ export default {
           legend: {
             orient: 'horizontal',
             bottom: 0,
-            data: series.map(s => s.name) // Only show legend for present series
+            data: series.map(s => s.name), // Only show legend for present series
+            selected: selectedLegendState
           },
           title: {
             text: this.chartTitle,
@@ -274,10 +325,20 @@ export default {
               }
           }
       };
+      this.$nextTick(() => {
+        this.bindLegendListener();
+      });
     },
   },
   mounted() {
       this.createChartData();
+  },
+  beforeUnmount() {
+    const chartComp = this.$refs.chart as any;
+    const chart = chartComp?.chart;
+    if (chart) {
+      chart.off('legendselectchanged', this.onLegendSelectChanged);
+    }
   },
   watch: {
     xaxisLabels: {
@@ -287,6 +348,12 @@ export default {
         },
     },
     levelOrder: {
+        handler() {
+            this.createChartData();
+        }
+    },
+    legendSelection: {
+        deep: true,
         handler() {
             this.createChartData();
         }

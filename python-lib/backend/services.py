@@ -344,7 +344,12 @@ class DataikuDataService:
         creation_args = {"data_handler": self.data_handler,
                             "model_cache": self.model_cache,
                             "full_model_id": full_model_id}
-        relativities = self.model_cache.get_or_create_cached_item(full_model_id, 'relativities', get_model_relativities, **creation_args)['relativities']
+        relativities = self.model_cache.get_or_create_cached_item(
+            full_model_id,
+            'relativities',
+            get_model_relativities,
+            **creation_args
+        )['relativities_raw']
         
         relativities_df = relativities.copy()
         relativities_df.columns = ['variable', 'category', 'relativity']

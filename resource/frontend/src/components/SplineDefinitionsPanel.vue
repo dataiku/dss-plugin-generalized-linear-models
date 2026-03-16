@@ -148,7 +148,15 @@ export default defineComponent({
     },
     methods: {
         featureMasterDegree(feature: any[]) {
-            return Array.isArray(feature) && feature.length > 0 ? Number(feature[0].degree ?? 1) : 1;
+            if (!Array.isArray(feature) || feature.length === 0) {
+                return 1;
+            }
+            const degrees = feature.map((segment: any) =>
+                Number.isFinite(Number(segment?.degree)) ? Number(segment.degree) : 1
+            );
+            const firstDegree = degrees[0];
+            const areAllEqual = degrees.every((degree: number) => degree === firstDegree);
+            return areAllEqual ? firstDegree : null;
         },
         featureKnots(feature: any[]) {
             if (!Array.isArray(feature) || feature.length <= 1) {

@@ -271,7 +271,6 @@ export const useTrainingStore = defineStore("TrainingStore", {
 
             const availableColumns = new Set(this.datasetColumns.map((column) => column.name));
             const defaultTarget = analysisStore.selectedMlTask.targetColumn || "";
-            const defaultExposure = analysisStore.selectedMlTask.exposureColumn || null;
             const defaultSampleWeight = analysisStore.selectedMlTask.sampleWeightColumn || null;
             const defaultOffsets = Array.isArray(analysisStore.selectedMlTask.offsetColumns)
                 ? analysisStore.selectedMlTask.offsetColumns.filter((name) => availableColumns.has(name))
@@ -284,15 +283,6 @@ export const useTrainingStore = defineStore("TrainingStore", {
             if (this.selectedLinkFunctionString === "Log") {
                 if (this.selectedExposureVariable && !availableColumns.has(this.selectedExposureVariable)) {
                     this.selectedExposureVariable = null;
-                }
-                if (
-                    this.selectedExposureVariable === null &&
-                    defaultExposure &&
-                    availableColumns.has(defaultExposure) &&
-                    this.selectedSampleWeightVariable !== defaultExposure &&
-                    !this.selectedOffsetVariables.includes(defaultExposure)
-                ) {
-                    this.selectedExposureVariable = defaultExposure;
                 }
             } else {
                 this.selectedExposureVariable = null;
@@ -325,10 +315,6 @@ export const useTrainingStore = defineStore("TrainingStore", {
         }
         if (!this.selectedTargetVariable) {
             this.errorMessage = 'Please select a target variable.';
-            return false;
-        }
-        if (this.selectedLinkFunctionString === "Log" && !this.selectedExposureVariable) {
-            this.errorMessage = 'Please select an exposure variable for Log link.';
             return false;
         }
         const usedFixedColumns = [
@@ -483,7 +469,7 @@ export const useTrainingStore = defineStore("TrainingStore", {
                     const response = await API.getDatasetColumns({
                         dataset: analysisStore.selectedMlTask.trainSet,
                         exposure: effectiveExposure,
-                        weightingColumn: this.selectedSampleWeightVariable || effectiveExposure || null,
+                        weightingColumn: this.selectedSampleWeightVariable || null,
                     });
                     const responseColumns = response.data.map((column: ColumnInput) => column.column);
                     
@@ -557,15 +543,14 @@ export const useTrainingStore = defineStore("TrainingStore", {
             this.selectedPreviousModel = null;
             try {
                 this.isLoading = true;
-                const defaultExposure = analysisStore.selectedMlTask.exposureColumn || null;
                 const defaultSampleWeight = analysisStore.selectedMlTask.sampleWeightColumn || null;
                 const effectiveExposure = this.selectedLinkFunctionString === "Log"
-                    ? (this.selectedExposureVariable || defaultExposure || null)
+                    ? (this.selectedExposureVariable || null)
                     : null;
                 const response = await API.getDatasetColumns({
                     dataset: analysisStore.selectedMlTask.trainSet,
                     exposure: effectiveExposure,
-                    weightingColumn: this.selectedSampleWeightVariable || defaultSampleWeight || effectiveExposure || null,
+                    weightingColumn: this.selectedSampleWeightVariable || defaultSampleWeight || null,
                 });
                 this.datasetColumns = response.data.map((column: ColumnInput) => ({
                     name: column.column,
