@@ -354,7 +354,12 @@ class RelativitiesCalculator:
             else:
                 exposure_per_modality = modality_mass.groupby(self.train_set[feature]).sum()
                 values_to_process = exposure_per_modality.nlargest(99).index.tolist()
-            if self._is_valid_value(base_value) and (not self._is_null_like_categorical(base_value)) and base_value not in values_to_process:
+            if feature_type == "CATEGORY":
+                # Keep one-way/relativity outputs on raw modalities only.
+                # For merged categories, base_value may be a synthetic group label (e.g. "A|B");
+                # do not inject that synthetic label into raw-category outputs.
+                pass
+            elif self._is_valid_value(base_value) and (not self._is_null_like_categorical(base_value)) and base_value not in values_to_process:
                 values_to_process.append(base_value)
 
             for value in values_to_process:
