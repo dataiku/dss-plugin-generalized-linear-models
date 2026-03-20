@@ -117,8 +117,8 @@ export default defineComponent({
     },
     methods: {
         async onModelChange(value: string) {
-            this.variableStatsStore.fetchStatsForModel(value);
-            this.store.setActiveModel(value);
+            await this.store.setActiveModel(value);
+            await this.variableStatsStore.fetchStatsForModel(value);
         },
         async deployModel() {
           this.store.deployActiveModel();

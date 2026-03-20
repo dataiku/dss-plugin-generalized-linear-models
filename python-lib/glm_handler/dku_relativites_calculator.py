@@ -345,8 +345,8 @@ class RelativitiesCalculator:
 
             modality_mass = self._get_modality_mass(self.train_set)
             if feature_type == "CATEGORY":
-                mapped_feature = self._map_categorical_series(feature, self.train_set[feature])
-                mass_per_group = modality_mass.groupby(mapped_feature).sum()
+                # Keep raw modality labels for downstream display/export.
+                mass_per_group = modality_mass.groupby(self.train_set[feature]).sum()
                 values_to_process = [
                     value for value in mass_per_group.index.tolist()
                     if not self._is_null_like_categorical(value)
@@ -354,7 +354,12 @@ class RelativitiesCalculator:
             else:
                 exposure_per_modality = modality_mass.groupby(self.train_set[feature]).sum()
                 values_to_process = exposure_per_modality.nlargest(99).index.tolist()
-            if self._is_valid_value(base_value) and (not self._is_null_like_categorical(base_value)) and base_value not in values_to_process:
+            if feature_type == "CATEGORY":
+                # Keep one-way/relativity outputs on raw modalities only.
+                # For merged categories, base_value may be a synthetic group label (e.g. "A|B");
+                # do not inject that synthetic label into raw-category outputs.
+                pass
+            elif self._is_valid_value(base_value) and (not self._is_null_like_categorical(base_value)) and base_value not in values_to_process:
                 values_to_process.append(base_value)
 
             for value in values_to_process:
@@ -539,14 +544,6 @@ class RelativitiesCalculator:
 
         bin_map = None
         if feature_type == 'CATEGORY':
-            mapping_start = time()
-            copy_test_df[feature] = self._map_categorical_series(feature, copy_test_df[feature])
-            logger.info(
-                "Categorical remap completed for %s in %.3fs (%s rows)",
-                feature,
-                time() - mapping_start,
-                len(copy_test_df)
-            )
             exposure_per_modality = modality_mass.groupby(copy_test_df[feature]).sum()
             top_modalities = exposure_per_modality.nlargest(max_modalities - 1).index
             copy_test_df[feature] = copy_test_df[feature].where(copy_test_df[feature].isin(top_modalities), other='Other')
@@ -644,14 +641,6 @@ class RelativitiesCalculator:
         modality_mass = self._get_modality_mass(dataset)
         grouped_dataset = dataset.copy()
         if feature_type == 'CATEGORY':
-            mapping_start = time()
-            grouped_dataset[variable] = self._map_categorical_series(variable, grouped_dataset[variable])
-            logger.info(
-                "Categorical remap in process_dataset_variable completed for %s in %.3fs (%s rows)",
-                variable,
-                time() - mapping_start,
-                len(grouped_dataset)
-            )
             exposure_per_modality = modality_mass.groupby(grouped_dataset[variable]).sum()
             top_modalities = exposure_per_modality.nlargest(max_modalities - 1).index
             grouped_dataset[variable] = grouped_dataset[variable].where(grouped_dataset[variable].isin(top_modalities), other='Other')

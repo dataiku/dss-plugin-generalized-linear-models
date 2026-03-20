@@ -93,7 +93,7 @@
                 ></BsLabel>
                 <BsLabel
                     v-if="trainingStore.selectedLinkFunctionString==='Log'"
-                    label="Exposure Column *"
+                    label="Exposure Column"
                     :isSubLabel="true"
                     info-text="Exposure is only applied for Log link"
                 />

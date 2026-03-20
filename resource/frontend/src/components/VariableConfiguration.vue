@@ -342,10 +342,16 @@
         },
         updateSegmentDegree(row: any, featureIdx: number, segmentIdx: number, degree: number) {
             this.ensureSplineFeatures(row);
-            if (!row.splineFeatures[featureIdx] || !row.splineFeatures[featureIdx][segmentIdx]) {
+            const feature = row.splineFeatures[featureIdx];
+            if (!feature || !feature[segmentIdx]) {
                 return;
             }
-            row.splineFeatures[featureIdx][segmentIdx].degree = Number.isFinite(degree) ? Number(degree) : 1;
+            const normalizedDegree = Number.isFinite(degree) ? Number(degree) : 1;
+            row.splineFeatures[featureIdx] = feature.map((segment: any, idx: number) =>
+                idx === segmentIdx
+                    ? { ...segment, degree: normalizedDegree }
+                    : segment
+            );
         },
         addCategoricalGroup(row: any) {
             this.ensureCategoricalGroups(row);

@@ -47,7 +47,8 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
             chartRescaling: "None",
             trainTest: true,
             comparisonModel: "",
-        }
+        },
+        legendSelection: {} as Record<string, boolean>,
         
     }),
 
@@ -131,6 +132,10 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
             } else {
                 this.formOptions.comparisonModel = comparisonModel;
             }
+        },
+
+        setLegendSelection(selection: Record<string, boolean>) {
+            this.legendSelection = { ...(selection || {}) };
         },
         
         async fetchVariablesForModel(modelName: string) {

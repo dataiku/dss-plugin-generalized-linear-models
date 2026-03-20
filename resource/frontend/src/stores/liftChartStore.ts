@@ -58,7 +58,10 @@ export const useLiftChartStore = defineStore("liftChart", {
             try {
                 const store = useModelStore();
                 const model = store.models.filter( (v: ModelPoint) => v.name==modelName)[0];
-                store.activeModel = model;
+                if (!model) {
+                    this.liftChartData = [];
+                    return;
+                }
                 const modelNbBins = { nbBins: this.chartOptions.nbBins, id: model.id, name: model.name, trainTest: this.chartOptions.trainTest};
                 const response = await API.getLiftData(modelNbBins);
                 this.liftChartData = response.data;
