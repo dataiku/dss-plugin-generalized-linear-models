@@ -3,10 +3,12 @@
         <div class="categorical-header">
             <div class="categorical-header-meta">
                 <span class="categorical-label">No. groups</span>
-                <q-icon name="info" size="14px" class="categorical-info-icon" />
-                <q-tooltip>
-                    A group can be formed by merging any two levels, with up to 20 levels per group.
-                </q-tooltip>
+                <span class="categorical-info-trigger">
+                    <q-icon name="info" size="14px" class="categorical-info-icon" />
+                    <q-tooltip>
+                        A group can be formed by merging any two levels, with up to 20 levels per group.
+                    </q-tooltip>
+                </span>
                 <span class="group-count-value">{{ row.categoricalGroups.length }}</span>
                 <q-icon v-if="hasIncompleteGroups" name="warning" size="16px" class="categorical-warning-icon" />
             </div>
@@ -202,6 +204,13 @@ export default defineComponent({
 
 .categorical-warning-icon {
     color: #a64d06;
+    cursor: default;
+    pointer-events: none;
+}
+
+.categorical-info-trigger {
+    display: inline-flex;
+    align-items: center;
 }
 
 .create-group-btn {

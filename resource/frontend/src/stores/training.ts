@@ -368,6 +368,10 @@ export const useTrainingStore = defineStore("TrainingStore", {
                     this.errorMessage = `Each spline feature must contain at least one segment for ${column.name}.`;
                     return false;
                 }
+                if (feature.length > 6) {
+                    this.errorMessage = `At most 5 knots are allowed per spline feature for ${column.name}.`;
+                    return false;
+                }
                 for (const segment of feature) {
                     if (
                         !Number.isFinite(segment.min_value) ||

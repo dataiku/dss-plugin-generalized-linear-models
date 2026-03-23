@@ -54,6 +54,46 @@ def test_get_feature_spline_features_returns_normalized_values():
     ]
 
 
+def test_normalize_spline_segments_caps_each_feature_to_five_knots():
+    raw = [
+        {"min_value": 0, "max_value": 10, "degree": 1},
+        {"min_value": 10, "max_value": 20, "degree": 1},
+        {"min_value": 20, "max_value": 30, "degree": 1},
+        {"min_value": 30, "max_value": 40, "degree": 1},
+        {"min_value": 40, "max_value": 50, "degree": 1},
+        {"min_value": 50, "max_value": 60, "degree": 1},
+        {"min_value": 60, "max_value": 70, "degree": 1},
+    ]
+
+    normalized = DKUVisualMLConfig._normalize_spline_segments(raw)
+
+    assert len(normalized) == 6
+    assert normalized[-1] == {"min_value": 50.0, "max_value": 60.0, "degree": 1}
+
+
+def test_get_feature_spline_features_caps_flat_backward_compatible_definitions():
+    config = DKUVisualMLConfig()
+    config.variables = {
+        "DriverAge": {
+            "spline_definitions": [
+                {"min_value": 0, "max_value": 10, "degree": 1},
+                {"min_value": 10, "max_value": 20, "degree": 1},
+                {"min_value": 20, "max_value": 30, "degree": 1},
+                {"min_value": 30, "max_value": 40, "degree": 1},
+                {"min_value": 40, "max_value": 50, "degree": 1},
+                {"min_value": 50, "max_value": 60, "degree": 1},
+                {"min_value": 60, "max_value": 70, "degree": 1},
+            ]
+        }
+    }
+
+    normalized = config.get_feature_spline_features("DriverAge")
+
+    assert len(normalized) == 1
+    assert len(normalized[0]) == 6
+    assert normalized[0][-1] == {"min_value": 50.0, "max_value": 60.0, "degree": 1}
+
+
 def test_build_numeric_custom_handling_code_uses_splines_when_present():
     spline_features = [[{"min_value": 16.0, "max_value": 25.0, "degree": 2}]]
     code = DKUVisualMLConfig.build_numeric_custom_handling_code(
