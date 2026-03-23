@@ -51,13 +51,14 @@ class GlmDataHandler():
         tempdata['exposure_cumsum'] = cumsum_values.cumsum() / cumsum_values.sum()
         return tempdata
     
-    def aggregate_metrics_by_bin(self, data, exposure, target):
+    def aggregate_metrics_by_bin(self, data, exposure, target, label_column='predicted'):
         """
         Aggregates and calculates metrics within each bin, including sum of exposures,
         weighted predictions, and targets, and calculates observed and predicted data metrics.
 
         Args:
             data (pd.DataFrame): The DataFrame with predictions, targets, and bin information.
+            label_column (str): Column used to build the displayed bin interval labels.
 
         Returns:
             pd.DataFrame: A summarized DataFrame with metrics calculated for each bin.
@@ -66,15 +67,22 @@ class GlmDataHandler():
             exposure: 'sum',
             'weighted_target': 'sum',
             'weighted_predicted': 'sum', 
-            'predicted': ['min', 'max']
+            label_column: ['min', 'max']
         })
         grouped.columns = grouped.columns.map('_'.join)
         grouped = grouped.reset_index()
         grouped['observedData'] = grouped['weighted_target_sum'] / grouped[exposure + '_sum']
         grouped['predictedData'] = grouped['weighted_predicted_sum'] / grouped[exposure + '_sum']
-        grouped['binInterval'] = [('%s' % float('%.3g' % value_min)) + '-' + ('%s' % float('%.3g' % value_max)) for value_min, value_max in zip(grouped['predicted_min'], grouped['predicted_max'])]
+        grouped['binInterval'] = [
+            ('%s' % float('%.3g' % value_min)) + '-' + ('%s' % float('%.3g' % value_max))
+            for value_min, value_max in zip(grouped[f'{label_column}_min'], grouped[f'{label_column}_max'])
+        ]
         grouped.reset_index(inplace=True)
-        grouped.drop(['index', 'weighted_target_sum', 'weighted_predicted_sum', 'predicted_min', 'predicted_max', 'bin'], axis=1, inplace=True)
+        grouped.drop(
+            ['index', 'weighted_target_sum', 'weighted_predicted_sum', f'{label_column}_min', f'{label_column}_max', 'bin'],
+            axis=1,
+            inplace=True
+        )
         return grouped
     
     def calculate_weighted_aggregations(self, test_set, non_excluded_features, used_feature):
