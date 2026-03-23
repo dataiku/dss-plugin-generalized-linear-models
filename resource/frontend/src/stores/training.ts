@@ -84,11 +84,11 @@ export const useTrainingStore = defineStore("TrainingStore", {
 
             const variableIncluded = this.datasetColumns.some(colum => colum.isIncluded === true);
 
-            if (variableIncluded) {
-                return { valid: true, reason: '' };
-            } else {
+            if (!variableIncluded) {
                 return { valid: false, reason: 'At least one variable should be included. ' };
             }
+
+            return this.getSubmissionValidationState();
         },
         allowedLinks(state) {
             switch (state.selectedDistributionFunctionString) {
@@ -307,15 +307,12 @@ export const useTrainingStore = defineStore("TrainingStore", {
         console.error(msg);
         this.notifyError(msg);
     },
-    validateSubmission() {
-        this.errorMessage = ''; // Reset error message before validation
+    getSubmissionValidationState() {
         if (!this.modelName) {
-            this.errorMessage = 'Please enter a model name.';
-            return false;
+            return { valid: false, reason: 'Please enter a model name.' };
         }
         if (!this.selectedTargetVariable) {
-            this.errorMessage = 'Please select a target variable.';
-            return false;
+            return { valid: false, reason: 'Please select a target variable.' };
         }
         const usedFixedColumns = [
             this.selectedTargetVariable,
@@ -324,9 +321,9 @@ export const useTrainingStore = defineStore("TrainingStore", {
             ...(this.selectedOffsetVariables || []),
         ].filter((value): value is string => Boolean(value));
         if (new Set(usedFixedColumns).size !== usedFixedColumns.length) {
-            this.errorMessage = 'Target, exposure, sample weight, and offset columns must be distinct.';
-            return false;
+            return { valid: false, reason: 'Target, exposure, sample weight, and offset columns must be distinct.' };
         }
+
         for (const column of this.datasetColumns) {
             if (!column.isIncluded || column.type !== "numerical") {
                 if (!column.isIncluded || column.type !== "categorical") {
@@ -334,20 +331,27 @@ export const useTrainingStore = defineStore("TrainingStore", {
                 }
                 const categoricalGroups = column.categoricalGroups || [];
                 if (categoricalGroups.length > 5) {
-                    this.errorMessage = `At most 5 modality groups are allowed for ${column.name}.`;
-                    return false;
+                    return { valid: false, reason: `At most 5 modality groups are allowed for ${column.name}.` };
+                }
+                const totalLevels = Array.isArray(column.options) ? column.options.length : 0;
+                const isSingleEmptyDefaultGroup = categoricalGroups.length === 1
+                    && Array.isArray(categoricalGroups[0])
+                    && categoricalGroups[0].length === 0;
+                if (isSingleEmptyDefaultGroup) {
+                    continue;
                 }
                 const seen = new Set<string>();
                 for (const group of categoricalGroups) {
                     if (!Array.isArray(group) || group.length < 2) {
-                        this.errorMessage = `Each categorical group must contain at least 2 modalities for ${column.name}.`;
-                        return false;
+                        return { valid: false, reason: `Each categorical group must contain at least 2 modalities for ${column.name}.` };
+                    }
+                    if (totalLevels > 0 && group.length === totalLevels) {
+                        return { valid: false, reason: `All levels cannot be added to one group for ${column.name}.` };
                     }
                     for (const modality of group) {
                         const key = String(modality);
                         if (seen.has(key)) {
-                            this.errorMessage = `Each modality can belong to only one group for ${column.name}.`;
-                            return false;
+                            return { valid: false, reason: `Each modality can belong to only one group for ${column.name}.` };
                         }
                         seen.add(key);
                     }
@@ -356,17 +360,17 @@ export const useTrainingStore = defineStore("TrainingStore", {
             }
             const splineFeatures = column.splineFeatures || [];
             if (splineFeatures.length > 0 && (column.baseLevel === null || column.baseLevel === undefined || column.baseLevel === "")) {
-                this.errorMessage = `Base level is required for spline configuration on ${column.name}.`;
-                return false;
+                return { valid: false, reason: `Base level is required for spline configuration on ${column.name}.` };
             }
             if (splineFeatures.length > 3) {
-                this.errorMessage = `At most 3 spline features are allowed for ${column.name}.`;
-                return false;
+                return { valid: false, reason: `At most 3 spline features are allowed for ${column.name}.` };
             }
             for (const feature of splineFeatures) {
                 if (!Array.isArray(feature) || feature.length === 0) {
-                    this.errorMessage = `Each spline feature must contain at least one segment for ${column.name}.`;
-                    return false;
+                    return { valid: false, reason: `Each spline feature must contain at least one segment for ${column.name}.` };
+                }
+                if (feature.length > 6) {
+                    return { valid: false, reason: `At most 5 knots are allowed per spline feature for ${column.name}.` };
                 }
                 for (const segment of feature) {
                     if (
@@ -375,11 +379,20 @@ export const useTrainingStore = defineStore("TrainingStore", {
                         !Number.isFinite(segment.degree) ||
                         segment.min_value >= segment.max_value
                     ) {
-                        this.errorMessage = `Invalid spline segment on ${column.name}.`;
-                        return false;
+                        return { valid: false, reason: `Invalid spline segment on ${column.name}.` };
                     }
                 }
             }
+        }
+
+        return { valid: true, reason: '' };
+    },
+    validateSubmission() {
+        this.errorMessage = ''; // Reset error message before validation
+        const validationState = this.getSubmissionValidationState();
+        if (!validationState.valid) {
+            this.errorMessage = validationState.reason;
+            return false;
         }
         return true; // Validation passed
     },

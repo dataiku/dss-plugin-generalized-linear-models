@@ -55,15 +55,21 @@
                         :value="knotInputs[featureIdx] ?? ''"
                         @input="setKnotInput(featureIdx, ($event.target as HTMLInputElement).value)"
                     />
-                    <BsButton
-                        class="add-knot-btn"
-                        flat
-                        no-caps
-                        :ripple="false"
-                        @click="emitAddKnot(featureIdx, feature)"
-                    >
-                        + Add knot
-                    </BsButton>
+                    <span class="add-knot-btn-wrapper">
+                        <BsButton
+                            class="add-knot-btn"
+                            flat
+                            no-caps
+                            :ripple="false"
+                            :disabled="featureKnots(feature).length >= 5"
+                            @click="emitAddKnot(featureIdx, feature)"
+                        >
+                            + Add knot
+                        </BsButton>
+                        <q-tooltip v-if="featureKnots(feature).length >= 5">
+                            At most 5 knots are allowed per feature.
+                        </q-tooltip>
+                    </span>
                 </div>
                 <div v-if="knotErrors[featureIdx]" class="knot-error-message">
                     {{ knotErrors[featureIdx] }}
@@ -190,6 +196,10 @@ export default defineComponent({
             return { min, max };
         },
         emitAddKnot(featureIdx: number, feature: any[]) {
+            if (this.featureKnots(feature).length >= 5) {
+                this.knotErrors[featureIdx] = "At most 5 knots are allowed per feature.";
+                return;
+            }
             const raw = this.knotInputs[featureIdx];
             const knot = Number(raw);
             if (!Number.isFinite(knot)) {
@@ -413,6 +423,20 @@ export default defineComponent({
     line-height: 1;
 }
 
+.add-knot-btn:disabled,
+.add-knot-btn.disabled,
+.add-knot-btn[disabled],
+.add-knot-btn[aria-disabled="true"] {
+    opacity: 0.35;
+    border: 1px solid #b8bcc9 !important;
+    color: #b8bcc9 !important;
+    background-color: #ffffff !important;
+}
+
+.add-knot-btn-wrapper {
+    display: inline-flex;
+}
+
 .knot-chips {
     display: flex;
     gap: 8px;
@@ -565,7 +589,6 @@ export default defineComponent({
     line-height: 28px !important;
 }
 
-.create-feature-btn :deep(.q-focus-helper),
 .add-knot-btn :deep(.q-focus-helper),
 .knot-remove-btn :deep(.q-focus-helper),
 .close-btn :deep(.q-focus-helper) {

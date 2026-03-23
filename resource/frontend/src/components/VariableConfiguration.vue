@@ -316,6 +316,9 @@
             }
             const feature = row.splineFeatures[featureIdx];
             const knots = this.getFeatureKnots(feature);
+            if (knots.length >= 5) {
+                return;
+            }
             knots.push(Number(knot));
             this.rebuildFeatureSegments(row, featureIdx, knots, this.getFeatureMasterDegree(feature));
         },

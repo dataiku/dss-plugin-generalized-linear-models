@@ -3,10 +3,12 @@
         <div class="categorical-header">
             <div class="categorical-header-meta">
                 <span class="categorical-label">No. groups</span>
-                <q-icon name="info" size="14px" class="categorical-info-icon" />
-                <q-tooltip>
-                    A group can be formed by merging any two levels, with up to 20 levels per group.
-                </q-tooltip>
+                <span class="categorical-info-trigger">
+                    <q-icon name="info" size="14px" class="categorical-info-icon" />
+                    <q-tooltip>
+                        A group can be formed by merging any two levels, with up to 20 levels per group.
+                    </q-tooltip>
+                </span>
                 <span class="group-count-value">{{ row.categoricalGroups.length }}</span>
                 <q-icon v-if="hasIncompleteGroups" name="warning" size="16px" class="categorical-warning-icon" />
             </div>
@@ -41,45 +43,49 @@
                         <div class="group-name-label">Group {{ groupIdx + 1 }}</div>
                     </td>
                     <td class="merged-cell">
-                        <BsSelect
-                            class="merged-levels-select"
-                            dense
-                            outlined
-                            use-chips
-                            deletable-chips
-                            multiple
-                            :modelValue="Array.isArray(group) && group.length > 0 ? group : null"
-                            :all-options="groupOptions(groupIdx)"
-                            :option-disable="opt => isOptionDisabledForGroup(group, opt)"
-                            popup-content-class="categorical-options-popup"
-                            placeHolder="Select two or more levels to form a group."
-                            @update:modelValue="value => $emit('update-group-modalities', { groupIdx, modalities: Array.isArray(value) ? value : [] })"
-                        >
-                            <template #selected-item="scope">
-                                <q-chip dense class="categorical-selected-chip">
-                                    {{ scope.opt }}
-                                    <q-icon
-                                        name="close"
-                                        class="categorical-chip-remove-icon"
-                                        @click.stop="scope.removeAtIndex(scope.index)"
-                                    />
-                                </q-chip>
-                            </template>
-                            <template #option="props">
-                                <q-item
-                                    v-bind="props.itemProps"
-                                    class="categorical-option"
-                                    :class="{ 'categorical-option--selected': props.selected }"
+                        <div class="merged-cell-content">
+                            <div class="merged-cell-control-row">
+                                <BsSelect
+                                    class="merged-levels-select"
+                                    dense
+                                    outlined
+                                    use-chips
+                                    deletable-chips
+                                    multiple
+                                    :modelValue="Array.isArray(group) && group.length > 0 ? group : null"
+                                    :all-options="groupOptions(groupIdx)"
+                                    :option-disable="opt => isOptionDisabledForGroup(group, opt)"
+                                    popup-content-class="categorical-options-popup"
+                                    placeHolder="Select two or more levels to form a group."
+                                    @update:modelValue="value => $emit('update-group-modalities', { groupIdx, modalities: Array.isArray(value) ? value : [] })"
                                 >
-                                    <q-item-section>{{ props.opt }}</q-item-section>
-                                    <q-item-section side>
-                                        <q-icon v-if="props.selected" name="check" size="16px" />
-                                    </q-item-section>
-                                </q-item>
-                            </template>
-                        </BsSelect>
-                        <div v-if="groupValidationMessage(group)" class="group-validation-error">
-                            {{ groupValidationMessage(group) }}
+                                    <template #selected-item="scope">
+                                        <q-chip dense class="categorical-selected-chip">
+                                            {{ scope.opt }}
+                                            <q-icon
+                                                name="close"
+                                                class="categorical-chip-remove-icon"
+                                                @click.stop="scope.removeAtIndex(scope.index)"
+                                            />
+                                        </q-chip>
+                                    </template>
+                                    <template #option="props">
+                                        <q-item
+                                            v-bind="props.itemProps"
+                                            class="categorical-option"
+                                            :class="{ 'categorical-option--selected': props.selected }"
+                                        >
+                                            <q-item-section>{{ props.opt }}</q-item-section>
+                                            <q-item-section side>
+                                                <q-icon v-if="props.selected" name="check" size="16px" />
+                                            </q-item-section>
+                                        </q-item>
+                                    </template>
+                                </BsSelect>
+                            </div>
+                            <div v-if="groupValidationMessage(group)" class="group-validation-error">
+                                {{ groupValidationMessage(group) }}
+                            </div>
                         </div>
                     </td>
                     <td class="delete-cell">
@@ -126,7 +132,22 @@ export default defineComponent({
     computed: {
         hasIncompleteGroups() {
             const groups = Array.isArray(this.row.categoricalGroups) ? this.row.categoricalGroups : [];
-            return groups.some((group: string[]) => !Array.isArray(group) || group.length < 2);
+            const totalLevels = Array.isArray(this.row.options) ? this.row.options.length : 0;
+
+            if (groups.length === 1 && Array.isArray(groups[0]) && groups[0].length === 0) {
+                return false;
+            }
+
+            return groups.some((group: string[]) => {
+                const selectedCount = Array.isArray(group) ? group.length : 0;
+                if (selectedCount === 1) {
+                    return true;
+                }
+                if (totalLevels > 0 && selectedCount === totalLevels) {
+                    return true;
+                }
+                return false;
+            });
         },
     },
     methods: {
@@ -202,6 +223,13 @@ export default defineComponent({
 
 .categorical-warning-icon {
     color: #a64d06;
+    cursor: default;
+    pointer-events: none;
+}
+
+.categorical-info-trigger {
+    display: inline-flex;
+    align-items: center;
 }
 
 .create-group-btn {
@@ -265,6 +293,12 @@ export default defineComponent({
 .group-name {
     text-align: left;
     padding-left: 12px !important;
+    vertical-align: top !important;
+}
+
+.merged-cell,
+.delete-cell {
+    vertical-align: top !important;
 }
 
 .group-name-label,
@@ -272,11 +306,25 @@ export default defineComponent({
     width: 100%;
     display: flex;
     align-items: center;
+    min-height: 40px;
+    padding-top: 4px;
 }
 
 .merged-cell :deep(.q-field) {
-    margin-top: 4px;
-    margin-bottom: 4px;
+    margin: 0;
+}
+
+.merged-cell-content {
+    display: flex;
+    flex-direction: column;
+    padding-top: 4px;
+    padding-bottom: 8px;
+}
+
+.merged-cell-control-row {
+    min-height: 40px;
+    display: flex;
+    align-items: center;
 }
 
 .merged-levels-select {
@@ -288,7 +336,8 @@ export default defineComponent({
 }
 
 .group-validation-error {
-    margin-top: 0;
+    margin-top: 8px;
+    padding-bottom: 6px;
     color: #CE1228;
     font-size: 14px;
     line-height: 1.2;

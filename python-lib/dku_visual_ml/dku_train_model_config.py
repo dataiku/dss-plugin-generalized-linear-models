@@ -2,6 +2,8 @@ from logging_assist.logging import logger
 from logging_assist.logging import logger
 
 class DKUVisualMLConfig:
+    MAX_SPLINE_FEATURES = 3
+    MAX_SPLINE_SEGMENTS_PER_FEATURE = 6
     
     def __init__(self):#, analysis_name=None, input_dataset=None, policy=None, test_dataset=None, target_column=None, exposure_column=None):
         
@@ -80,6 +82,8 @@ class DKUVisualMLConfig:
                 "max_value": max_value,
                 "degree": degree,
             })
+            if len(normalized) >= DKUVisualMLConfig.MAX_SPLINE_SEGMENTS_PER_FEATURE:
+                break
         return normalized
 
     @classmethod
@@ -93,7 +97,7 @@ class DKUVisualMLConfig:
             return []
 
         normalized_features = []
-        for feature in spline_features[:3]:
+        for feature in spline_features[:cls.MAX_SPLINE_FEATURES]:
             normalized_segments = cls._normalize_spline_segments(feature)
             if normalized_segments:
                 normalized_features.append(normalized_segments)
