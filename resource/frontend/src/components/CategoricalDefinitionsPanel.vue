@@ -132,7 +132,22 @@ export default defineComponent({
     computed: {
         hasIncompleteGroups() {
             const groups = Array.isArray(this.row.categoricalGroups) ? this.row.categoricalGroups : [];
-            return groups.some((group: string[]) => !Array.isArray(group) || group.length < 2);
+            const totalLevels = Array.isArray(this.row.options) ? this.row.options.length : 0;
+
+            if (groups.length === 1 && Array.isArray(groups[0]) && groups[0].length === 0) {
+                return false;
+            }
+
+            return groups.some((group: string[]) => {
+                const selectedCount = Array.isArray(group) ? group.length : 0;
+                if (selectedCount === 1) {
+                    return true;
+                }
+                if (totalLevels > 0 && selectedCount === totalLevels) {
+                    return true;
+                }
+                return false;
+            });
         },
     },
     methods: {
