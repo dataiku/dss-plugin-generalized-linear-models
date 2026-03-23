@@ -25,13 +25,19 @@ class LiftChartFormatter:
         
         try:
             ranking_exposure = None
+            label_column = 'predicted'
             exposure_column = getattr(self.model_retriever, "exposure_columns", None)
             if exposure_column and exposure_column in dataset.columns:
                 ranking_exposure = exposure_column
+                label_column = 'raw_predict'
             tempdata = self.data_handler.sort_and_cumsum_exposure(dataset, 'weight', ranking_exposure=ranking_exposure)
             binned_data = self.data_handler.bin_data(tempdata, nb_bins)
-            new_data = dataset.join(binned_data[['bin']], how='inner')
-            lift_chart_data = self.data_handler.aggregate_metrics_by_bin(new_data, 'weight', self.model_retriever.target_column)
+            lift_chart_data = self.data_handler.aggregate_metrics_by_bin(
+                binned_data,
+                'weight',
+                self.model_retriever.target_column,
+                label_column=label_column
+            )
             
             lift_chart_data.columns = ['Category', 'Value', 'observedAverage', 'fittedAverage']
             lift_chart_data['dataset'] = dataset_type
