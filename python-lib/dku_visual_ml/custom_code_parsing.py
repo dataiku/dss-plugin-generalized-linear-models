@@ -55,12 +55,33 @@ def extract_base_level_from_custom_handling_code(
     # Supports both quote styles, numeric values and None literals.
     regex = re.compile(r"""['"]base_level['"]\s*:\s*([^,\}\n]+)""")
     match = regex.search(custom_handling_code)
-    if not match:
+    if match:
+        value_token = match.group(1).strip()
+        try:
+            return ast.literal_eval(value_token), processor_name, "regex_fallback"
+        except (ValueError, SyntaxError):
+            normalized = value_token.strip().strip("'").strip('"')
+            if normalized:
+                return normalized, processor_name, "regex_fallback"
+
+    # Legacy release/1.0.5 fallback where webapp-trained models stored:
+    # self.mode_column = 45
+    # self.mode_column = "A"
+    legacy_match = re.search(
+        r"""self\.mode_column\s*=\s*(?:"([^"]+)"|'([^']+)'|([+-]?\d+(?:\.\d+)?))""",
+        custom_handling_code,
+    )
+    if not legacy_match:
         return None, processor_name, "none"
 
-    value_token = match.group(1).strip()
-    try:
-        return ast.literal_eval(value_token), processor_name, "regex_fallback"
-    except (ValueError, SyntaxError):
-        normalized = value_token.strip().strip("'").strip('"')
-        return normalized if normalized else None, processor_name, "regex_fallback"
+    if legacy_match.group(1) is not None:
+        return legacy_match.group(1), processor_name, "legacy_mode_column"
+    if legacy_match.group(2) is not None:
+        return legacy_match.group(2), processor_name, "legacy_mode_column"
+    if legacy_match.group(3) is not None:
+        try:
+            return float(legacy_match.group(3)), processor_name, "legacy_mode_column"
+        except ValueError:
+            return None, processor_name, "legacy_mode_column"
+
+    return None, processor_name, "none"

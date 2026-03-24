@@ -217,23 +217,13 @@ class VisualMLModelRetriver(DataikuClientProject):
             return spline_config.get("base_level")
 
         custom_handling_code = feature_settings.get('customHandlingCode', '')
-        logger.debug(f"custom_handling_code: {custom_handling_code}")
-       # Match either a quoted string or a signed integer/float
-        pattern = r'"base_level":\s*(?:"([^"]+)"|([+-]?\d+(?:\.\d+)?))'
-        match = re.search(pattern, custom_handling_code)
-        logger.debug(f"matches: {match}")
-        base_level = None
-        if match:
-            if match.group(1) is not None:
-                base_level = match.group(1)
-            elif match.group(2) is not None:
-                # Convert numeric string to float to support decimals
-                num_str = match.group(2)
-                try:
-                    base_level = float(num_str)
-                except ValueError:
-                    base_level = None
-        logger.debug(f"returning base_level {base_level}")
+        base_level, processor_name, parsing_path = extract_base_level_from_custom_handling_code(custom_handling_code)
+        logger.debug(
+            "base level extraction processor=%s path=%s value=%s",
+            processor_name,
+            parsing_path,
+            base_level,
+        )
         return base_level
 
     def _extract_continuous_spline_config(self, feature_settings: Dict[str, Any]) -> Optional[Dict[str, Any]]:
