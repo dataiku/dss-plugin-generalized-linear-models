@@ -109,6 +109,13 @@ export const useTrainingStore = defineStore("TrainingStore", {
         }
     },
     actions: {
+        normalizeAlgorithmIdentifier(value: string | null | undefined) {
+            if (!value) {
+                return "";
+            }
+
+            return String(value).trim().toLowerCase().replace(/[\s-]+/g, "_");
+        },
 
         setElasticNetPenalty(newValue: number) {
             if (isNaN(newValue)) {
@@ -598,8 +605,8 @@ export const useTrainingStore = defineStore("TrainingStore", {
         const analysisStore = useAnalysisStore();
         const modelParameters = {
             model_name: this.modelName,
-            distribution_function: this.selectedDistributionFunctionString,
-            link_function: this.selectedLinkFunctionString,
+            distribution_function: this.normalizeAlgorithmIdentifier(this.selectedDistributionFunctionString),
+            link_function: this.normalizeAlgorithmIdentifier(this.selectedLinkFunctionString),
             elastic_net_penalty: this.selectedElasticNetPenalty,
             l1_ratio: this.selectedL1Ratio,
             theta: this.selectedTheta,

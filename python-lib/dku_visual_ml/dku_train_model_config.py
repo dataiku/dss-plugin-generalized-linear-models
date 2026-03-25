@@ -135,6 +135,13 @@ class DKUVisualMLConfig:
 
         return normalized_groups
 
+    @staticmethod
+    def _normalize_algorithm_identifier(value):
+        if value is None:
+            return None
+
+        return str(value).strip().lower().replace("-", "_").replace(" ", "_")
+
     def get_feature_categorical_groups(self, variable):
         feature_config = self.variables.get(variable, {})
         raw_groups = feature_config.get("categorical_groups")
@@ -241,8 +248,12 @@ class DKUVisualMLConfig:
             self.test_dataset_string = request_json.get('testSet', "")
 
         if 'model_parameters' in request_json.keys(): # when training
-            self.distribution_function = request_json.get('model_parameters', {}).get('distribution_function').lower()
-            self.link_function = request_json.get('model_parameters', {}).get('link_function').lower()
+            self.distribution_function = self._normalize_algorithm_identifier(
+                request_json.get('model_parameters', {}).get('distribution_function')
+            )
+            self.link_function = self._normalize_algorithm_identifier(
+                request_json.get('model_parameters', {}).get('link_function')
+            )
             self.elastic_net_penalty = float(request_json.get('model_parameters', {}).get('elastic_net_penalty'))
             self.l1_ratio = float(request_json.get('model_parameters', {}).get('l1_ratio'))
             self.model_name_string = request_json.get('model_parameters', {}).get('model_name', None)

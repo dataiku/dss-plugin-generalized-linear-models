@@ -180,6 +180,23 @@ def test_update_model_parameters_parses_single_weight_exposure_and_offsets():
     assert config.offset_columns == ["offset_a", "offset_b"]
 
 
+def test_update_model_parameters_normalizes_distribution_and_link_identifiers():
+    config = DKUVisualMLConfig()
+    config.update_model_parameters({
+        "model_parameters": {
+            "distribution_function": "Negative Binomial",
+            "link_function": "Inverse Power",
+            "elastic_net_penalty": 0,
+            "l1_ratio": 0,
+            "model_name": "glm_nb",
+        },
+        "variables": {},
+    })
+
+    assert config.distribution_function == "negative_binomial"
+    assert config.link_function == "inverse_power"
+
+
 def test_get_model_features_excludes_target_exposure_sample_weight_and_offsets():
     config = DKUVisualMLConfig()
     config.target_column = "target"
