@@ -43,6 +43,20 @@ class VisualMLModelTrainer(DataikuClientProject):
         logger.info("Successfully updated a Visual ML config")
         
         return None
+
+    @staticmethod
+    def _clear_family_link_params(params):
+        for link_param in (
+            "binomial_link",
+            "gamma_link",
+            "gaussian_link",
+            "inverse_gaussian_link",
+            "poisson_link",
+            "negative_binomial_link",
+            "tweedie_link",
+            "negative binomial_link",
+        ):
+            params.pop(link_param, None)
     
     def _refresh_mltask(self):
         
@@ -412,6 +426,7 @@ class VisualMLModelTrainer(DataikuClientProject):
             algo_settings = settings.get_algorithm_settings(
                 'CustomPyPredAlgo_generalized-linear-models_generalized-linear-models_regression'
             )
+            self._clear_family_link_params(algo_settings['params'])
             algo_settings['params'].update({
                 f"{self.visual_ml_config.distribution_function}_link": self.visual_ml_config.link_function,
                 "family_name": self.visual_ml_config.distribution_function,

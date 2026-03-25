@@ -145,3 +145,41 @@ def test_set_sample_weight_variable_disables_weighting_when_missing():
     settings.set_weighting.assert_called_once_with("NO_WEIGHTING")
     assert by_feature["old_weight"]["role"] == "REJECT"
     settings.save.assert_called_once()
+
+
+def test_update_mltask_modelling_params_clears_stale_family_link_keys():
+    trainer = _make_trainer()
+    trainer.visual_ml_config.distribution_function = "negative_binomial"
+    trainer.visual_ml_config.link_function = "log"
+    trainer.visual_ml_config.elastic_net_penalty = 0
+    trainer.visual_ml_config.l1_ratio = 0
+    trainer.visual_ml_config.theta = 1
+    trainer.visual_ml_config.power = 1
+    trainer.visual_ml_config.variance_power = 1.5
+    trainer.visual_ml_config.get_interaction_variables = Mock(return_value=[])
+    trainer.visual_ml_config.get_exposure_variable = Mock(return_value=None)
+    trainer.visual_ml_config.get_offset_variables = Mock(return_value=[])
+
+    settings = Mock()
+    algo_settings = {
+        "params": {
+            "negative binomial_link": "log",
+            "gaussian_link": "identity",
+            "poisson_link": "log",
+        }
+    }
+    settings.get_algorithm_settings.return_value = algo_settings
+
+    trainer.mltask = Mock()
+    trainer.mltask.get_settings.return_value = settings
+    trainer.process_interaction_columns = Mock(return_value=([], []))
+
+    trainer.update_mltask_modelling_params()
+
+    params = algo_settings["params"]
+    assert "negative binomial_link" not in params
+    assert "gaussian_link" not in params
+    assert "poisson_link" not in params
+    assert params["negative_binomial_link"] == "log"
+    assert params["family_name"] == "negative_binomial"
+    settings.save.assert_called_once()
