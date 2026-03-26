@@ -54,21 +54,37 @@
                     @update:modelValue="value => trainingStore.setDistribution(value)"
                     style="min-width: 150px">
                 </BsSelect>
+                <div v-if="modelParameterFieldErrors.distributionFunction" class="error-message inline-field-error">
+                    {{ modelParameterFieldErrors.distributionFunction }}
+                </div>
                 <BsLabel v-if="trainingStore.selectedDistributionFunctionString=='Tweedie'"
                         label="Select Tweedie Variance Power *"
                         :isSubLabel="true"
                         info-text="The power of the variance function of the tweedie distribution"
                 ></BsLabel>
-                    <input v-if="trainingStore.selectedDistributionFunctionString=='Tweedie'" className="model-name-input" type="number" 
-                    v-model.number="trainingStore.selectedVariancePower"/>
+                    <input v-if="trainingStore.selectedDistributionFunctionString=='Tweedie'"
+                    class="model-name-input"
+                    :class="{ 'model-name-input--error': modelParameterFieldErrors.variancePower }"
+                    type="number"
+                    :value="trainingStore.selectedVariancePower ?? ''"
+                    @input="event => trainingStore.setVariancePower((event.target as HTMLInputElement).value)"/>
+                <div v-if="modelParameterFieldErrors.variancePower" class="error-message inline-field-error">
+                    {{ modelParameterFieldErrors.variancePower }}
+                </div>
                 <BsLabel v-if="trainingStore.selectedDistributionFunctionString=='Negative Binomial'"
                         label="Select Theta *"
                         :isSubLabel="true"
                         info-text="The ancillary parameter for the negative binomial distribution, strictly positive"
                 ></BsLabel>
-                    <input v-if="trainingStore.selectedDistributionFunctionString=='Negative Binomial'" className="model-name-input" type="number" 
-                    :value="trainingStore.selectedTheta"
-                    @input="event => trainingStore.setTheta(parseFloat((event.target as HTMLInputElement).value))"/>
+                    <input v-if="trainingStore.selectedDistributionFunctionString=='Negative Binomial'"
+                    class="model-name-input"
+                    :class="{ 'model-name-input--error': modelParameterFieldErrors.theta }"
+                    type="number"
+                    :value="trainingStore.selectedTheta ?? ''"
+                    @input="event => trainingStore.setTheta((event.target as HTMLInputElement).value)"/>
+                <div v-if="modelParameterFieldErrors.theta" class="error-message inline-field-error">
+                    {{ modelParameterFieldErrors.theta }}
+                </div>
                 <BsLabel
                         label="Select a Link Function *"
                         :isSubLabel="true"
@@ -80,13 +96,23 @@
                     @update:modelValue="value => trainingStore.setLinkFunction(value)"
                     style="min-width: 150px">
                 </BsSelect>
+                <div v-if="modelParameterFieldErrors.linkFunction" class="error-message inline-field-error">
+                    {{ modelParameterFieldErrors.linkFunction }}
+                </div>
                 <BsLabel v-if="trainingStore.selectedLinkFunctionString=='Power'"
                         label="Select Power *"
                         :isSubLabel="true"
                         info-text="The power used for the power link function"
                 ></BsLabel>
-                    <input v-if="trainingStore.selectedLinkFunctionString=='Power'" className="model-name-input" type="number" 
-                    v-model.number="trainingStore.selectedPower"/>
+                    <input v-if="trainingStore.selectedLinkFunctionString=='Power'"
+                    class="model-name-input"
+                    :class="{ 'model-name-input--error': modelParameterFieldErrors.power }"
+                    type="number"
+                    :value="trainingStore.selectedPower ?? ''"
+                    @input="event => trainingStore.setPower((event.target as HTMLInputElement).value)"/>
+                <div v-if="modelParameterFieldErrors.power" class="error-message inline-field-error">
+                    {{ modelParameterFieldErrors.power }}
+                </div>
                 <BsLabel
                     label="Model Columns"
                     className="section-title model-columns-title"
@@ -105,6 +131,9 @@
                     @update:modelValue="value => trainingStore.setExposureVariable(value)"
                     style="min-width: 220px"
                 />
+                <div v-if="modelParameterFieldErrors.exposure" class="error-message inline-field-error">
+                    {{ modelParameterFieldErrors.exposure }}
+                </div>
                 <BsLabel
                     label="Sample Weight Column"
                     :isSubLabel="true"
@@ -261,6 +290,9 @@
         offsetOptions() {
             return this.fixedNumericColumns
                 .filter((name: string) => name !== this.trainingStore.selectedExposureVariable && name !== this.trainingStore.selectedSampleWeightVariable);
+        },
+        modelParameterFieldErrors() {
+            return this.trainingStore.modelParameterValidationState.fieldErrors;
         }
     }
     })
@@ -321,9 +353,16 @@
       border-radius: 4px;
       height: 40px;
     }
+    .model-name-input--error {
+      border-color: #c10015;
+    }
     .error-message {
       color: red;
       margin-top: 10px;
+    }
+    .inline-field-error {
+        margin-top: 6px;
+        margin-bottom: 10px;
     }
     .custom-label-spacing {
         margin-right: 10px; /* Adjust the margin as needed */

@@ -13,6 +13,14 @@ import { useAnalysisStore } from "./analysisStore";
 import { WT1iser } from '../utilities/utils';
 
 type UpdatableProperties = 'selectedDatasetString' | 'selectedDistributionFunctionString' | 'selectedLinkFunctionString';
+type ModelParameterFieldErrors = {
+    distributionFunction: string;
+    linkFunction: string;
+    theta: string;
+    power: string;
+    variancePower: string;
+    exposure: string;
+};
 
 export const useTrainingStore = defineStore("TrainingStore", {
     state: () => ({
@@ -27,9 +35,9 @@ export const useTrainingStore = defineStore("TrainingStore", {
         selectedOffsetVariables: [] as string[],
         selectedDistributionFunctionString: 'Poisson' as string,
         selectedLinkFunctionString: 'Log' as string,
-        selectedTheta: 1.0 as number,
-        selectedPower: 1.0 as number,
-        selectedVariancePower: 1.5 as number,
+        selectedTheta: 1.0 as number | null,
+        selectedPower: 1.0 as number | null,
+        selectedVariancePower: 1.5 as number | null,
         datasetsString: [] as string[],
         chartData: [],  
         selectedElasticNetPenalty: 0 as number,
@@ -106,6 +114,9 @@ export const useTrainingStore = defineStore("TrainingStore", {
                     return ["Log", "Power"];
             }
             return [];
+        },
+        modelParameterValidationState() {
+            return this.getModelParameterValidationState();
         }
     },
     actions: {
@@ -130,17 +141,92 @@ export const useTrainingStore = defineStore("TrainingStore", {
             }
         },
 
-        setTheta(newValue: number) {
-            if (isNaN(newValue)) {
-                this.selectedTheta = 1.0;
-                return;
+        parseOptionalNumber(value: number | string | null | undefined) {
+            if (value === null || value === undefined || value === '') {
+                return null;
             }
 
-            if (newValue > 0) {
-                this.selectedTheta = newValue;
-            } else {
+            const parsedValue = typeof value === 'number' ? value : Number(value);
+            return Number.isFinite(parsedValue) ? parsedValue : null;
+        },
+
+        getEmptyModelParameterFieldErrors(): ModelParameterFieldErrors {
+            return {
+                distributionFunction: '',
+                linkFunction: '',
+                theta: '',
+                power: '',
+                variancePower: '',
+                exposure: '',
+            };
+        },
+
+        getModelParameterValidationState() {
+            const fieldErrors = this.getEmptyModelParameterFieldErrors();
+            const selectedDistribution = this.selectedDistributionFunctionString;
+            const selectedLink = this.selectedLinkFunctionString;
+            const allowedLinks = this.allowedLinks;
+
+            if (!selectedDistribution) {
+                fieldErrors.distributionFunction = 'Distribution function is required.';
+            }
+
+            if (!selectedLink) {
+                fieldErrors.linkFunction = 'Link function is required.';
+            } else if (!allowedLinks.includes(selectedLink)) {
+                fieldErrors.linkFunction = 'Link function is not valid for the selected distribution.';
+            }
+
+            if (selectedDistribution === 'Negative Binomial') {
+                if (this.selectedTheta === null) {
+                    fieldErrors.theta = 'Theta must be between 0.01 and 2.';
+                } else if (this.selectedTheta < 0.01 || this.selectedTheta > 2) {
+                    fieldErrors.theta = 'Theta must be between 0.01 and 2.';
+                }
+            }
+
+            const requiresPower = selectedLink === 'Power'
+                && (selectedDistribution === 'Negative Binomial' || selectedDistribution === 'Tweedie');
+            if (requiresPower && this.selectedPower === null) {
+                fieldErrors.power = 'Power is required when the link function is Power.';
+            }
+
+            if (selectedDistribution === 'Tweedie' && this.selectedVariancePower === null) {
+                fieldErrors.variancePower = 'Variance power is required for Tweedie.';
+            }
+
+            if (selectedLink !== 'Log' && this.selectedExposureVariable !== null) {
+                fieldErrors.exposure = 'Exposure is only available when the link function is Log.';
+            }
+
+            const reason = Object.values(fieldErrors).find(Boolean) || '';
+            return { valid: reason === '', reason, fieldErrors };
+        },
+
+        resetConditionalModelParameters() {
+            if (this.selectedDistributionFunctionString !== 'Negative Binomial') {
                 this.selectedTheta = 1.0;
             }
+            if (this.selectedDistributionFunctionString !== 'Tweedie') {
+                this.selectedVariancePower = 1.5;
+            }
+            const requiresPower = this.selectedLinkFunctionString === 'Power'
+                && (this.selectedDistributionFunctionString === 'Negative Binomial' || this.selectedDistributionFunctionString === 'Tweedie');
+            if (!requiresPower) {
+                this.selectedPower = 1.0;
+            }
+        },
+
+        setTheta(newValue: number | string | null | undefined) {
+            this.selectedTheta = this.parseOptionalNumber(newValue);
+        },
+
+        setPower(newValue: number | string | null | undefined) {
+            this.selectedPower = this.parseOptionalNumber(newValue);
+        },
+
+        setVariancePower(newValue: number | string | null | undefined) {
+            this.selectedVariancePower = this.parseOptionalNumber(newValue);
         },
 
         setDistribution(newDistribution: string) {
@@ -154,6 +240,7 @@ export const useTrainingStore = defineStore("TrainingStore", {
             if (!isCurrentLinkAllowed) {
                 this.selectedLinkFunctionString = this.allowedLinks[0];
             }
+            this.resetConditionalModelParameters();
             if (this.selectedLinkFunctionString !== "Log" && this.selectedExposureVariable !== null) {
                 this.selectedExposureVariable = null;
             }
@@ -165,6 +252,7 @@ export const useTrainingStore = defineStore("TrainingStore", {
                 return;
             }
             this.selectedLinkFunctionString = newLink;
+            this.resetConditionalModelParameters();
             if (this.selectedLinkFunctionString !== "Log" && this.selectedExposureVariable !== null) {
                 this.selectedExposureVariable = null;
             }
@@ -314,10 +402,10 @@ export const useTrainingStore = defineStore("TrainingStore", {
         console.error(msg);
         this.notifyError(msg);
     },
-    getSubmissionValidationState() {
-        if (!this.modelName) {
-            return { valid: false, reason: 'Please enter a model name.' };
-        }
+        getSubmissionValidationState() {
+            if (!this.modelName) {
+                return { valid: false, reason: 'Please enter a model name.' };
+            }
         if (!this.selectedTargetVariable) {
             return { valid: false, reason: 'Please select a target variable.' };
         }
@@ -329,6 +417,11 @@ export const useTrainingStore = defineStore("TrainingStore", {
         ].filter((value): value is string => Boolean(value));
         if (new Set(usedFixedColumns).size !== usedFixedColumns.length) {
             return { valid: false, reason: 'Target, exposure, sample weight, and offset columns must be distinct.' };
+        }
+
+        const modelParameterValidationState = this.getModelParameterValidationState();
+        if (!modelParameterValidationState.valid) {
+            return { valid: false, reason: modelParameterValidationState.reason };
         }
 
         for (const column of this.datasetColumns) {
@@ -475,9 +568,9 @@ export const useTrainingStore = defineStore("TrainingStore", {
                     this.selectedLinkFunctionString = paramsResponse.data.link_function;
                     this.selectedElasticNetPenalty = paramsResponse.data.elastic_net_penalty ? paramsResponse.data.elastic_net_penalty : 0;
                     this.selectedL1Ratio = paramsResponse.data.l1_ratio ? paramsResponse.data.l1_ratio : 0;
-                    this.selectedTheta = paramsResponse.data.theta ? paramsResponse.data.theta : 0;
-                    this.selectedPower = paramsResponse.data.power ? paramsResponse.data.power : 0;
-                    this.selectedVariancePower = paramsResponse.data.var_power ? paramsResponse.data.var_power : 0;
+                    this.selectedTheta = paramsResponse.data.theta ?? 1.0;
+                    this.selectedPower = paramsResponse.data.power ?? 1.0;
+                    this.selectedVariancePower = paramsResponse.data.var_power ?? 1.5;
                     this.selectedTargetVariable = paramsResponse.data.target_column || analysisStore.selectedMlTask.targetColumn || "";
                     this.selectedExposureVariable = paramsResponse.data.exposure_column || null;
                     this.selectedSampleWeightVariable = paramsResponse.data.sample_weight_column || null;
@@ -548,6 +641,7 @@ export const useTrainingStore = defineStore("TrainingStore", {
                             categoricalGroups: (param.categoricalGroups || []) as CategoricalGroup[]
                         };
                     });
+                    this.resetConditionalModelParameters();
                     this.syncFixedColumnRoles();
                     this.updateDatasetColumnsPreprocessing();
 
@@ -585,6 +679,7 @@ export const useTrainingStore = defineStore("TrainingStore", {
                     splineFeatures: [],
                     categoricalGroups: []
                 }));
+                this.resetConditionalModelParameters();
                 await this.fetchExcludedColumns();
                 this.syncFixedColumnRoles();
                 this.updateDatasetColumnsPreprocessing();
