@@ -62,7 +62,7 @@ class LiftChartFormatter:
         """
         logger.debug('Combining and formatting lift chart data.')
 
-        combined_data = train_data.append(test_data)
+        combined_data = pd.concat([train_data, test_data], ignore_index=True)
         combined_data.columns = ['Value', 'observedAverage', 'fittedAverage', 'Category', 'dataset']
         # Format numbers
         combined_data['observedAverage'] = [float('%s' % float('%.3g' % x)) for x in combined_data['observedAverage']]

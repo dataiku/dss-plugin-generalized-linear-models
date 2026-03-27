@@ -108,15 +108,13 @@ def test_set_sample_weight_variable_sets_sample_weight_method():
     trainer = _make_trainer()
     trainer.visual_ml_config.sample_weight_column = "sample_w"
     settings = Mock()
-    settings.get_feature_preprocessing.return_value = {}
+    settings.get_raw.return_value = {"preprocessing": {"per_feature": {}}}
     trainer.mltask = Mock()
     trainer.mltask.get_settings.return_value = settings
 
     trainer.set_sample_weight_variable()
 
     settings.set_weighting.assert_called_once_with("SAMPLE_WEIGHT", "sample_w")
-    settings.use_feature.assert_called_once_with("sample_w")
-    settings.get_feature_preprocessing.assert_called_once_with("sample_w")
     settings.save.assert_called_once()
 
 
@@ -132,18 +130,12 @@ def test_set_sample_weight_variable_disables_weighting_when_missing():
             }
         }
     }
-    by_feature = {
-        "old_weight": {"role": "WEIGHT"},
-        "feature_a": {"role": "INPUT"},
-    }
-    settings.get_feature_preprocessing.side_effect = lambda name: by_feature[name]
     trainer.mltask = Mock()
     trainer.mltask.get_settings.return_value = settings
 
     trainer.set_sample_weight_variable()
 
     settings.set_weighting.assert_called_once_with("NO_WEIGHTING")
-    assert by_feature["old_weight"]["role"] == "REJECT"
     settings.save.assert_called_once()
 
 

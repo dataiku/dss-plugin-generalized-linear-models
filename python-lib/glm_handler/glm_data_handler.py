@@ -111,7 +111,7 @@ class GlmDataHandler():
         for feature, df in predicted_base.items():
             df.columns = ['category', 'target', 'predicted', 'exposure', 'base']
             df['feature'] = feature
-            predicted_base_df = predicted_base_df.append(df)
+            predicted_base_df = pd.concat([predicted_base_df, df], ignore_index=True)
         logger.info("Successfully constructed final dataframe")
         return predicted_base_df
     
