@@ -19,12 +19,11 @@ class ModelConformityChecker(DataikuClientProject):
         self.model_details = model_details
         
         is_glm = self.check_is_glm()
-        no_offset = self.check_no_offset()
-        no_weighting = self.check_no_weighting()
+        supported_weighting = self.check_supported_weighting()
         train_test_split = self.check_train_test_split()
         feature_handling = self.check_feature_handling()
         
-        return all([is_glm, no_offset, no_weighting, train_test_split, feature_handling])
+        return all([is_glm, supported_weighting, train_test_split, feature_handling])
 
     def check_is_glm(self):
         logger.info("Model Conformity Check: is GLM?")
@@ -38,22 +37,7 @@ class ModelConformityChecker(DataikuClientProject):
         logger.info("Passed: Model Conformity Check: is GLM?")
         return True
 
-    def check_no_regularization(self):
-        penalty = self.model_details.details['modeling']['plugin_python_grid']['params']['penalty']
-        if penalty != [0.0]:
-            return False
-        return True
-
-    def check_no_offset(self):
-        logger.info("Model Conformity Check: offsets/exposure support")
-        offsets = self.model_details.details['modeling']['plugin_python_grid']['params']['offset_columns']
-        if len(offsets) > 0:
-            logger.info(f"Passed: Model Conformity Check: offsets enabled ({len(offsets)})")
-            return True
-        logger.info("Passed: Model Conformity Check: no offsets")
-        return True
-
-    def check_no_weighting(self):
+    def check_supported_weighting(self):
         logger.info("Model Conformity Check: supported weighting?")
         weight_details = self.model_details.details.get('coreParams', {}).get('weight', {})
         if not isinstance(weight_details, dict):
