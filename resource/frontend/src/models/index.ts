@@ -30,6 +30,7 @@ export type RelativityPoint = {
 }
 
 export type VariableLevelStatsPoint = {
+    rowKey?: string;
     variable: string;
     value: string;
     coefficient: number;

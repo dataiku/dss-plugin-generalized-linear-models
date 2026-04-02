@@ -61,7 +61,8 @@ export const useVariableLevelStatsStore = defineStore("variableLevelStats", {
                     throw new Error("Variable level stats response is not an array.");
                 }
 
-                this.modelStats = rows.map((point: any) => ({
+                this.modelStats = rows.map((point: any, index: number) => ({
+                    rowKey: this._buildRowKey(point, index),
                     ...point,
                     coefficient: this._round(point.coefficient),
                     p_value: this._formatPValue(point.p_value),
@@ -119,6 +120,16 @@ export const useVariableLevelStatsStore = defineStore("variableLevelStats", {
                 return numericValue.toExponential(2);
             }
             return (Math.round(numericValue * 1000) / 1000).toString();
+        },
+        _buildRowKey(point: any, index: number): string {
+            return [
+                point?.variable ?? "",
+                point?.value ?? "",
+                point?.coefficient ?? "",
+                point?.p_value ?? "",
+                point?.standard_error ?? "",
+                index,
+            ].map((value) => String(value)).join("::");
         },
 
         notifyError(message: string) {
