@@ -37,6 +37,8 @@
                     :isSubLabel="true">
                 </BsLabel>
                 <BsSelect
+                    clearable
+                    :modelValue="trainingStore.selectedPreviousModel"
                     :all-options="store.modelOptions"
                     @update:modelValue="value => trainingStore.getDatasetColumns(value)"
                     style="min-width: 250px">
@@ -52,21 +54,37 @@
                     @update:modelValue="value => trainingStore.setDistribution(value)"
                     style="min-width: 150px">
                 </BsSelect>
+                <div v-if="modelParameterFieldErrors.distributionFunction" class="error-message inline-field-error">
+                    {{ modelParameterFieldErrors.distributionFunction }}
+                </div>
                 <BsLabel v-if="trainingStore.selectedDistributionFunctionString=='Tweedie'"
                         label="Select Tweedie Variance Power *"
                         :isSubLabel="true"
                         info-text="The power of the variance function of the tweedie distribution"
                 ></BsLabel>
-                    <input v-if="trainingStore.selectedDistributionFunctionString=='Tweedie'" className="model-name-input" type="number" 
-                    v-model.number="trainingStore.selectedVariancePower"/>
+                    <input v-if="trainingStore.selectedDistributionFunctionString=='Tweedie'"
+                    class="model-name-input"
+                    :class="{ 'model-name-input--error': modelParameterFieldErrors.variancePower }"
+                    type="number"
+                    :value="trainingStore.selectedVariancePower ?? ''"
+                    @input="event => trainingStore.setVariancePower((event.target as HTMLInputElement).value)"/>
+                <div v-if="modelParameterFieldErrors.variancePower" class="error-message inline-field-error">
+                    {{ modelParameterFieldErrors.variancePower }}
+                </div>
                 <BsLabel v-if="trainingStore.selectedDistributionFunctionString=='Negative Binomial'"
                         label="Select Theta *"
                         :isSubLabel="true"
                         info-text="The ancillary parameter for the negative binomial distribution, strictly positive"
                 ></BsLabel>
-                    <input v-if="trainingStore.selectedDistributionFunctionString=='Negative Binomial'" className="model-name-input" type="number" 
-                    :value="trainingStore.selectedTheta"
-                    @input="event => trainingStore.setTheta(parseFloat((event.target as HTMLInputElement).value))"/>
+                    <input v-if="trainingStore.selectedDistributionFunctionString=='Negative Binomial'"
+                    class="model-name-input"
+                    :class="{ 'model-name-input--error': modelParameterFieldErrors.theta }"
+                    type="number"
+                    :value="trainingStore.selectedTheta ?? ''"
+                    @input="event => trainingStore.setTheta((event.target as HTMLInputElement).value)"/>
+                <div v-if="modelParameterFieldErrors.theta" class="error-message inline-field-error">
+                    {{ modelParameterFieldErrors.theta }}
+                </div>
                 <BsLabel
                         label="Select a Link Function *"
                         :isSubLabel="true"
@@ -78,13 +96,83 @@
                     @update:modelValue="value => trainingStore.setLinkFunction(value)"
                     style="min-width: 150px">
                 </BsSelect>
+                <div v-if="modelParameterFieldErrors.linkFunction" class="error-message inline-field-error">
+                    {{ modelParameterFieldErrors.linkFunction }}
+                </div>
                 <BsLabel v-if="trainingStore.selectedLinkFunctionString=='Power'"
                         label="Select Power *"
                         :isSubLabel="true"
                         info-text="The power used for the power link function"
                 ></BsLabel>
-                    <input v-if="trainingStore.selectedLinkFunctionString=='Power'" className="model-name-input" type="number" 
-                    v-model.number="trainingStore.selectedPower"/>
+                    <input v-if="trainingStore.selectedLinkFunctionString=='Power'"
+                    class="model-name-input"
+                    :class="{ 'model-name-input--error': modelParameterFieldErrors.power }"
+                    type="number"
+                    :value="trainingStore.selectedPower ?? ''"
+                    @input="event => trainingStore.setPower((event.target as HTMLInputElement).value)"/>
+                <div v-if="modelParameterFieldErrors.power" class="error-message inline-field-error">
+                    {{ modelParameterFieldErrors.power }}
+                </div>
+                <BsLabel
+                    label="Model Columns"
+                    className="section-title model-columns-title"
+                ></BsLabel>
+                <BsLabel
+                    v-if="trainingStore.selectedLinkFunctionString==='Log'"
+                    label="Exposure Column"
+                    :isSubLabel="true"
+                    info-text="Exposure is only applied for Log link"
+                />
+                <BsSelect
+                    v-if="trainingStore.selectedLinkFunctionString==='Log'"
+                    clearable
+                    :modelValue="trainingStore.selectedExposureVariable"
+                    :all-options="exposureOptions"
+                    @update:modelValue="value => trainingStore.setExposureVariable(value)"
+                    style="min-width: 220px"
+                />
+                <div v-if="modelParameterFieldErrors.exposure" class="error-message inline-field-error">
+                    {{ modelParameterFieldErrors.exposure }}
+                </div>
+                <BsLabel
+                    label="Sample Weight Column"
+                    :isSubLabel="true"
+                    info-text="Optional sample weights used for chart aggregations"
+                />
+                <BsSelect
+                    clearable
+                    :modelValue="trainingStore.selectedSampleWeightVariable"
+                    :all-options="sampleWeightOptions"
+                    @update:modelValue="value => trainingStore.setSampleWeightVariable(value)"
+                    style="min-width: 220px"
+                />
+                <BsLabel
+                    label="Offset Columns"
+                    :isSubLabel="true"
+                    info-text="Optional offsets applied in the model for any link"
+                />
+                <BsSelect
+                    use-chips
+                    deletable-chips
+                    multiple
+                    clearable
+                    :modelValue="trainingStore.selectedOffsetVariables"
+                    :all-options="offsetOptions"
+                    @update:modelValue="value => trainingStore.setOffsetVariables(value)"
+                    style="min-width: 280px"
+                >
+                    <template #selected-item="scope">
+                        <q-chip dense class="offset-chip">
+                            {{ scope.opt }}
+                            <q-icon
+                                name="close"
+                                size="12px"
+                                class="offset-chip-remove"
+                                @click.stop="scope.removeAtIndex(scope.index)"
+                            />
+                        </q-chip>
+                    </template>
+                </BsSelect>
                 
         </q-card-section>
         <q-card-section>
@@ -139,7 +227,7 @@
     import { defineComponent } from "vue";
     import EmptyState from './EmptyState.vue';
     import { BsTab, BsTabIcon, BsHeader, BsButton, BsDrawer, BsContent, BsTooltip, BsSlider, BsCard } from "quasar-ui-bs";
-    import { QRadio, QCard, QSeparator, QCardSection } from 'quasar';
+    import { QRadio, QCard, QSeparator, QCardSection, QChip, QIcon } from 'quasar';
     import VariableInteractions from './VariableInteractions.vue'
     import { useTrainingStore } from "../stores/training";
     import { useModelStore } from "../stores/webapp";
@@ -160,7 +248,9 @@
         BsCard,
         QCard, 
         QSeparator, 
-        QCardSection
+        QCardSection,
+        QChip,
+        QIcon
     
     },
     props: [],
@@ -183,6 +273,26 @@
     computed: {
         updateModels() {
             return this.trainingStore.updateModels;
+        },
+        fixedNumericColumns() {
+            return this.trainingStore.datasetColumns
+                .filter((column) => column.type === "numerical" && column.name !== this.trainingStore.selectedTargetVariable)
+                .map((column) => column.name);
+        },
+        exposureOptions() {
+            return this.fixedNumericColumns
+                .filter((name: string) => name !== this.trainingStore.selectedSampleWeightVariable && !this.trainingStore.selectedOffsetVariables.includes(name));
+        },
+        sampleWeightOptions() {
+            return this.fixedNumericColumns
+                .filter((name: string) => name !== this.trainingStore.selectedExposureVariable && !this.trainingStore.selectedOffsetVariables.includes(name));
+        },
+        offsetOptions() {
+            return this.fixedNumericColumns
+                .filter((name: string) => name !== this.trainingStore.selectedExposureVariable && name !== this.trainingStore.selectedSampleWeightVariable);
+        },
+        modelParameterFieldErrors() {
+            return this.trainingStore.modelParameterValidationState.fieldErrors;
         }
     }
     })
@@ -243,9 +353,16 @@
       border-radius: 4px;
       height: 40px;
     }
+    .model-name-input--error {
+      border-color: #c10015;
+    }
     .error-message {
       color: red;
       margin-top: 10px;
+    }
+    .inline-field-error {
+        margin-top: 6px;
+        margin-bottom: 10px;
     }
     .custom-label-spacing {
         margin-right: 10px; /* Adjust the margin as needed */
@@ -279,6 +396,10 @@
         margin-bottom: 6px;
     }
 
+    .model-columns-title {
+        margin-top: 48px;
+    }
+
     .explanation {
         font-size: 12px;
     }
@@ -286,5 +407,20 @@
     .slider-input :deep(.q-slider) {
         width: 100% !important;
         max-width: 100% !important;
+    }
+
+    .offset-chip {
+        border: 1px solid #214ab5 !important;
+        border-radius: 9999px !important;
+        min-height: 22px;
+        padding: 0 8px;
+        background: #ffffff !important;
+        color: #262626 !important;
+        gap: 4px;
+    }
+
+    .offset-chip-remove {
+        color: #000000 !important;
+        cursor: pointer;
     }
     </style>

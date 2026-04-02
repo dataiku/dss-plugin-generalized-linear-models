@@ -12,6 +12,8 @@ export type ColumnInput = {
     baseLevel: string;
     options: Array<string>;
     type: string;
+    minValue?: number | null;
+    maxValue?: number | null;
 }
 
 export type LiftDataPoint = { 
@@ -28,6 +30,7 @@ export type RelativityPoint = {
 }
 
 export type VariableLevelStatsPoint = {
+    rowKey?: string;
     variable: string;
     value: string;
     coefficient: number;
@@ -110,6 +113,27 @@ export type AccType = {
     type: string;
     processing: string;
     included: boolean;
+    base_level: string | number | null;
+    spline_features?: SplineFeature[];
+    categorical_groups?: CategoricalGroup[];
+    };
+}
+
+export type SplineSegment = {
+    min_value: number;
+    max_value: number;
+    degree: number;
+}
+
+export type SplineFeature = SplineSegment[];
+export type CategoricalGroup = string[];
+
+export type AccTypeLegacy = {
+    [key: string]: {
+    role: string;
+    type: string;
+    processing: string;
+    included: boolean;
     base_level: string;
     };
 }
@@ -126,7 +150,9 @@ export type MlTask = {
     splitPolicy: string;
     testSet: string;
     targetColumn: string;
-    exposureColumn: string;
+    exposureColumn?: string | null;
+    sampleWeightColumn?: string | null;
+    offsetColumns?: string[];
     isValid: boolean;
 }
 
@@ -136,7 +162,7 @@ export type MlTaskConfiguration = {
     splitPolicy: string;
     testSet: string;
     targetColumn: string;
-    exposureColumn: string;
+    exposureColumn?: string | null;
 }
 
 export type APIResponse = {
@@ -152,10 +178,14 @@ export type APIResponse = {
                 type: string;
                 handling: string;
                 baseLevel?: string;
+                splineFeatures?: SplineFeature[];
+                categoricalGroups?: CategoricalGroup[];
             }
         };
         target_column: string;
-        exposure_column: string;
+        exposure_column?: string | null;
+        sample_weight_column?: string | null;
+        offset_columns?: string[];
         distribution_function: string;
         link_function: string;
         elastic_net_penalty?: number;
@@ -172,8 +202,12 @@ export type Column = {
     role: string;
     type: string;
     preprocessing: string;
-    baseLevel: string;
+    baseLevel: string | number | null;
     options: Array<string>;
+    minValue?: number | null;
+    maxValue?: number | null;
+    splineFeatures: SplineFeature[];
+    categoricalGroups: CategoricalGroup[];
 }
 
 

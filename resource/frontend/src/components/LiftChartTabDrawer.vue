@@ -71,6 +71,7 @@ export default defineComponent({
             this.liftChartStore.setTrainTest(value == 'Train' ? true : false);
         },
         async onCreateChart() {
+            await this.store.setActiveModel(this.liftChartStore.formOptions.model);
             await this.liftChartStore.applyForm();
             await this.liftChartStore.fetchLiftData();
         },

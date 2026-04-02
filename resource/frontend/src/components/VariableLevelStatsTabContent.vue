@@ -3,11 +3,17 @@
   <div class="top-row">
     <div class="model-selector">
       <BsLabel label="Select a model" info-text="Stats will be generated for this model" />
-      <BsSelect
+      <BsSelect class="vls-model-select"
           :model-value="store.activeModelName"
           :all-options="store.modelOptions"
           @update:modelValue="onModelChange"
-      />
+      >
+        <template #selected-item>
+          <div class="vls-model-select-value">
+            {{ store.activeModelName }}
+          </div>
+        </template>
+      </BsSelect>
       </div>
           <div class="export-buttons" v-if="variableLevelStatsData.length>0">
             <BsButton 
@@ -37,18 +43,11 @@
               :rows="variableLevelStatsData"
               :columns="columns"
               :globalSearch="false"
-              row-key="variable">
-                <template v-slot:body-cell-p_value="props">
+              row-key="rowKey">
+                <template v-slot:body-cell="props">
                   <q-td :props="props">
-                    <span :class="{ 'table-value-highlight': props.row.p_value > p_value_threshold }">
-                      {{ props.value }}
-                    </span>
-                  </q-td>
-                </template>
-                <template v-slot:body-cell-standard_error_pct="props">
-                  <q-td :props="props">
-                    <span :class="{ 'table-value-highlight': props.row.standard_error_pct > standard_error_pct_threshold }">
-                      {{ props.value }}
+                    <span :class="{ 'table-value-highlight': shouldHighlightCell(props) }">
+                      {{ formatCellValue(props.value) }}
                     </span>
                   </q-td>
                 </template>
@@ -118,15 +117,29 @@ export default defineComponent({
     },
     methods: {
         async onModelChange(value: string) {
-            this.variableStatsStore.fetchStatsForModel(value);
-            this.store.setActiveModel(value);
+            await this.store.setActiveModel(value);
+            await this.variableStatsStore.fetchStatsForModel(value);
         },
         async deployModel() {
           this.store.deployActiveModel();
         },
         async exportVariableLevelStats() {
           this.variableStatsStore.exportVariableLevelStats();
-        }
+        },
+        formatCellValue(value: any) {
+          return value === null || value === undefined || value === '' ? '—' : value;
+        },
+        shouldHighlightCell(props: any) {
+          if (props.col?.name === 'p_value') {
+            const pValue = Number(props.row?.p_value);
+            return Number.isFinite(pValue) && pValue > this.p_value_threshold;
+          }
+          if (props.col?.name === 'standard_error_pct') {
+            const sePct = Number(props.row?.standard_error_pct);
+            return Number.isFinite(sePct) && sePct > this.standard_error_pct_threshold;
+          }
+          return false;
+        },
     },
 })
 </script>
@@ -204,5 +217,38 @@ header {
       display: flex;
       justify-content: flex-start; /* Aligns to the left */
       width: 100%;
-    }
+}
+
+:deep(.vls-model-select) {
+  width: 320px;
+  min-width: 320px;
+  max-width: 320px;
+}
+
+:deep(.vls-model-select .q-field__native) {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+}
+
+:deep(.vls-model-select .q-field__control) {
+  min-height: 40px !important;
+}
+
+:deep(.vls-model-select .q-field__input) {
+  width: 0 !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.vls-model-select-value {
+  max-width: calc(100% - 28px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 </style>

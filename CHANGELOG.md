@@ -1,5 +1,13 @@
 # Changelog
 
+## [Version 2.1.0] - New Feature Release - 2026-03
+
+* Added spline definition support for numerical variables
+* Added categorical grouping support for categorical variables
+* Added sample weight and offset handling, and improved exposure handling
+* Improved validation and persistent error handling in model training configuration
+* Improved one-way, lift chart, and variable level stats behavior and fixes
+
 ## [Version 2.0.3] - Patch Release - 2026-01
 
 * Bugfix on binary classification

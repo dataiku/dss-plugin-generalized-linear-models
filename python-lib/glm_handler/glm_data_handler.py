@@ -30,7 +30,7 @@ class GlmDataHandler():
         data['bin'] = data['bin'].astype(int)
         return data
 
-    def sort_and_cumsum_exposure(self, data, exposure):
+    def sort_and_cumsum_exposure(self, data, cumsum_weight, ranking_exposure=None):
         """
         Sorts the data by prediction values in ascending order and calculates
         the cumulative sum of exposure, normalized by the total exposure.
@@ -42,20 +42,23 @@ class GlmDataHandler():
             pd.DataFrame: The input DataFrame with additional columns for the cumulative sum
                           and binning information based on exposure.
         """
-        print(f"Pandas version is {pd.__version__}")
-        print(f"data is type {type(data)}")
-        data['raw_predict'] = data['predicted'] / data[exposure]
+        if ranking_exposure and ranking_exposure in data.columns:
+            data['raw_predict'] = data['predicted'] / data[ranking_exposure]
+        else:
+            data['raw_predict'] = data['predicted']
         tempdata = data.sort_values(by='raw_predict', ascending=True)
-        tempdata['exposure_cumsum'] = tempdata[exposure].cumsum() / tempdata[exposure].sum()
+        cumsum_values = tempdata[cumsum_weight]
+        tempdata['exposure_cumsum'] = cumsum_values.cumsum() / cumsum_values.sum()
         return tempdata
     
-    def aggregate_metrics_by_bin(self, data, exposure, target):
+    def aggregate_metrics_by_bin(self, data, exposure, target, label_column='predicted'):
         """
         Aggregates and calculates metrics within each bin, including sum of exposures,
         weighted predictions, and targets, and calculates observed and predicted data metrics.
 
         Args:
             data (pd.DataFrame): The DataFrame with predictions, targets, and bin information.
+            label_column (str): Column used to build the displayed bin interval labels.
 
         Returns:
             pd.DataFrame: A summarized DataFrame with metrics calculated for each bin.
@@ -64,15 +67,22 @@ class GlmDataHandler():
             exposure: 'sum',
             'weighted_target': 'sum',
             'weighted_predicted': 'sum', 
-            'predicted': ['min', 'max']
+            label_column: ['min', 'max']
         })
         grouped.columns = grouped.columns.map('_'.join)
         grouped = grouped.reset_index()
         grouped['observedData'] = grouped['weighted_target_sum'] / grouped[exposure + '_sum']
         grouped['predictedData'] = grouped['weighted_predicted_sum'] / grouped[exposure + '_sum']
-        grouped['binInterval'] = [('%s' % float('%.3g' % value_min)) + '-' + ('%s' % float('%.3g' % value_max)) for value_min, value_max in zip(grouped['predicted_min'], grouped['predicted_max'])]
+        grouped['binInterval'] = [
+            ('%s' % float('%.3g' % value_min)) + '-' + ('%s' % float('%.3g' % value_max))
+            for value_min, value_max in zip(grouped[f'{label_column}_min'], grouped[f'{label_column}_max'])
+        ]
         grouped.reset_index(inplace=True)
-        grouped.drop(['index', 'weighted_target_sum', 'weighted_predicted_sum', 'predicted_min', 'predicted_max', 'bin'], axis=1, inplace=True)
+        grouped.drop(
+            ['index', 'weighted_target_sum', 'weighted_predicted_sum', f'{label_column}_min', f'{label_column}_max', 'bin'],
+            axis=1,
+            inplace=True
+        )
         return grouped
     
     def calculate_weighted_aggregations(self, test_set, non_excluded_features, used_feature):
@@ -101,7 +111,7 @@ class GlmDataHandler():
         for feature, df in predicted_base.items():
             df.columns = ['category', 'target', 'predicted', 'exposure', 'base']
             df['feature'] = feature
-            predicted_base_df = predicted_base_df.append(df)
+            predicted_base_df = pd.concat([predicted_base_df, df], ignore_index=True)
         logger.info("Successfully constructed final dataframe")
         return predicted_base_df
     

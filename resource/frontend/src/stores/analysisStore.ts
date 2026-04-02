@@ -70,7 +70,7 @@ export const useAnalysisStore = defineStore("AnalysisStore", {
             }
         },
 
-        async createNewMlTask(formData: { analysisName: string, trainSet: string, splitPolicy: string, testSet: string, targetColumn: string, exposureColumn: string }) {
+        async createNewMlTask(formData: { analysisName: string, trainSet: string, splitPolicy: string, testSet: string, targetColumn: string, exposureColumn?: string | null }) {
             this.isLoading = true;
             try {
                 const response = await API.createMlTask(formData);

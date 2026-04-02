@@ -5,7 +5,7 @@ fetch_api = Blueprint("fetch_api", __name__, url_prefix="/api")
 
 @fetch_api.errorhandler(Exception)
 def handle_fetch_api_exception(e):
-    current_app.logger.error(f"Error in fetch_api: {str(e)}")
+    current_app.logger.exception("Error in fetch_api")
     response = jsonify({"error": str(e)})
     response.status_code = 400
     return response
@@ -79,7 +79,8 @@ def get_relativities():
 @fetch_api.route("/get_variable_level_stats", methods=["POST"])
 def get_variable_level_stats():
     data_service = current_app.data_service
-    result = data_service.get_variable_level_stats(request.get_json())
+    payload = request.get_json()
+    result = data_service.get_variable_level_stats(payload)
     return jsonify(result)
     
 @fetch_api.route("/get_model_metrics", methods=["POST"])

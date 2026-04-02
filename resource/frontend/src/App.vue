@@ -217,7 +217,6 @@ export default defineComponent({
     },
     watch: {
         loading(newVal) {
-            console.log("App loading");
             if (newVal) {
                 useLoader("Loading data..").show();
             } else {
@@ -226,7 +225,6 @@ export default defineComponent({
         },
         updateModels(newVal) {
             if (newVal) {
-                console.log("App: Reload models")
                 this.store.loadModels();
                 this.trainingStore.updateModels = false;
             }
@@ -237,7 +235,7 @@ export default defineComponent({
             this.goToTab(1);
         },
         handleAnalysisSelected() {
-            this.goToTab(2);
+            this.goToTab(1);
         },
         goToTab(index: number) {
             WT1iser.tabChange({ tabIndex: index });
@@ -323,6 +321,8 @@ header {
 }
 
 .header-analysis-selector {
+    flex: 0 0 620px;
+    max-width: 620px;
     padding-right: 16px;
 }
 

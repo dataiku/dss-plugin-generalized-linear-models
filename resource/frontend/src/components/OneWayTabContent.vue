@@ -37,10 +37,13 @@
             :baseLevelPredictionLine="chartData.map(item => item.baseLevelPrediction)"
             :fittedAverageLine2="chartData2.map(item => item.fittedAverage)"
             :baseLevelPredictionLine2="chartData2.map(item => item.baseLevelPrediction)"
+            :showBaseLevelPrediction="Boolean(selectedVariable?.isInModel)"
             :chartTitle="selectedVariable.variable"
             :levelOrder="levelOrder"
+            :legendSelection="oneWayStore.legendSelection"
+            @update:legendSelection="value => oneWayStore.setLegendSelection(value)"
             />
-          <BsTable v-if="selectedVariable.isInModel"
+          <BsTable v-if="selectedVariable?.isInModel"
             class="table-item"
             :title="selectedVariable.variable"
             :rows="relativities"
@@ -106,7 +109,7 @@ export default defineComponent({
       },
       selectedVariable: {
         type: Object as PropType<VariablePoint>,
-        required: true
+        default: () => ({ variable: "", isInModel: false, variableType: "" })
       },
       relativities: {
         type: Array<Object>,
