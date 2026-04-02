@@ -43,7 +43,7 @@
               :rows="variableLevelStatsData"
               :columns="columns"
               :globalSearch="false"
-              row-key="variable">
+              row-key="rowKey">
                 <template v-slot:body-cell="props">
                   <q-td :props="props">
                     <span :class="{ 'table-value-highlight': shouldHighlightCell(props) }">
