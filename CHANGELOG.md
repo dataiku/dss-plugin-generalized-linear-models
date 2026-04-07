@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 2.1.1] - Bugfix Release - 2026-04
+
+* Fix the statsmodels version for python 3.10
+
 ## [Version 2.1.0] - New Feature Release - 2026-03
 
 * Added spline definition support for numerical variables
