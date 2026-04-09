@@ -1,5 +1,5 @@
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 from backend.services import DataikuDataService
 
 service = DataikuDataService()
@@ -7,27 +7,31 @@ service = DataikuDataService()
 def train_model(
 	ml_task_id: str,
 	analysis_id: str,
-	targetColumn: str,
-	exposureColumn: str,
-	splitPolicy: str,
-	trainSet: str,
-	analysisName: str,
 	model_parameters: Dict[str, Any],
 	variables: Dict[str, Any],
+	targetColumn: Optional[str] = None,
+	exposureColumn: Optional[str] = None,
+	splitPolicy: Optional[str] = None,
+	trainSet: Optional[str] = None,
+	analysisName: Optional[str] = None,
 	interaction_variables: Optional[List[Any]] = None,
 	testSet: Optional[str] = None,
 ) -> Dict[str, Any]:
 	"""
 	Train a model.
-	model_parameters and variables are mandatory. Find their formats below.
+	Only ml_task_id, analysis_id, model_parameters, and variables are mandatory.
 	Args:
 		ml_task_id: The ML task ID.
 		analysis_id: The analysis ID.
-		targetColumn: Target column name.
-		exposureColumn: Exposure column name.
-		model_parameters: Dict of model parameters "distribution_function" ("Gamma", "Gaussian", "Inverse Gaussian", "Poisson", "Negative Binomial", "Tweedie"), "link_function" ("CLogLog", "Log", "Logit", "Cauchy", "Identity", "Power", "Inverse Power", "Inverse Squared"), "elastic_net_penalty", "l1_ratio", "model_name", "theta", "power" (when using the power link), "variance_power" (when using the Tweedie distribution).
-		variables: Dict of variable objects using the format {<variable_name>: {"type" ("categorical", "numerical"), "role" ("REJECT", "INPUT", "Target", "Exposure"), included" (boolean), "base_level" ("Rural", 50, ...)}}.
+		model_parameters: Dict of model parameters including "distribution_function", "link_function", "elastic_net_penalty", "l1_ratio", "model_name", and optionally "theta", "power", and "variance_power" for supported distributions and links.
+		variables: Dict of variable objects using the format {<variable_name>: {"type" ("categorical", "numerical"), "role" ("REJECT", "INPUT", "Target", "Exposure"), "included" (boolean), "base_level" ("Rural", 50, ...)}}.
+		targetColumn: (optional) Target column name.
+		exposureColumn: (optional) Exposure column name.
+		splitPolicy: (optional) Split policy.
+		trainSet: (optional) Training dataset.
+		analysisName: (optional) Analysis name.
 		interaction_variables: (optional) List of interaction variables.
+		testSet: (optional) Test dataset.
 	Returns:
 		Service response dict.
 	"""
@@ -282,17 +286,16 @@ def export_one_way(id: str, variable: str, trainTest: bool, rescale: str) -> byt
 	except Exception as e:
 		return {'error': str(e)}
 
-def get_dataset_columns(dataset: str, exposure: str) -> List[Any]:
+def get_dataset_columns(dataset: str) -> List[Any]:
 	"""
 	Get dataset columns and base levels.
 	Args:
 		dataset: Dataset name.
-		exposure: Exposure column name.
 	Returns:
 		List of columns and base levels.
 	"""
 	try:
-		request_json = dict(dataset=dataset, exposure=exposure)
+		request_json = dict(dataset=dataset)
 		return service.get_dataset_columns(request_json)
 	except Exception as e:
 		return {'error': str(e)}
