@@ -127,7 +127,9 @@ interface ExcludedColumns {
 }
 interface MLTaskParams {
     target_column: string;
-    exposure_column: string;
+    exposure_column?: string | null;
+    sample_weight_column?: string | null;
+    offset_columns?: string[];
     distribution_function: string;
     link_function: string;
     elastic_net_penalty: number;
@@ -139,11 +141,17 @@ interface MLTaskParams {
         [key: string]: {
             role: string;
             type: string;
-            handling: string | null;
-            chooseBaseLevel: boolean;
-            baseLevel: string;
-        }
-    };
+                handling: string | null;
+                chooseBaseLevel: boolean;
+                baseLevel: string;
+                splineFeatures?: Array<Array<{
+                    min_value: number;
+                    max_value: number;
+                    degree: number;
+                }>>;
+                categoricalGroups?: string[][];
+            }
+        };
     interactions: Array<{
         first: string;
         second: string;
@@ -162,7 +170,9 @@ interface MlTask {
     splitPolicy: string;
     testSet: string;
     targetColumn: string;
-    exposureColumn: string;
+    exposureColumn?: string | null;
+    sampleWeightColumn?: string | null;
+    offsetColumns?: string[];
     isValid: boolean;
 }
 
@@ -172,7 +182,7 @@ interface MlTaskConfiguration {
     splitPolicy: string;
     testSet: string;
     targetColumn: string;
-    exposureColumn: string;
+    exposureColumn?: string | null;
 }
 
 interface MlTaskIds {
@@ -182,7 +192,8 @@ interface MlTaskIds {
 
 interface DatasetExposure {
     dataset: string;
-    exposure: string;
+    exposure?: string | null;
+    weightingColumn?: string | null;
 }
 
 export let API = {
@@ -214,4 +225,3 @@ export let API = {
     getVariablesForDataset: (dataset: DatasetName) => axios.post<VariableName[]>("/api/get_variables_for_dataset", dataset),
     createMlTask: (mlTaskConfiguration: MlTaskConfiguration) => axios.post<MlTask>("/api/create_ml_task", mlTaskConfiguration)
 }
-

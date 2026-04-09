@@ -27,6 +27,7 @@ export function useNotification(type: "positive" | "negative", msg: string) {
             type: "negative",
             message: msg,
             position: "top",
+            timeout: 0,
             color: "negative-alert",
             textColor: "negative-alert",
             icon: "mdi-close-circle-outline",

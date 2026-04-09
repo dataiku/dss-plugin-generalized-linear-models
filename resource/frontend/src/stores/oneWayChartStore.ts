@@ -47,7 +47,8 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
             chartRescaling: "None",
             trainTest: true,
             comparisonModel: "",
-        }
+        },
+        legendSelection: {} as Record<string, boolean>,
         
     }),
 
@@ -132,6 +133,10 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
                 this.formOptions.comparisonModel = comparisonModel;
             }
         },
+
+        setLegendSelection(selection: Record<string, boolean>) {
+            this.legendSelection = { ...(selection || {}) };
+        },
         
         async fetchVariablesForModel(modelName: string) {
             if (!modelName) {
@@ -154,7 +159,6 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
         },
 
         async selectVariable(variableName: VariablePoint) {
-            console.log("Selecting variable:", variableName);
             const store = useModelStore();
             let foundVariable = this.availableVariables.find(v => v === variableName);
             if (foundVariable) {
@@ -281,27 +285,37 @@ export const useOneWayChartStore = defineStore("oneWayChart", {
         },
 
         _applyRescaling(dataPoints: DataPoint[], baseValues: any[]): DataPoint[] {
-            if (!this.chartOptions.selectedVariable) return dataPoints;
+            if (!this.chartOptions.selectedVariable) {
+                return dataPoints;
+            }
+
+            if (!Array.isArray(baseValues)) {
+                return dataPoints;
+            }
 
             const baseCategory = baseValues.find(item => item.variable === this.chartOptions.selectedVariable!.variable);
-            if (!baseCategory) return dataPoints;
+            if (!baseCategory) {
+                return dataPoints;
+            }
 
             const baseDataPoint = dataPoints.find(item => item.Category === baseCategory.base_level);
-            if (!baseDataPoint) return dataPoints;
+            if (!baseDataPoint) {
+                return dataPoints;
+            }
 
             const { baseLevelPrediction, fittedAverage, observedAverage } = baseDataPoint;
 
-            return dataPoints.map(item => ({
+            const rescaled = dataPoints.map(item => ({
                 ...item,
                 baseLevelPrediction: item.baseLevelPrediction / baseLevelPrediction,
                 fittedAverage: item.fittedAverage / fittedAverage,
                 observedAverage: item.observedAverage / observedAverage,
             }));
+            return rescaled;
         },
 
         _applyRescalingRatio(dataPoints: DataPoint[]): DataPoint[] {
             if (!this.chartOptions.selectedVariable) return dataPoints;
-
             return dataPoints.map(item => ({
                 ...item,
                 baseLevelPrediction: item.baseLevelPrediction / item.observedAverage,

@@ -6,6 +6,7 @@ from logging_assist.logging import logger
 import logging
 import numpy as np
 import pandas as pd
+import re
 
 class VariableLevelStatsFormatter:
 
@@ -16,6 +17,7 @@ class VariableLevelStatsFormatter:
         self.relativities_interaction = relativities_interaction
         self.base_values = base_values
         self.relativities_calculator = RelativitiesCalculator(data_handler, model_retriever, train_set, test_set)
+        self._group_mapping_cache = {}
 
     def get_variable_level_stats(self):
         logger.info("Starting to get variable level stats.")
@@ -24,18 +26,22 @@ class VariableLevelStatsFormatter:
             features = self.model_retriever.get_features_used_in_modelling()
             
             variable_stats = self._process_intercept(coef_table, self.relativities)
-            
-            if categorical_features := self._get_categorical_features(features):
+
+            categorical_features = self._get_categorical_features(features)
+            numeric_features = self._get_numeric_features(features)
+
+            if categorical_features:
                 variable_stats = self._process_categorical_features(
                     variable_stats, self.relativities, coef_table, categorical_features
                 )
 
-            if numeric_features := self._get_numeric_features(features):
+            if numeric_features:
                 variable_stats = self._process_numeric_features(
                     variable_stats, coef_table, numeric_features
                 )
             
-            if interaction_features := self._get_interaction_features():
+            interaction_features = self._get_interaction_features()
+            if interaction_features:
                 variable_stats = self._process_interaction_features(
                     variable_stats, self.relativities_interaction, coef_table, interaction_features, categorical_features, numeric_features
                 )
@@ -53,6 +59,59 @@ class VariableLevelStatsFormatter:
         coef_table = self.model_retriever.predictor._clf.coef_table.reset_index()
         coef_table['se_pct'] = coef_table['se'] / abs(coef_table['coef']) * 100
         return coef_table
+
+    def _get_group_mapping(self, feature):
+        if feature not in self._group_mapping_cache:
+            self._group_mapping_cache[feature] = self.relativities_calculator.get_categorical_group_mapping(feature)
+        return self._group_mapping_cache[feature]
+
+    @staticmethod
+    def _parse_main_effects(coef_table):
+        parsed_rows = []
+        pattern = re.compile(r'^[^:]+:(?P<variable>[^:]+):(?P<value>.+)$')
+        for _, row in coef_table.iterrows():
+            index_value = str(row.get("index", ""))
+            if index_value == "intercept":
+                continue
+            if index_value.startswith("interaction:"):
+                continue
+            matched = pattern.match(index_value)
+            if not matched:
+                continue
+            parsed_rows.append({
+                "variable": matched.group("variable"),
+                "value": matched.group("value"),
+                "coef": row.get("coef"),
+                "p_value": row.get("p_value"),
+                "se": row.get("se"),
+                "se_pct": row.get("se_pct"),
+            })
+        if not parsed_rows:
+            return pd.DataFrame(columns=["variable", "value", "coef", "p_value", "se", "se_pct"])
+        return pd.DataFrame(parsed_rows)
+
+    @staticmethod
+    def _parse_spline_term(term_name):
+        pattern = r'^spline_f(?P<feature_idx>\d+)_s(?P<segment_idx>\d+)_(?P<min>[-+0-9.eE]+)_(?P<max>[-+0-9.eE]+)_d(?P<degree>\d+)$'
+        match = re.match(pattern, str(term_name))
+        if not match:
+            return None
+        try:
+            return {
+                "feature_idx": int(match.group("feature_idx")),
+                "segment_idx": int(match.group("segment_idx")),
+                "min_value": float(match.group("min")),
+                "max_value": float(match.group("max")),
+                "degree": int(match.group("degree")),
+            }
+        except ValueError:
+            return None
+
+    @staticmethod
+    def _format_segment_term(parsed_term):
+        min_value = parsed_term["min_value"]
+        max_value = parsed_term["max_value"]
+        return f"f{parsed_term['feature_idx']}:s{parsed_term['segment_idx']}:[{min_value}, {max_value}]:d{parsed_term['degree']}"
 
     def _process_intercept(self, coef_table, relativities):
         logger.debug("Processing intercept.")
@@ -103,32 +162,48 @@ class VariableLevelStatsFormatter:
 
     def _process_categorical_features(self, variable_stats, relativities, coef_table, categorical_features):
         logger.debug("Processing categorical features.")
-        predicted_cat = self.relativities_calculator.train_set.groupby(categorical_features)['weight'].sum().reset_index()
-        predicted_cat = self._transform_dataset(predicted_cat)
-        predicted_cat.rename(columns={"weight": "exposure"}, inplace=True)
-        relativities_cat = relativities[relativities['feature'].isin(categorical_features)]
-        
-        coef_table_cat = coef_table[((coef_table['index'] == 'intercept') | (coef_table['index'].str.contains(':'))) & (~coef_table['index'].str.startswith('interaction:')) & (~coef_table['index'].str.endswith(':_'))]
+        main_effects = self._parse_main_effects(coef_table)
+        variable_stats_frames = []
 
-        coef_table_cat[['dummy', 'variable', 'value']] = coef_table_cat['index'].str.split(':', expand=True)
-        variable_stats_cat = relativities_cat.merge(
-            coef_table_cat[['variable', 'value', 'coef', 'p_value', 'se', 'se_pct']],
-            how='left',
-            left_on=['feature', 'value'],
-            right_on=['variable', 'value']
-        )
+        for feature in categorical_features:
+            mapping = self._get_group_mapping(feature)
+            train_df = self.relativities_calculator.train_set.copy()
+            mapped_values = self.relativities_calculator._map_categorical_series(feature, train_df[feature])
+            exposure_df = (
+                train_df.assign(_mapped_value=mapped_values)
+                .dropna(subset=["_mapped_value"])
+                .groupby("_mapped_value", as_index=False)["weight"]
+                .sum()
+                .rename(columns={"_mapped_value": "value", "weight": "exposure"})
+            )
+            exposure_total = exposure_df["exposure"].sum()
+            exposure_df["exposure_pct"] = (exposure_df["exposure"] / exposure_total * 100) if exposure_total else 0
+            exposure_df["feature"] = feature
 
-        variable_stats_cat.drop('variable', axis=1, inplace=True)
-        predicted_cat['exposure_sum'] = predicted_cat['exposure'].groupby(predicted_cat['feature']).transform('sum')
-        predicted_cat['exposure_pct'] = predicted_cat['exposure'] / predicted_cat['exposure_sum'] * 100
+            relativities_cat = relativities[relativities["feature"] == feature].copy()
+            if not relativities_cat.empty:
+                relativities_cat["value"] = self.relativities_calculator._map_categorical_series(feature, relativities_cat["value"])
+                relativities_cat = relativities_cat.dropna(subset=["value"])
+                relativities_cat = relativities_cat.groupby(["feature", "value"], as_index=False)["relativity"].mean()
 
-        variable_stats_cat = variable_stats_cat.merge(
-            predicted_cat,
-            how='left',
-            on=['feature', 'value']
-        )
-        variable_stats_cat.drop(['exposure_sum'], axis=1, inplace=True)
-        return variable_stats.append(variable_stats_cat)
+            coef_table_cat = main_effects[main_effects["variable"] == feature].copy()
+
+            feature_stats = relativities_cat.merge(
+                coef_table_cat[["value", "coef", "p_value", "se", "se_pct"]],
+                how="left",
+                on=["value"],
+            )
+            feature_stats = feature_stats.merge(
+                exposure_df[["feature", "value", "exposure", "exposure_pct"]],
+                how="left",
+                on=["feature", "value"],
+            )
+            variable_stats_frames.append(feature_stats)
+
+        if not variable_stats_frames:
+            return variable_stats
+        variable_stats_cat = pd.concat(variable_stats_frames, ignore_index=True)
+        return pd.concat([variable_stats, variable_stats_cat], ignore_index=True)
 
     def _get_numeric_features(self, features):
         logger.debug("Retrieving numeric features.")
@@ -136,15 +211,82 @@ class VariableLevelStatsFormatter:
 
     def _process_numeric_features(self, variable_stats, coef_table, numeric_features):
         logger.debug("Processing numeric features.")
-        coef_table_num = coef_table[(coef_table['index'].str.endswith(':_')) & (~coef_table['index'].str.startswith('interaction:'))].copy()
-        coef_table_num['feature'] = [var.split(':')[1] for var in coef_table_num['index']]
-        coef_table_num['value'] = [self.base_values[feature] for feature in coef_table_num['feature']]
-        coef_table_num['exposure'] = self.relativities_calculator.train_set['weight'].sum()
-        coef_table_num['exposure_pct'] = 100
-        coef_table_num['relativity'] = 1
-        
-        variable_stats_num = coef_table_num[['feature', 'value', 'relativity', 'coef', 'p_value', 'se', 'se_pct', 'exposure', 'exposure_pct']]
-        return variable_stats.append(variable_stats_num)
+        main_effects = self._parse_main_effects(coef_table)
+        variable_stats_rows = []
+        total_weight = self.relativities_calculator.train_set["weight"].sum()
+
+        for feature in numeric_features:
+            feature_effects = main_effects[main_effects["variable"] == feature].copy()
+            feature_effects["parsed_spline"] = feature_effects["value"].map(self._parse_spline_term)
+            spline_effects = feature_effects[feature_effects["parsed_spline"].notna()].copy()
+            nonspline_effects = feature_effects[feature_effects["parsed_spline"].isna()].copy()
+
+            base_row_added = False
+            if not nonspline_effects.empty:
+                for _, coef_row in nonspline_effects.iterrows():
+                    variable_stats_rows.append({
+                        "feature": feature,
+                        "value": self.base_values.get(feature),
+                        "relativity": None,
+                        "coef": coef_row["coef"],
+                        "p_value": coef_row["p_value"],
+                        "se": coef_row["se"],
+                        "se_pct": coef_row["se_pct"],
+                        "exposure": total_weight,
+                        "exposure_pct": 100,
+                    })
+                    base_row_added = True
+            # Only add a synthetic base row when there are no spline segments.
+            # For spline-only features this row is not meaningful and should be hidden.
+            if not base_row_added and spline_effects.empty:
+                variable_stats_rows.append({
+                    "feature": feature,
+                    "value": self.base_values.get(feature),
+                    "relativity": None,
+                    "coef": None,
+                    "p_value": None,
+                    "se": None,
+                    "se_pct": None,
+                    "exposure": total_weight,
+                    "exposure_pct": 100,
+                })
+
+            if spline_effects.empty:
+                continue
+
+            feature_series = pd.to_numeric(self.relativities_calculator.train_set[feature], errors="coerce")
+            segment_weight_cache = {}
+            for _, coef_row in spline_effects.iterrows():
+                parsed_term = coef_row["parsed_spline"]
+                segment_key = (
+                    parsed_term["feature_idx"],
+                    parsed_term["segment_idx"],
+                    parsed_term["min_value"],
+                    parsed_term["max_value"],
+                )
+                if segment_key not in segment_weight_cache:
+                    in_segment = (feature_series >= parsed_term["min_value"]) & (feature_series <= parsed_term["max_value"])
+                    segment_weight_cache[segment_key] = self.relativities_calculator.train_set.loc[in_segment, "weight"].sum()
+                segment_weight = segment_weight_cache[segment_key]
+                variable_stats_rows.append({
+                    "feature": feature,
+                    "value": self._format_segment_term(parsed_term),
+                    "relativity": None,
+                    "coef": coef_row["coef"],
+                    "p_value": coef_row["p_value"],
+                    "se": coef_row["se"],
+                    "se_pct": coef_row["se_pct"],
+                    "exposure": segment_weight,
+                    "exposure_pct": (segment_weight / total_weight * 100) if total_weight else 0,
+                })
+
+        if not variable_stats_rows:
+            return variable_stats
+
+        variable_stats_num = pd.DataFrame(variable_stats_rows, columns=[
+            "feature", "value", "relativity", "coef", "p_value", "se", "se_pct", "exposure", "exposure_pct"
+        ])
+        return pd.concat([variable_stats, variable_stats_num], ignore_index=True)
 
     def _get_interaction_features(self):
         return self.model_retriever.get_interactions()
@@ -329,7 +471,5 @@ class VariableLevelStatsFormatter:
     def _finalize_stats(self, variable_stats):
         logger.debug("Finalizing stats.")
         variable_stats.columns = ['variable', 'value', 'relativity', 'coefficient', 'p_value', 'standard_error', 'standard_error_pct', 'weight', 'weight_pct']
-        variable_stats.fillna(0, inplace=True)
-        variable_stats.replace([np.inf, -np.inf], 0, inplace=True)
+        variable_stats.replace([np.inf, -np.inf], np.nan, inplace=True)
         return variable_stats
-

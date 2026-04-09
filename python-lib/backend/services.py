@@ -1,3 +1,4 @@
+from flask import current_app
 import pandas as pd
 import time
 import random
@@ -20,6 +21,13 @@ class MockDataService:
     """
     Dev backend service with dummy data
     """
+    def _get_mock_setup_params(self, full_model_id: str):
+        if full_model_id == "model_interaction":
+            return interaction_setup_params
+        if full_model_id == "model_2":
+            return dummy_setup_params_2
+        return dummy_setup_params
+
     def train_model(self, request_json: dict):
         logger.info("Local set up: No model training completed")
         time.sleep(2)
@@ -39,11 +47,7 @@ class MockDataService:
     def get_latest_mltask_params(self, request_json: dict):
         logger.info("Getting Latest ML task set up parameters")
         full_model_id = request_json["id"]
-        if full_model_id== "model_interaction":
-            setup_params = interaction_setup_params
-        else:
-            setup_params = random.choice([dummy_setup_params, dummy_setup_params_2])
-        logger.info(f"Returning Params {setup_params}")
+        setup_params = self._get_mock_setup_params(full_model_id)
         return setup_params
     
     def get_variables(self, request_json: dict):
@@ -71,8 +75,10 @@ class MockDataService:
     
     def get_variable_level_stats(self, request_json: dict):
         time.sleep(1)
-        logger.info("Getting Variable Level Stats")
-        return dummy_variable_level_stats
+        stats_df = pd.DataFrame(dummy_variable_level_stats)
+        stats_df = stats_df.astype(object).where(pd.notnull(stats_df), None)
+        result = stats_df.to_dict('records')
+        return result
     
     def get_model_metrics(self, request_json: dict):
         return dummy_model_metrics
@@ -88,13 +94,13 @@ class MockDataService:
     
     def export_variable_level_stats(self, request_json: dict):
         # Convert DataFrame to CSV format
-        csv_data = dummy_variable_level_stats.to_csv(index=False).encode('utf-8')
+        csv_data = pd.DataFrame(dummy_variable_level_stats).to_csv(index=False).encode('utf-8')
 
         return csv_data
     
     def export_lift_chart(self, request_json: dict):
         # Convert DataFrame to CSV format
-        csv_data = dummy_variable_level_stats.to_csv(index=False).encode('utf-8')
+        csv_data = pd.DataFrame(dummy_variable_level_stats).to_csv(index=False).encode('utf-8')
 
         return csv_data
     
@@ -104,16 +110,36 @@ class MockDataService:
         return csv_data
     
     def get_dataset_columns(self, request_json: dict):
-        dataset_name = "claim_train"
-        exposure_column = "exposure"
-        
-        logger.info(f"Training Dataset name selected is: {dataset_name}")
-        
-        df = dataiku.Dataset(dataset_name).get_dataframe(limit=100000)
-        cols_json = calculate_base_levels(df, exposure_column)
+        # In mock mode, return columns aligned with mock model params (do not read a real DSS dataset).
+        params = dummy_setup_params.get("params", {})
+        cols_json = []
+        for col_name, col_params in params.items():
+            col_type = "categorical" if col_params.get("type") == "CATEGORY" else "numerical"
+            base_level = col_params.get("baseLevel")
+            options = []
+            if col_type == "categorical":
+                if base_level is not None:
+                    options = [str(base_level), "OtherA", "OtherB"]
+                else:
+                    options = ["A", "B", "C"]
+            else:
+                if base_level is not None:
+                    try:
+                        base_numeric = float(base_level)
+                        options = [str(base_numeric - 1), str(base_numeric), str(base_numeric + 1)]
+                    except (TypeError, ValueError):
+                        options = ["0", "1", "2"]
+                else:
+                    options = ["0", "1", "2"]
 
-        logger.info(f"Successfully retrieved column for dataset '{dataset_name}': {[col['column'] for col in cols_json]}")
-
+            cols_json.append({
+                "column": col_name,
+                "options": options,
+                "baseLevel": str(base_level) if base_level is not None else options[0],
+                "type": col_type,
+                "minValue": None,
+                "maxValue": None,
+            })
         return cols_json
 
     def get_project(self):
@@ -164,12 +190,14 @@ class DataikuDataService:
         logger.debug(f"Model error message is {error_message}")
         logger.debug(f"Model details are {model_details}")
         
-        if not error_message:
-            logger.info("Model trained and cache updated")
+        training_status = (model_details or {}).get("status")
+        if training_status == "DONE" and not error_message:
             return {'message': 'Model training completed successfully.'}
-        else:
-            logger.debug(f"Model training error: {error_message}")
-            raise ValueError(f"Model training error: {error_message}")
+
+        if not error_message:
+            error_message = f"Training ended with status '{training_status or 'UNKNOWN'}'."
+
+        raise ValueError(f"Model training error: {error_message}")
     
     def deploy_model(self, request_json: dict):
         logger.info(f"Initalising Model Deployment with request {request_json}")
@@ -260,8 +288,6 @@ class DataikuDataService:
                         "full_model_id": full_model_id}
         base_values = self.model_cache.get_or_create_cached_item(full_model_id, 'base_values_modalities_types', get_model_base_values_modalities_types, **creation_args)['base_values']
         
-        logger.info(base_values)
-
         base_values = [{'variable': k, 'base_level': v} for k, v in base_values.items()]
 
         logger.info("base_values")
@@ -304,7 +330,12 @@ class DataikuDataService:
         creation_args = {"data_handler": self.data_handler,
                             "model_cache": self.model_cache,
                             "full_model_id": full_model_id}
-        relativities = self.model_cache.get_or_create_cached_item(full_model_id, 'relativities', get_model_relativities, **creation_args)['relativities']
+        relativities = self.model_cache.get_or_create_cached_item(
+            full_model_id,
+            'relativities',
+            get_model_relativities,
+            **creation_args
+        )['relativities_raw']
         
         relativities_df = relativities.copy()
         relativities_df.columns = ['variable', 'category', 'relativity']
@@ -321,9 +352,9 @@ class DataikuDataService:
                             "full_model_id": full_model_id}
         variable_stats = self.model_cache.get_or_create_cached_item(full_model_id, 'variable_level_stats', get_model_variable_level_stats, **creation_args)
         
-        logger.info(variable_stats)
-        logger.info(variable_stats.columns)
-        return variable_stats.to_dict('records')
+        variable_stats = variable_stats.astype(object).where(pd.notnull(variable_stats), None)
+        result = variable_stats.to_dict('records')
+        return result
     
     def get_model_metrics(self, request_json: dict):
         
@@ -349,10 +380,27 @@ class DataikuDataService:
                             "model_cache": self.model_cache,
                             "full_model_id": model}
             relativities_dict = self.model_cache.get_or_create_cached_item(model, 'relativities', get_model_relativities, **creation_args)['relativities_dict']
+            base_values = self.model_cache.get_or_create_cached_item(model, 'base_values_modalities_types', get_model_base_values_modalities_types, **creation_args)['base_values']
             if not relativities_dict:
                 logger.error(f"error: Model Cache not found for {model} cache only has {model_cache.keys()}")
             
-            logger.info(f"Relativities dict for model {model} is {relativities_dict}.")
+            current_app.logger.info(f"Relativities dict for model {model} is {relativities_dict}.")
+
+            def _to_float_or_none(value):
+                try:
+                    if value is None or pd.isna(value):
+                        return None
+                    return float(value)
+                except (TypeError, ValueError):
+                    return None
+
+            def _is_base_match(variable, value, tolerance=1e-9):
+                base_value = base_values.get(variable)
+                numeric_value = _to_float_or_none(value)
+                numeric_base = _to_float_or_none(base_value)
+                if numeric_value is not None and numeric_base is not None:
+                    return abs(numeric_value - numeric_base) <= tolerance
+                return str(value) == str(base_value)
             
             nb_col = (len(relativities_dict.keys()) - 1) * 3
             variables = [col for col in relativities_dict.keys() if col != "base"]
@@ -368,7 +416,10 @@ class DataikuDataService:
                 for variable in variables:
                     if i < len(variable_keys[variable]):
                         value = sorted(variable_keys[variable])[i]
-                        csv_output += "{},{},,".format(value, relativities_dict[variable][value])
+                        relativity = relativities_dict[variable][value]
+                        if _is_base_match(variable, value):
+                            relativity = 1.0
+                        csv_output += "{},{},,".format(value, relativity)
                     else:
                         csv_output += ",,,"
                 csv_output += "\n"
@@ -387,7 +438,20 @@ class DataikuDataService:
                     csv_output += ",,{}\n{}".format(",".join([str(v) for v in sorted_value_1]), feature_2)
                     sorted_value_2 = sorted(list(set(these_relativities['value_2'])))
                     for value_2 in sorted_value_2:
-                        csv_output += ",{},{}\n".format(str(value_2), ",".join([str(these_relativities[(these_relativities['value_1']==value_1) & (these_relativities['value_2']==value_2)]['relativity'].iloc[0]/relativities_dict[feature_1][value_1]/relativities_dict[feature_2][value_2]) for value_1 in sorted_value_1]))
+                        row_values = []
+                        for value_1 in sorted_value_1:
+                            relativity_value = (
+                                these_relativities[
+                                    (these_relativities['value_1'] == value_1) &
+                                    (these_relativities['value_2'] == value_2)
+                                ]['relativity'].iloc[0]
+                                / relativities_dict[feature_1][value_1]
+                                / relativities_dict[feature_2][value_2]
+                            )
+                            if _is_base_match(feature_1, value_1) and _is_base_match(feature_2, value_2):
+                                relativity_value = 1.0
+                            row_values.append(str(relativity_value))
+                        csv_output += ",{},{}\n".format(str(value_2), ",".join(row_values))
                     csv_output += "\n"                    
             
             csv_data = csv_output.encode('utf-8')
@@ -410,7 +474,7 @@ class DataikuDataService:
             logger.info(df.columns)
             df.columns = ['variable', 'value', 'relativity', 'coefficient', 'p_value', 'standard_error', 'standard_error_pct', 'weight', 'weight_pct']
 
-            csv_data = df.to_csv(index=False).encode('utf-8')
+            csv_data = df.to_csv(index=False, na_rep='').encode('utf-8')
 
         except KeyError as e:
             logger.error(f"An error occurred: {str(e)}")
@@ -472,17 +536,62 @@ class DataikuDataService:
                             "full_model_id": full_model_id, 
                             "variable": variable}
             predicted_base = self.model_cache.get_or_create_cached_item(full_model_id, f'predicted_base_variable_{variable}', get_model_predicted_base, **creation_args)
-            predicted_base = predicted_base[predicted_base['dataset']==dataset]
+            predicted_base = predicted_base[predicted_base['dataset']==dataset].copy()
 
-            if rescale:
+            def _to_float_or_none(value):
+                try:
+                    if value is None or pd.isna(value):
+                        return None
+                    return float(value)
+                except (TypeError, ValueError):
+                    return None
+
+            def _is_base_match(value, base_level, tolerance=1e-9):
+                numeric_value = _to_float_or_none(value)
+                numeric_base = _to_float_or_none(base_level)
+                if numeric_value is not None and numeric_base is not None:
+                    return abs(numeric_value - numeric_base) <= tolerance
+                return str(value).strip() == str(base_level).strip()
+
+            def _safe_divide(series, denominator):
+                if denominator is None:
+                    return series
+                try:
+                    denom = float(denominator)
+                except (TypeError, ValueError):
+                    return series
+                if abs(denom) <= 1e-12:
+                    return series
+                return series / denom
+
+            if rescale == "Base level":
                 creation_args = {"data_handler": self.data_handler,
                             "model_cache": self.model_cache,
                             "full_model_id": full_model_id}
                 base_values = self.model_cache.get_or_create_cached_item(full_model_id, 'base_values_modalities_types', get_model_base_values_modalities_types, **creation_args)['base_values']
-                predicted_base_denominator = predicted_base[predicted_base['Category']==base_values[variable]].iloc[0]
-                predicted_base['observedAverage'] = predicted_base['observedAverage'] / predicted_base_denominator['observedAverage']
-                predicted_base['fittedAverage'] = predicted_base['fittedAverage'] / predicted_base_denominator['fittedAverage']
-                predicted_base['baseLevelPrediction'] = predicted_base['baseLevelPrediction'] / predicted_base_denominator['baseLevelPrediction']
+                base_level = base_values.get(variable)
+                base_rows = predicted_base[predicted_base['Category'].apply(lambda value: _is_base_match(value, base_level))]
+                if len(base_rows) == 0:
+                    current_app.logger.warning(
+                        "Base-level rescaling skipped for %s: base %s not found in predicted base categories.",
+                        variable,
+                        base_level
+                    )
+                else:
+                    predicted_base_denominator = base_rows.iloc[0]
+                    predicted_base['observedAverage'] = _safe_divide(predicted_base['observedAverage'], predicted_base_denominator['observedAverage'])
+                    predicted_base['fittedAverage'] = _safe_divide(predicted_base['fittedAverage'], predicted_base_denominator['fittedAverage'])
+                    predicted_base['baseLevelPrediction'] = _safe_divide(predicted_base['baseLevelPrediction'], predicted_base_denominator['baseLevelPrediction'])
+            elif rescale == "Ratio":
+                valid_observed = predicted_base['observedAverage'].replace(0, np.nan)
+                predicted_base['baseLevelPrediction'] = predicted_base['baseLevelPrediction'] / valid_observed
+                predicted_base['fittedAverage'] = predicted_base['fittedAverage'] / valid_observed
+                predicted_base['observedAverage'] = predicted_base['observedAverage'] / valid_observed
+                predicted_base = predicted_base.replace([np.inf, -np.inf], np.nan).fillna({
+                    'baseLevelPrediction': 0,
+                    'fittedAverage': 0,
+                    'observedAverage': 0
+                })
 
             csv_data = predicted_base.to_csv(index=False).encode('utf-8')
 
@@ -494,13 +603,13 @@ class DataikuDataService:
     
     def get_dataset_columns(self, request_json):
         try:
+            request_json = request_json or {}
             dataset_name = request_json['dataset']
-            exposure_column = request_json['exposure']
             
             logger.info(f"Training Dataset name selected is: {dataset_name}")
             
             df = dataiku.Dataset(dataset_name).get_dataframe(limit=100000)
-            cols_json = calculate_base_levels(df, exposure_column)
+            cols_json = calculate_base_levels(df)
 
             logger.info(f"Successfully retrieved column for dataset '{dataset_name}': {[col['column'] for col in cols_json]}")
 

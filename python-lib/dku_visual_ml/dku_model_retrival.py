@@ -1,7 +1,12 @@
 import dataikuapi
 from logging_assist.logging import logger
+import ast
 import re
 from dku_visual_ml.dku_base import DataikuClientProject
+from dku_visual_ml.custom_code_parsing import (
+    extract_base_level_from_custom_handling_code,
+    extract_processor_config_from_custom_code,
+)
 from dataiku.doctor.posttraining.model_information_handler import PredictionModelInformationHandler
 from typing import List, Dict, Any, Optional
 
@@ -34,7 +39,36 @@ class VisualMLModelRetriver(DataikuClientProject):
         logger.info(f"Model retriever intialised for model ID {full_model_id}")
               
     def get_offset_columns(self):
-        return self.algo_settings['params']['offset_columns']
+        params = self.algo_settings.get('params', {}) if self.algo_settings else {}
+        offset_columns = params.get('offset_columns') or []
+        return [column for column in offset_columns if column]
+
+    def get_sample_weight_column(self):
+        core_params = self.model_details.details.get('coreParams', {})
+        weight_details = core_params.get('weight', {})
+        if not isinstance(weight_details, dict) or not weight_details:
+            try:
+                settings = self.task.get_settings()
+                settings_raw = settings.get_raw() if settings else {}
+                weight_details = settings_raw.get('weight', {})
+            except Exception:
+                weight_details = {}
+        if not isinstance(weight_details, dict):
+            return None
+        weight_method = weight_details.get('weightMethod')
+        if not weight_method or weight_method == 'NO_WEIGHTING':
+            return None
+        if weight_method != 'SAMPLE_WEIGHT':
+            raise ValueError(
+                f"Unsupported weighting method '{weight_method}'. "
+                "Only 'NO_WEIGHTING' and 'SAMPLE_WEIGHT' are supported."
+            )
+        sample_weight_variable = weight_details.get('sampleWeightVariable')
+        if not sample_weight_variable:
+            raise ValueError(
+                "Weighting method is SAMPLE_WEIGHT but sampleWeightVariable is missing."
+            )
+        return sample_weight_variable
     
     def get_features(self):
         logger.info(f"Getting features for model ID {self.full_model_id}")
@@ -69,9 +103,16 @@ class VisualMLModelRetriver(DataikuClientProject):
     def _get_excluded_features(self):
         logger.debug(f"Excluding features exposure {self.exposure_columns}")
         logger.debug(f"Excluding features target {self.target_column}")
-        important_columns = []
-        important_columns += [self.offset_columns, self.exposure_columns, self.target_column]
-        
+        important_columns = set()
+        for offset_column in self.offset_columns or []:
+            important_columns.add(offset_column)
+        if self.exposure_columns:
+            important_columns.add(self.exposure_columns)
+        sample_weight = self.get_sample_weight_column()
+        if sample_weight:
+            important_columns.add(sample_weight)
+        if self.target_column:
+            important_columns.add(self.target_column)
         return important_columns
     
     def _get_included_features(self):
@@ -171,21 +212,127 @@ class VisualMLModelRetriver(DataikuClientProject):
         }
 
     def _extract_base_level(self, feature_settings: Dict[str, Any]) -> Optional[str]:
+        spline_config = self._extract_continuous_spline_config(feature_settings)
+        if spline_config is not None and "base_level" in spline_config:
+            return spline_config.get("base_level")
+
         custom_handling_code = feature_settings.get('customHandlingCode', '')
-        pattern = r'["\']base_level["\']\s*:\s*(["\'])(.*?)\1'
-        match = re.search(pattern, custom_handling_code)
-        # If a match is found, the value is in the second captured group.
-        return match.group(2) if match else None
+        base_level, processor_name, parsing_path = extract_base_level_from_custom_handling_code(custom_handling_code)
+        logger.debug(
+            "base level extraction processor=%s path=%s value=%s",
+            processor_name,
+            parsing_path,
+            base_level,
+        )
+        return base_level
+
+    def _extract_continuous_spline_config(self, feature_settings: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        custom_handling_code = feature_settings.get('customHandlingCode', '')
+        if "continuous_spline" not in custom_handling_code:
+            return None
+
+        try:
+            parsed = ast.parse(custom_handling_code)
+        except SyntaxError:
+            return None
+
+        for node in ast.walk(parsed):
+            if not isinstance(node, ast.Assign):
+                continue
+            value = node.value
+            if not isinstance(value, ast.Call):
+                continue
+            if not isinstance(value.func, ast.Name) or value.func.id != "continuous_spline":
+                continue
+            if not value.args:
+                continue
+            try:
+                config_dict = ast.literal_eval(value.args[0])
+            except (ValueError, SyntaxError):
+                continue
+            if isinstance(config_dict, dict):
+                return config_dict
+        return None
+
+    def _extract_spline_features(self, feature_settings: Dict[str, Any]) -> List[List[Dict[str, Any]]]:
+        spline_config = self._extract_continuous_spline_config(feature_settings)
+        if not spline_config:
+            return []
+
+        raw_spline_features = spline_config.get("spline_features")
+        if raw_spline_features is None and spline_config.get("definitions") is not None:
+            # Backward compatibility with flat shape.
+            raw_spline_features = [spline_config.get("definitions")]
+
+        if not isinstance(raw_spline_features, list):
+            return []
+
+        spline_features = []
+        for feature in raw_spline_features:
+            if not isinstance(feature, list):
+                continue
+            segments = []
+            for segment in feature:
+                if not isinstance(segment, dict):
+                    continue
+                if not {"min_value", "max_value", "degree"}.issubset(segment.keys()):
+                    continue
+                try:
+                    segments.append({
+                        "min_value": float(segment["min_value"]),
+                        "max_value": float(segment["max_value"]),
+                        "degree": int(segment["degree"]),
+                    })
+                except (TypeError, ValueError):
+                    continue
+            if segments:
+                spline_features.append(segments)
+        return spline_features
+
+    def _extract_categorical_groups(self, feature_settings: Dict[str, Any]) -> List[List[str]]:
+        custom_handling_code = feature_settings.get('customHandlingCode', '')
+        _, config_dict = extract_processor_config_from_custom_code(custom_handling_code, ("rebase_mode",))
+        if not isinstance(config_dict, dict):
+            return []
+
+        raw_groups = config_dict.get("categorical_groups")
+        if not isinstance(raw_groups, list):
+            return []
+
+        normalized_groups = []
+        seen_modalities = set()
+        for raw_group in raw_groups:
+            if not isinstance(raw_group, list):
+                continue
+            group = []
+            for modality in raw_group:
+                modality_str = str(modality)
+                if modality_str in seen_modalities or modality_str in group:
+                    continue
+                group.append(modality_str)
+            if len(group) < 2:
+                continue
+            normalized_groups.append(group)
+            seen_modalities.update(group)
+
+        return normalized_groups
     
-    def _process_feature(self, feature: str, preprocessing: Dict[str, Any], 
-                         exposure_columns: str, target_column: str) -> Dict[str, Any]:
+    def _process_feature(self, feature: str, preprocessing: Dict[str, Any],
+                         exposure_columns: Optional[str], target_column: str,
+                         offset_columns: List[str], sample_weight_column: Optional[str]) -> Dict[str, Any]:
         
         feature_settings = preprocessing.get(feature, {})
         feature_dict = self._get_basic_feature_info(feature_settings)
         feature_dict["baseLevel"] = self._extract_base_level(feature_settings)
+        feature_dict["splineFeatures"] = self._extract_spline_features(feature_settings)
+        feature_dict["categoricalGroups"] = self._extract_categorical_groups(feature_settings)
         
         if feature == exposure_columns:
             feature_dict["role"] = "Exposure"
+        elif feature in offset_columns:
+            feature_dict["role"] = "Offset"
+        elif sample_weight_column and feature == sample_weight_column:
+            feature_dict["role"] = "SampleWeight"
         elif feature == target_column:
             feature_dict["role"] = "Target"
         
@@ -196,6 +343,8 @@ class VisualMLModelRetriver(DataikuClientProject):
         
         logger.info("Getting model feature dict")
         exposure_columns = self.get_exposure_columns()
+        offset_columns = self.get_offset_columns()
+        sample_weight_column = self.get_sample_weight_column()
         target_column = self.get_target_column()
         
         preprocessing = self.model_details.get_preprocessing_settings().get('per_feature')
@@ -203,7 +352,14 @@ class VisualMLModelRetriver(DataikuClientProject):
         
         features_dict = {}
         for feature in features:
-            feature_dict = self._process_feature(feature, preprocessing, exposure_columns, target_column)
+            feature_dict = self._process_feature(
+                feature,
+                preprocessing,
+                exposure_columns,
+                target_column,
+                offset_columns,
+                sample_weight_column,
+            )
             features_dict[feature] = feature_dict
                     
                 
@@ -212,15 +368,13 @@ class VisualMLModelRetriver(DataikuClientProject):
         return features_dict
     
     def get_exposure_columns(self):
-        try:
-            if self.exposure_columns:
-                return self.exposure_columns
-            else:
-                self.exposure_columns = self.algo_settings.get('params').get('exposure_columns')[0]
-                return self.exposure_columns
-        except:
-            self.exposure_columns = self.algo_settings.get('params').get('exposure_columns')[0]
-            return self.exposure_columns
+        params = self.algo_settings.get('params', {}) if self.algo_settings else {}
+        exposure_columns = params.get('exposure_columns') or []
+        if len(exposure_columns) >= 1:
+            self.exposure_columns = exposure_columns[0]
+        else:
+            self.exposure_columns = None
+        return self.exposure_columns
 
     def get_elastic_net_penalty(self):
         return self.algo_settings.get('params').get('penalty')[0]
@@ -264,6 +418,8 @@ class VisualMLModelRetriver(DataikuClientProject):
         setup_params = {
             "target_column": self.get_target_column(),
             "exposure_column":self.get_exposure_columns(),
+            "sample_weight_column": self.get_sample_weight_column(),
+            "offset_columns": self.get_offset_columns(),
             "distribution_function": self.get_distribution_function(),
             "link_function":self.get_link_function(),
             "elastic_net_penalty": self.get_elastic_net_penalty(),

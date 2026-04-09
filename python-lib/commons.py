@@ -2,6 +2,8 @@ import dataiku
 from dataiku.customrecipe import get_input_names_for_role, get_output_names_for_role
 from dku_config import DkuConfig
 
+FEATURE_SELECTION_METHOD_NONE = "NONE"
+
 
 def get_input_output():
     if len(get_input_names_for_role('input_dataset')) == 0:
@@ -13,6 +15,28 @@ def get_input_output():
     output_dataset_name = get_output_names_for_role('output_dataset')[0]
     output_dataset = dataiku.Dataset(output_dataset_name)
     return (input_dataset, output_dataset)
+
+
+def extract_feature_selection_method_from_raw_settings(raw_settings):
+    if not isinstance(raw_settings, dict):
+        return None
+    preprocessing = raw_settings.get("preprocessing", {})
+    if not isinstance(preprocessing, dict):
+        return None
+    feature_selection_params = preprocessing.get("feature_selection_params", {})
+    if not isinstance(feature_selection_params, dict):
+        return None
+    return feature_selection_params.get("method")
+
+
+def validate_feature_selection_method_none(feature_selection_method, context):
+    if feature_selection_method is None:
+        return
+    if feature_selection_method != FEATURE_SELECTION_METHOD_NONE:
+        raise ValueError(
+            f"Feature reduction must be disabled for generalized-linear-models "
+            f"(feature_selection_params.method must be '{FEATURE_SELECTION_METHOD_NONE}', got '{feature_selection_method}') "
+        )
 
 
 def check_params(params):

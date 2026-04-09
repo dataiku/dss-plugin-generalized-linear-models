@@ -37,41 +37,34 @@ def natural_sort_key(s):
     import re
     return [int(c) if c.isdigit() else c.lower() for c in re.split(r'(\d+)', str(s))]
 
-def calculate_base_levels(df, exposure_column=None):
+def calculate_base_levels(df):
     cols_json = []
     # Sort the columns using natural sorting
     sorted_columns = sorted(df.columns, key=natural_sort_key)
     
     for col in sorted_columns:
-        if col == exposure_column:
-            continue
-    
         is_numeric = pd.api.types.is_numeric_dtype(df[col])
+        min_value = None
+        max_value = None
 
-        if exposure_column and exposure_column in df.columns:
-            # Exposure-based calculation
-            weighted_counts = df.groupby(col)[exposure_column].sum()
-
-            top_modalities = weighted_counts.sort_values(ascending=False).head(100)
-            if is_numeric:
-                options = sorted([str(val) for val in top_modalities.index], key=float)
-            else:
-                options = sorted([str(val) for val in top_modalities.index], key=natural_sort_key)
-            base_level = str(top_modalities.idxmax())
+        unique_vals = df[col].unique()
+        if is_numeric:
+            options = sorted([str(val) for val in unique_vals], key=float)[:100]
+            numeric_series = pd.to_numeric(df[col], errors='coerce').dropna()
+            if len(numeric_series) > 0:
+                min_value = float(numeric_series.min())
+                max_value = float(numeric_series.max())
         else:
-            # Original mode-based calculation
-            unique_vals = df[col].unique()
-            if is_numeric:
-                options = sorted([str(val) for val in unique_vals], key=float)[:100]
-            else:
-                options = sorted([str(val) for val in unique_vals], key=natural_sort_key)[:100]
-            base_level = str(df[col].mode().iloc[0])
+            options = sorted([str(val) for val in unique_vals], key=natural_sort_key)[:100]
+        base_level = str(df[col].mode().iloc[0])
 
         cols_json.append({
             'column': col,
             'options': options,
             'baseLevel': base_level,
-            'type': ('numerical' if is_numeric else 'categorical')
+            'type': ('numerical' if is_numeric else 'categorical'),
+            'minValue': min_value,
+            'maxValue': max_value
         })
     
     return cols_json
@@ -113,9 +106,14 @@ def get_model_relativities(full_model_id, model_cache, data_handler):
     variable_types = base_values_modalities_types['types']
     model_retriever = VisualMLModelRetriver(full_model_id)
     relativities_calculator = RelativitiesCalculator(data_handler, model_retriever, train_set, test_set, base_values=base_values, modalities=modalities, variable_types=variable_types)
-    relativities = relativities_calculator.get_relativities_df()
-    relativities_dict = relativities_calculator.relativities
-    return {'relativities': relativities, 'relativities_dict': relativities_dict}
+    relativities_raw = relativities_calculator.get_relativities_df(modeled_categorical=False)
+    relativities_modeled = getattr(relativities_calculator, "relativities_modeled_df", relativities_raw)
+    relativities_dict_raw = getattr(relativities_calculator, "relativities_raw", relativities_calculator.relativities)
+    return {
+        'relativities': relativities_modeled,
+        'relativities_raw': relativities_raw,
+        'relativities_dict': relativities_dict_raw
+    }
 
 def get_model_relativities_interaction(full_model_id, model_cache, data_handler):
     creation_args = {"data_handler": data_handler,

@@ -84,10 +84,8 @@ export class WT1iser {
   }
 
   static init() {
-    console.log('** visual glm version **', version)
     try {
       if (!(window.parent as any).WT1SVC && (window as any).dkuUsageReportingUtils) {
-        console.debug('bootstrap standalone reporting mode')
         ;(window as any).dkuUsageReportingUtils.standaloneModeBootstrap()
       }
     } catch (error) {

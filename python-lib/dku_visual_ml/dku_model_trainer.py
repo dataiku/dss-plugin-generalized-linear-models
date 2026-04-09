@@ -8,6 +8,7 @@ import string
 from logging_assist.logging import logger
 from dku_visual_ml.custom_configurations import dku_dataset_selection_params
 from dku_visual_ml.dku_base import DataikuClientProject
+from commons import extract_feature_selection_method_from_raw_settings, validate_feature_selection_method_none
 from typing import List, Dict, Any
 
 
@@ -42,6 +43,20 @@ class VisualMLModelTrainer(DataikuClientProject):
         logger.info("Successfully updated a Visual ML config")
         
         return None
+
+    @staticmethod
+    def _clear_family_link_params(params):
+        for link_param in (
+            "binomial_link",
+            "gamma_link",
+            "gaussian_link",
+            "inverse_gaussian_link",
+            "poisson_link",
+            "negative_binomial_link",
+            "tweedie_link",
+            "negative binomial_link",
+        ):
+            params.pop(link_param, None)
     
     def _refresh_mltask(self):
         
@@ -83,7 +98,7 @@ class VisualMLModelTrainer(DataikuClientProject):
         for feature_name in settings.get_raw()['preprocessing']['per_feature'].keys():
             feature_role = settings.get_raw()['preprocessing']['per_feature'][feature_name].get('role')
             logger.debug(f"feature role is {feature_role}")
-            if feature_name != target_variable or (feature_role!="TARGET"):
+            if (feature_role!="TARGET") and (feature_role!="WEIGHT"):
                 settings.reject_feature(feature_name)
         settings.save()
         
@@ -156,12 +171,21 @@ class VisualMLModelTrainer(DataikuClientProject):
             
             fs = settings.get_feature_preprocessing(variable)
             variable_type = self.visual_ml_config.get_variable_type(variable)
-            base_level = self.visual_ml_config.variables[variable].get('base_level', None)
+            variable_config = self.visual_ml_config.variables.get(variable, {})
+            base_level = variable_config.get('base_level', None)
+            processing = str(variable_config.get('processing', 'CUSTOM')).upper()
+            spline_features = self.visual_ml_config.get_feature_spline_features(variable)
+            categorical_groups = self.visual_ml_config.get_feature_categorical_groups(variable)
 
             if variable_type == 'categorical':
-                fs = self.update_to_categorical(fs, base_level)
+                fs = self.update_to_categorical(fs, base_level, categorical_groups)
             elif variable_type == 'numerical':
-                fs = self.update_to_numeric(fs, base_level)
+                fs = self.update_to_numeric(
+                    fs,
+                    base_level,
+                    processing=processing,
+                    spline_features=spline_features,
+                )
                 
             if include:
                 settings.use_feature(variable)
@@ -189,13 +213,52 @@ class VisualMLModelTrainer(DataikuClientProject):
     def set_exposure_variable(self):
         logger.debug("Updating the Dataiku ML task settings for exposure variables")
         exposure_variable = self.visual_ml_config.get_exposure_variable()
+        if getattr(self.visual_ml_config, "link_function", None) != "log":
+            logger.debug("Exposure variable ignored because link function is not log")
+            return
+        if not exposure_variable:
+            logger.debug("No exposure variable configured")
+            return
         settings = self.mltask.get_settings()
         logger.debug(exposure_variable)
         settings.use_feature(exposure_variable)
         fs = settings.get_feature_preprocessing(exposure_variable)
-        fs = self.update_to_numeric(fs, None)
+        fs = self.update_to_numeric(fs, None, processing="REGULAR", spline_features=[])
         settings.save()
         logger.debug("Successfully updated the Dataiku ML task settings for exposure variables")
+
+    def set_offset_variables(self):
+        logger.debug("Updating the Dataiku ML task settings for offset variables")
+        offset_variables = self.visual_ml_config.get_offset_variables()
+        if not offset_variables:
+            logger.debug("No offset variables configured")
+            return
+        settings = self.mltask.get_settings()
+        for offset_variable in offset_variables:
+            settings.use_feature(offset_variable)
+            fs = settings.get_feature_preprocessing(offset_variable)
+            fs = self.update_to_numeric(fs, None, processing="REGULAR", spline_features=[])
+        settings.save()
+        logger.debug("Successfully updated the Dataiku ML task settings for offset variables")
+
+    def set_sample_weight_variable(self):
+        logger.debug("Updating the Dataiku ML task settings for sample weight")
+        settings = self.mltask.get_settings()
+        per_feature = settings.get_raw().get('preprocessing', {}).get('per_feature', {})
+        if not isinstance(per_feature, dict):
+            per_feature = {}
+        sample_weight_variable = self.visual_ml_config.get_sample_weight_variable()
+
+        if not sample_weight_variable:
+            settings.set_weighting("NO_WEIGHTING")
+            settings.save()
+            logger.debug("Sample weighting disabled (NO_WEIGHTING)")
+            return
+        logger.debug(f"Sample weight variable configured: {sample_weight_variable}")
+        # Ensure no stale WEIGHT role remains on another feature
+        settings.set_weighting("SAMPLE_WEIGHT", sample_weight_variable)
+        settings.save()
+        logger.debug("Successfully updated sample weighting settings")
     
     def configure_variables(self):
         """
@@ -203,9 +266,12 @@ class VisualMLModelTrainer(DataikuClientProject):
         """
         logger.info("Setting the variables and preprocecssing for each variable")
         
+        self.set_sample_weight_variable()
         self.set_included_variables()
+        self.set_offset_variables()
         self.set_exposure_variable()
         self.set_target_variable()
+        
         
         logger.debug('***Updated settings are:***')
         settings = self.mltask.get_settings()
@@ -271,12 +337,15 @@ class VisualMLModelTrainer(DataikuClientProject):
         return latest_model_id
     
     def check_failure_get_error_message(self, latest_model_id):
-        
-        status = self.mltask.get_trained_model_details(latest_model_id).details.get('trainInfo').get('state')
-        try:
-            message = self.mltask.get_trained_model_details(latest_model_id).details.get('trainInfo').get('failure').get('message', None)
-        except:
-            message = None
+        model_details = self.mltask.get_trained_model_details(latest_model_id).details
+        train_info = model_details.get('trainInfo', {}) if isinstance(model_details, dict) else {}
+        status = train_info.get('state')
+        failure = train_info.get('failure')
+        message = None
+        if isinstance(failure, dict):
+            message = failure.get('message')
+        elif failure:
+            message = str(failure)
         return status, message
     
     
@@ -297,19 +366,29 @@ class VisualMLModelTrainer(DataikuClientProject):
         self.enable_glm_algorithm()
         settings_new = self.configure_variables()
         self.set_code_env_settings(code_env_string)
+        self.ensure_feature_selection_disabled()
         self.mltask.start_train(session_name=session_name)
         details = self.mltask.wait_train_complete()
         logging.info("Model training completed. Deploying the model.")
         
         latest_model_id = self.get_latest_model()
+        if not latest_model_id:
+            return {"status": "FAILED"}, "Model training error: no trained model was produced by DSS."
+
         status, error_message = self.check_failure_get_error_message(latest_model_id)
-        
-        if status == "FAILED":
+        normalized_status = (status or "").upper()
+
+        if normalized_status != "DONE":
+            if not error_message:
+                error_message = (
+                    f"Training session ended with state '{status}' "
+                    f"for model_id={latest_model_id}."
+                )
             if error_message == "Failed to train : <class 'numpy.linalg.LinAlgError'> : Matrix is singular.":
-                error_message = error_message + "Check colinearity of variables added to the model"
-            return None, error_message
-        else:
-            return None, error_message
+                error_message = error_message + " Check colinearity of variables added to the model"
+            return {"status": normalized_status or "FAILED", "model_id": latest_model_id}, error_message
+
+        return {"status": "DONE", "model_id": latest_model_id}, None
     
     def process_interaction_columns(self, interaction_columns):
         print(f"interaction columns are {interaction_columns}")
@@ -332,11 +411,22 @@ class VisualMLModelTrainer(DataikuClientProject):
         settings = self.mltask.get_settings()
         interaction_variables = self.visual_ml_config.get_interaction_variables()
         first_columns, second_columns = self.process_interaction_columns(interaction_variables)
+        exposure_variable = self.visual_ml_config.get_exposure_variable()
+        offset_columns = self.visual_ml_config.get_offset_variables()
+        link_function = getattr(self.visual_ml_config, "link_function", None)
+        use_exposure = bool(exposure_variable) and link_function == "log"
+        if use_exposure:
+            offset_mode = "OFFSETS/EXPOSURES"
+        elif len(offset_columns) > 0:
+            offset_mode = "OFFSETS"
+        else:
+            offset_mode = "BASIC"
         
         if hasattr(self.visual_ml_config, 'distribution_function'): # for training
             algo_settings = settings.get_algorithm_settings(
                 'CustomPyPredAlgo_generalized-linear-models_generalized-linear-models_regression'
             )
+            self._clear_family_link_params(algo_settings['params'])
             algo_settings['params'].update({
                 f"{self.visual_ml_config.distribution_function}_link": self.visual_ml_config.link_function,
                 "family_name": self.visual_ml_config.distribution_function,
@@ -346,29 +436,36 @@ class VisualMLModelTrainer(DataikuClientProject):
                 "interaction_columns_second":second_columns,
                 "alpha": self.visual_ml_config.theta,
                 "power": self.visual_ml_config.power,
-                "var_power": self.visual_ml_config.variance_power
+                "var_power": self.visual_ml_config.variance_power,
+                "offset_mode": offset_mode,
+                "offset_columns": offset_columns,
+                "exposure_columns": ([exposure_variable] if use_exposure else []),
             })
         else: # for init
             algo_settings = settings.get_algorithm_settings(
                 'CustomPyPredAlgo_generalized-linear-models_generalized-linear-models_regression'
             )
             algo_settings['params'].update({
-                "offset_mode": "OFFSETS/EXPOSURES",
+                "offset_mode": "BASIC",
                 "offset_columns": [],
-                "exposure_columns": [self.visual_ml_config.exposure_column],
+                "exposure_columns": [],
                 "training_dataset": self.visual_ml_config.input_dataset,
             })
         
         settings.save()
         return
+
+    def ensure_feature_selection_disabled(self):
+        settings = self.mltask.get_settings()
+        feature_selection_method = extract_feature_selection_method_from_raw_settings(settings.get_raw())
+        validate_feature_selection_method_none(feature_selection_method, context="webapp_train_model")
     
-    def update_to_numeric(self, fs, base_level):
-    
+    def update_to_numeric(self, fs, base_level, processing="CUSTOM", spline_features=None):
+        processing_mode = str(processing or "CUSTOM").upper()
+        use_custom_processing = processing_mode == "CUSTOM"
+
         fs['generate_derivative'] = False
-        if base_level is None:
-            fs['numerical_handling'] = 'REGULAR'
-        else:
-            fs['numerical_handling'] = 'CUSTOM'
+        fs['numerical_handling'] = 'CUSTOM' if use_custom_processing else 'REGULAR'
         fs['missing_handling'] = 'IMPUTE'
         fs['missing_impute_with'] = 'MEAN'
         fs['impute_constant_value'] = 0.0
@@ -380,19 +477,17 @@ class VisualMLModelTrainer(DataikuClientProject):
         fs['datetime_cyclical_periods'] = []
         fs['role'] = 'INPUT'
         fs['type'] = 'NUMERIC'
-        if base_level is None:
-            fs['customHandlingCode'] = ''
-        else:
-            fs['customHandlingCode'] = (
-            'from dataiku.base.model_plugin import prepare_for_plugin\n'
-            'prepare_for_plugin(\'generalized-linear-models\', \'generalized-linear-models_regression\')\n'
-            'from processors.processors import save_base\n'
-            'processor = save_base({"base_level": ' + str(base_level) + '})\n')
+        fs['customHandlingCode'] = ''
+        if use_custom_processing:
+            fs['customHandlingCode'] = self.visual_ml_config.build_numeric_custom_handling_code(
+                base_level=base_level,
+                spline_features=spline_features or [],
+            )
         fs['customProcessorWantsMatrix'] = True
         fs['sendToInput'] = 'main'
         return fs
     
-    def update_to_categorical(self, fs, base_level):
+    def update_to_categorical(self, fs, base_level, categorical_groups=None):
         
         fs['missing_impute_with']= 'MODE'
         fs['type']= 'CATEGORY'
@@ -422,11 +517,10 @@ class VisualMLModelTrainer(DataikuClientProject):
         fs['customHandlingCode'] = ''
         fs['customProcessorWantsMatrix'] = False
         fs['sendToInput'] = 'main'
-        fs['customHandlingCode'] = (
-            'from dataiku.base.model_plugin import prepare_for_plugin\n'
-            'prepare_for_plugin(\'generalized-linear-models\', \'generalized-linear-models_regression\')\n'
-            'from processors.processors import rebase_mode\n'
-            'processor = rebase_mode({"base_level": "' + str(base_level) + '"})\n')
+        fs['customHandlingCode'] = self.visual_ml_config.build_categorical_custom_handling_code(
+            base_level=base_level,
+            categorical_groups=categorical_groups or [],
+        )
         
         return fs      
 

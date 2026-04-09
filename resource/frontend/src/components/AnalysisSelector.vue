@@ -1,5 +1,6 @@
 <template>
   <BsSelect
+    class="analysis-fixed-select"
     :model-value="store.selectedMlTask"
     :all-options="store.mlTaskOptions"
     option-value="mlTaskId"
@@ -77,9 +78,29 @@ export default defineComponent({
   min-width: 260px;
 }
 
-::v-deep(.bs-selection-content) {
-  max-width: 100% !important;
+:deep(.analysis-fixed-select) {
+  width: 620px;
+  min-width: 620px;
+  max-width: 620px;
+}
+
+:deep(.analysis-fixed-select .bs-selection-content) {
+  display: block;
+  max-width: calc(100% - 28px);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+:deep(.analysis-fixed-select .q-field__native) {
+  min-width: 0;
+  padding-right: 28px;
+}
+
+:deep(.analysis-fixed-select .bs-selection-content > div) {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 </style>

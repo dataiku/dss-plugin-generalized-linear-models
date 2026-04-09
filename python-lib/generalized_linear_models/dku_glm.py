@@ -21,7 +21,7 @@ class BaseGLM(BaseEstimator, ClassifierMixin):
     def __init__(self, family_name="gaussian", binomial_link="logit", gamma_link="inverse_power", gaussian_link="identity", inverse_gaussian_link="inverse_squared",
                  poisson_link="log", negative_binomial_link="log", tweedie_link="log", alpha=1, power=1, penalty=0.0, l1_ratio=0.5,
                  var_power=1, offset_mode="BASIC", training_dataset=None, offset_columns=None, exposure_columns=None,
-                 interaction_columns_first=None, interaction_columns_second=None,
+                 interaction_columns_first=[], interaction_columns_second=[],
                  column_labels=None):
         
         self.family_name = family_name
@@ -117,7 +117,7 @@ class BaseGLM(BaseEstimator, ClassifierMixin):
         elif user_link == 'power':
             return link.Power(self.power)
         elif user_link == 'inverse_power':
-            return link.InversePower(self.power)
+            return link.InversePower()
         elif user_link == 'inverse_squared':
             return link.InverseSquared()
         else:
@@ -206,6 +206,19 @@ class BaseGLM(BaseEstimator, ClassifierMixin):
 
         return column_values, column_indices
 
+    def _validate_columns_exist(self, required_columns, column_kind):
+        if not required_columns:
+            return
+        missing_columns = [column for column in required_columns if column not in self.column_labels]
+        if not missing_columns:
+            return
+        missing_columns_str = ", ".join(missing_columns)
+        raise ValueError(
+            f"{column_kind.capitalize()} column(s) not found in processed features: [{missing_columns_str}]. "
+            "This may happen when feature reduction removed the column(s). "
+            "Disable feature reduction (method=NONE) and ensure these columns are kept in feature handling."
+        )
+
     def compute_aggregate_offset(self, offsets, exposures):
         offset_output = None
         if len(offsets) > 0:
@@ -213,8 +226,10 @@ class BaseGLM(BaseEstimator, ClassifierMixin):
             offset_output = offsets
 
         if len(exposures) > 0:
+            exposures = np.asarray(exposures, dtype=float)
             if (exposures <= 0).any():
                 raise ValueError('Exposure columns contains some negative values. Please make sure that the exposure column is not rescaled in feature handling.')
+            
             exposures = np.log(exposures)
             exposures = exposures.sum(axis=1)
             if offset_output is None:
@@ -321,10 +336,13 @@ class BaseGLM(BaseEstimator, ClassifierMixin):
         offsets = []
         exposures = []
         if self.offset_mode == 'OFFSETS':
+            self._validate_columns_exist(self.offset_columns, "offset")
             offsets, self.offset_indices = self.get_columns(X, self.offset_columns)
             if len(offsets) == 0:
                 raise ValueError('OFFSETS mode is selected but no offset column is defined')
         elif self.offset_mode == 'OFFSETS/EXPOSURES':
+            self._validate_columns_exist(self.offset_columns, "offset")
+            self._validate_columns_exist(self.exposure_columns, "exposure")
             offsets, self.offset_indices = self.get_columns(X, self.offset_columns)
             exposures, self.exposure_indices = self.get_columns(X, self.exposure_columns)
             if len(offsets) == 0 and len(exposures) == 0:
@@ -389,8 +407,5 @@ class RegressionGLM(BaseGLM):
         """
         return self.predict_target(X)
     
-
-
-
 
 

@@ -1,5 +1,27 @@
 # Changelog
 
+## [Version 2.1.1] - Bugfix Release - 2026-04
+
+* Fix the statsmodels version for python 3.10
+
+## [Version 2.1.0] - New Feature Release - 2026-03
+
+* Added spline definition support for numerical variables
+* Added categorical grouping support for categorical variables
+* Added sample weight and offset handling, and improved exposure handling
+* Improved validation and persistent error handling in model training configuration
+* Improved one-way, lift chart, and variable level stats behavior and fixes
+
+## [Version 2.0.3] - Patch Release - 2026-01
+
+* Bugfix on binary classification
+
+## [Version 2.0.2] - Patch Release - 2026-01
+
+* Ability for non Admin to run the webapp
+* Size reduction of the compiled css
+* Bugfixes
+
 ## [Version 2.0.1] - Patch Release - 2025-11
 
 * Small UI improvements
