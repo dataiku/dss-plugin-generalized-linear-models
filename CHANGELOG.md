@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 2.1.2] - Bugfix Release - 2026-07
+
+* Exclude unneeded files from the packaged plugin archive
+
 ## [Version 2.1.1] - Bugfix Release - 2026-04
 
 * Fix the statsmodels version for python 3.10
