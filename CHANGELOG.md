@@ -1,5 +1,9 @@
 # Changelog
 
+## [Version 2.1.3] - Bugfix Release - 2026-11
+
+* Fix crash when the project contains an ML task without a target variable
+
 ## [Version 2.1.2] - Bugfix Release - 2026-07
 
 * Exclude unneeded files from the packaged plugin archive
