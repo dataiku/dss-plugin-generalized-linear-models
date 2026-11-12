@@ -44,7 +44,9 @@ class DataikuClientProject:
                 exposure_column = ""
         weight_settings = settings.get_raw().get("weight", {})
         sample_weight_column = weight_settings.get("sampleWeightVariable") or ""
-        target_variable = settings.get_raw()['targetVariable']
+        target_variable = settings.get_raw().get('targetVariable') or ""
+        if not target_variable:
+            is_valid = False
         ml_task_formatted = {"analysisName": ml_task_config['analysisName'],
                             "analysisId": ml_task_config['analysisId'],
                             "mlTaskId": ml_task_config['mlTaskId'],
